@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #e2e2df;
+  --foreground: #070607;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* ---------- Tipografi ---------- */
+
+/* Judul memakai font display. Judul yang sangat kecil tetap DM Sans agar terbaca. */
+h1,
+h2:not(.text-xs):not(.text-sm),
+h3[class*="text-lg"],
+h3[class*="text-xl"],
+h3[class*="text-2xl"],
+.font-display {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em !important;
+}
+
+h1 {
+  font-size: clamp(34px, 6.5vw, 72px) !important;
+  line-height: 1.02 !important;
+}
+
+/* Font display tidak dipakai di bawah 26px. */
+h2[class*="text-lg"],
+h2[class*="text-xl"] {
+  font-size: clamp(26px, 3.2vw, 32px) !important;
+  line-height: 1.1 !important;
+}
+
+h3[class*="text-lg"],
+h3[class*="text-xl"],
+h3[class*="text-2xl"] {
+  font-size: 26px !important;
+  line-height: 1.15 !important;
+}
+
+strong,
+b {
+  font-weight: 500;
+}
+
+/* Label kecil kapital bukan bagian dari gaya ini. */
+.uppercase {
+  text-transform: none;
+}
+
+.tracking-wide,
+.tracking-wider,
+.tracking-widest {
+  letter-spacing: 0;
+}
+
+/* ---------- Tombol dan kontrol ---------- */
+
+/* Tombol utama: pill ember dengan teks gelap (kontras ember + putih tidak lolos AA). */
+.bg-blue-500,
+.bg-blue-600,
+.bg-red-500,
+.bg-red-600 {
+  background-color: #fc5000;
+  color: #070607;
+  border-radius: 800px;
+}
+
+.hover\:bg-blue-700:hover,
+.hover\:bg-blue-800:hover,
+.hover\:bg-red-700:hover,
+.hover\:bg-red-800:hover {
+  background-color: #ff6f2b;
+  color: #070607;
+}
+
+/* Tidak ada tombol bersudut kecil. */
+:is(button, a):is(.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: 40px;
+}
+
+/* Tombol sekunder: garis obsidian 1.5px. */
+:is(button, a).border:is(.border-blue-100, .border-blue-200, .border-blue-300) {
+  border-color: #070607;
+  border-width: 1.5px;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select {
+  border-color: #070607 !important;
+  border-width: 1.5px !important;
+  border-radius: 100px !important;
+}
+
+/* Kolom dengan ikon di kiri sudah punya padding sendiri. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([class*="pl-"]),
+select:not([class*="pl-"]) {
+  padding-left: 24px !important;
+}
+
+textarea {
+  border-color: #070607 !important;
+  border-width: 1.5px !important;
+  border-radius: 32px !important;
+  padding: 20px 24px !important;
+}
+
+/* Navigasi header. */
+header nav a {
+  color: #070607;
+}
+
+header nav a[aria-current="page"] {
+  background-color: #fc5000;
+  color: #070607;
+}
+
+/* ---------- Permukaan ---------- */
+
+/* Tingkat kewaspadaan dibedakan lewat warna permukaan, bukan garis. */
+[data-level] {
+  border-width: 0;
+}
+
+/* Teks abu tidak terbaca di atas permukaan ember. */
+.bg-red-50,
+.bg-red-100 {
+  color: #070607;
+}
+
+.bg-red-50 :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700),
+.bg-red-100 :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700) {
+  color: #070607;
+}
+
+/* Pemisah khas: titik-titik obsidian 1.5px. */
+.border-t:is(.border-gray-100, .border-gray-200),
+.border-b:is(.border-gray-100, .border-gray-200) {
+  border-style: dotted;
+  border-color: rgb(7 6 7 / 0.45);
+}
+
+.border-t:is(.border-gray-100, .border-gray-200) {
+  border-top-width: 1.5px;
+}
+
+.border-b:is(.border-gray-100, .border-gray-200) {
+  border-bottom-width: 1.5px;
+}
+
+/* Landing page memakai font dan ukuran judulnya sendiri. */
+.beranda-anton {
+  --font-display: var(--font-anton);
+}
+
+.beranda-anton h1 {
+  font-size: 3rem !important;
+  line-height: 1.02 !important;
+}
+
+@media (min-width: 640px) {
+  .beranda-anton h1 {
+    font-size: 3.75rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .beranda-anton h1 {
+    font-size: 76px !important;
+  }
+}
+
+/* Motif halftone: titik ember di atas gradasi violet ke ember. */
+.halftone {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to top right, #524ae9 8%, #fc5000 82%);
+}
+
+.halftone::before,
+.halftone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #fc5000 34%, transparent 37%);
+  background-size: 14px 14px;
+}
+
+.halftone::after {
+  background-position: 7px 7px;
+  background-size: 14px 14px;
+  -webkit-mask-image: linear-gradient(to top right, transparent 25%, #000 80%);
+  mask-image: linear-gradient(to top right, transparent 25%, #000 80%);
+}
+
+/* Kursor ketik pemandu. Margin negatif menjaga lebarnya tidak menggeser baris. */
+.pemandu-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 1px;
+  margin-right: -3px;
+  vertical-align: -0.15em;
+  background-color: #fc5000;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

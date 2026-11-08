@@ -1,0 +1,162 @@
+{
+  "skenario": [
+    {
+      "id": "video-call-kakak",
+      "judul": "Video call kakak minta transfer",
+      "situasi": "video_call",
+      "jawaban": {
+        "apa_diminta": "transfer",
+        "nomor_akun": "nomor_baru",
+        "darurat_desakan": true,
+        "diminta_rahasiakan": true,
+        "bisa_telepon_balik": false
+      },
+      "hasilSimulasi": {
+        "halaman": "video",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan panggilan video rekayasa sosial atau manipulasi wajah. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Permintaan transfer dana mendesak",
+            "penjelasan": "Pelaku memanfaatkan narasi musibah atau kecelakaan untuk menciptakan kepanikan agar korban segera mentransfer uang tanpa berpikir panjang.",
+            "bukti": "Minta transfer segera dengan dalih kecelakaan darurat",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Menolak verifikasi panggilan balik",
+            "penjelasan": "Pelaku yang menggunakan rekaman video curian atau manipulasi wajah sering beralasan kamera rusak atau sinyal buruk dan menolak ditelepon ulang.",
+            "bukti": "Menolak ditelepon balik ke nomor lama",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Menggunakan nomor baru dan meminta dirahasiakan",
+            "penjelasan": "Kombinasi mengaku ganti nomor dan meminta tidak memberi tahu keluarga lain adalah tanda umum modus isolasi korban.",
+            "bukti": "Nomor baru mengaku kerabat dan meminta jangan beritahu keluarga lain",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Wajah sekilas terlihat mirip kerabat karena menggunakan materi video atau foto asli yang dimanipulasi"
+        ],
+        "langkah": [
+          "Segera tutup panggilan dan jangan lakukan transfer dana dalam bentuk apa pun.",
+          "Telepon balik ke nomor lama kakak yang tersimpan di kontak ponsel kamu.",
+          "Tanyakan hal atau kode rahasia yang hanya diketahui oleh keluarga inti kamu.",
+          "Hubungi orang tua atau anggota keluarga lain yang berada dekat dengan kakakmu untuk memastikan keberadaannya."
+        ],
+        "situasi_darurat": [
+          "transfer"
+        ],
+        "batasan": "Penilaian dilakukan berdasarkan aturan konteks situasi panggilan tanpa memproses data video di server.",
+        "pihak_ketiga": [],
+        "status_layanan": {}
+      }
+    },
+    {
+      "id": "voice-note-atasan",
+      "judul": "Voice note atasan minta voucher",
+      "situasi": "rekaman",
+      "jawaban": {
+        "siapa_tampil": "atasan",
+        "apa_diminta": "voucher",
+        "nomor_akun": "nomor_baru",
+        "darurat_desakan": true,
+        "diminta_rahasiakan": true,
+        "bisa_telepon_balik": false
+      },
+      "hasilSimulasi": {
+        "halaman": "video",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan tiruan suara mengatasnamakan pimpinan. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Permintaan pembelian voucher atau pulsa",
+            "penjelasan": "Permintaan kode voucher belanja atau pulsa adalah modus pengalihan dana cepat yang sering digunakan penipu karena sulit dilacak dan dibatalkan.",
+            "bukti": "Meminta dibelikan kode voucher belanja mendesak",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Menghindari panggilan telepon dua arah",
+            "penjelasan": "Pelaku tiruan suara biasanya hanya mengirim pesan suara singkat dan menolak panggilan langsung dua arah karena keterbatasan teknologi kloning suara real-time.",
+            "bukti": "Hanya mengirim pesan suara dan menolak panggilan telepon langsung",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Meminta merahasiakan dari rekan kerja",
+            "penjelasan": "Pelaku memanfaatkan hierarki jabatan dan meminta kerahasiaan agar korban tidak sempat memverifikasi ke staf lain.",
+            "bukti": "Meminta untuk tidak membicarakan instruksi ini ke rekan lain",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Karakteristik nada suara dan gaya bicara terdengar meyakinkan"
+        ],
+        "langkah": [
+          "Jangan membelikan atau mengirimkan kode voucher apa pun.",
+          "Konfirmasikan instruksi tersebut melalui jalur komunikasi resmi kantor seperti email kantor atau nomor telepon kantor.",
+          "Temui langsung atasan bersangkutan atau tanyakan kepada sekretaris maupun rekan kerja satu divisi."
+        ],
+        "situasi_darurat": [
+          "transfer"
+        ],
+        "batasan": "Penilaian berbasis analisis indikator konteks komunikasi, berfungsi penuh di peramban tanpa koneksi server eksternal.",
+        "pihak_ketiga": [],
+        "status_layanan": {}
+      }
+    },
+    {
+      "id": "video-tokoh-investasi",
+      "judul": "Video tokoh promosi investasi",
+      "situasi": "tokoh",
+      "jawaban": {
+        "siapa_tampil": "tokoh_publik",
+        "apa_diminta": "investasi",
+        "janji_untung_ajakan": true,
+        "nomor_akun": "akun_tidak_dikenal",
+        "darurat_desakan": true,
+        "diminta_rahasiakan": false,
+        "bisa_telepon_balik": false
+      },
+      "hasilSimulasi": {
+        "halaman": "video",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan manipulasi video figur publik untuk promosi investasi. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Pencatutan figur publik untuk investasi",
+            "penjelasan": "Pelaku menggunakan teknologi deepfake atau rekaman potongan video tokoh ternama yang diselaraskan kembali suaranya untuk mempromosikan skema investasi tidak berizin.",
+            "bukti": "Menampilkan video tokoh publik mempromosikan keuntungan finansial",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Ajakan bergabung ke grup pesan privat",
+            "penjelasan": "Tautan yang mengarahkan penonton ke obrolan WhatsApp atau Telegram pribadi merupakan taktik umum penipuan investasi bodong tanpa izin resmi.",
+            "bukti": "Mengarahkan penonton mengklik tautan menuju grup WhatsApp atau Telegram",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Janji imbal hasil tidak wajar",
+            "penjelasan": "Investasi legal tidak pernah menjanjikan imbal hasil tinggi tanpa risiko dalam waktu singkat. Skema ini mengarah pada penipuan berkedok trading atau aset kripto.",
+            "bukti": "Menjanjikan pengembalian modal dan keuntungan berlipat ganda",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Kualitas rekaman video tampak rapi karena menggunakan potongan siaran berita atau podcast resmi"
+        ],
+        "langkah": [
+          "Jangan mengklik tautan menuju WhatsApp atau Telegram dan jangan menyetorkan dana apa pun.",
+          "Periksa akun media sosial resmi dan terverifikasi milik tokoh tersebut untuk memastikan kebenarannya.",
+          "Periksa legalitas entitas penawaran investasi melalui Kontak OJK 157 (telepon 157, WhatsApp 081-157-157-157, atau email konsumen@ojk.go.id)."
+        ],
+        "situasi_darurat": [
+          "klik_link",
+          "transfer"
+        ],
+        "batasan": "Hasil penilaian didasarkan pada karakteristik umum penyalahgunaan identitas figur publik di media sosial.",
+        "pihak_ketiga": [],
+        "status_layanan": {}
+      }
+    }
+  ]
+}

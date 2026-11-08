@@ -1,0 +1,251 @@
+{
+  "skenario": [
+    {
+      "id": "link-bank-hadiah",
+      "judul": "Tautan klaim undian mengatasnamakan bank",
+      "url": "https://undian-bca-gebyar.example/klaim-hadiah",
+      "responsSimulasi": {
+        "safeBrowsing": {
+          "ditemukan": true,
+          "ancaman": [
+            "SOCIAL_ENGINEERING"
+          ]
+        },
+        "rdap": {
+          "tersedia": true,
+          "tanggalRegistrasi": "2025-02-15T08:00:00Z",
+          "umurHari": 5
+        },
+        "leksikal": [
+          {
+            "judul": "Mencatut nama merek perbankan",
+            "penjelasan": "Nama domain menggunakan nama bank BCA pada domain tidak resmi untuk mengelabui calon korban.",
+            "bukti": "undian-bca-gebyar.example",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Kata pemicu undian dan klaim",
+            "penjelasan": "URL memuat kata pemicu yang sering digunakan dalam modus phishing berhadiah.",
+            "bukti": "undian / klaim-hadiah",
+            "sumber": "aturan"
+          }
+        ]
+      },
+      "hasilSimulasi": {
+        "halaman": "link",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan tautan phishing perbankan. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Terdaftar dalam basis data ancaman",
+            "penjelasan": "Google Safe Browsing mengidentifikasi alamat ini sebagai situs rekayasa sosial atau phishing yang berpotensi mencuri data pribadi.",
+            "bukti": "undian-bca-gebyar.example",
+            "sumber": "safe_browsing"
+          },
+          {
+            "judul": "Mencatut nama merek perbankan",
+            "penjelasan": "Nama domain menggunakan nama bank BCA pada domain tidak resmi untuk mengelabui calon korban.",
+            "bukti": "undian-bca-gebyar.example",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Domain baru didaftarkan",
+            "penjelasan": "Data registrasi domain menunjukkan alamat ini baru terdaftar kurang dari 30 hari yang lalu (berusia 5 hari). Situs phishing sering berganti domain baru untuk menghindari pemblokiran.",
+            "bukti": "umur 5 hari",
+            "sumber": "rdap"
+          },
+          {
+            "judul": "Menggunakan kata pemicu hadiah",
+            "penjelasan": "Penggunaan kata undian, klaim, dan hadiah sering dipakai pelaku untuk memancing korban memasukkan kredensial login akun.",
+            "bukti": "undian / klaim-hadiah",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Menggunakan protokol HTTPS"
+        ],
+        "langkah": [
+          "Jangan membuka tautan tersebut dan jangan mengisi formulir apa pun di dalamnya.",
+          "Akses situs resmi bank secara langsung dengan mengetikkan alamat resmi pada peramban, bukan melalui tautan pesan.",
+          "Jika sudah terlanjur memasukkan data perbankan, segera hubungi call center resmi bank untuk meminta pemblokiran rekening atau kartu ATM."
+        ],
+        "situasi_darurat": [
+          "klik_link",
+          "isi_data"
+        ],
+        "batasan": "Pemeriksaan tautan didasarkan pada reputasi Safe Browsing, informasi umur domain, dan karakteristik leksikal URL.",
+        "pihak_ketiga": [
+          "Google Safe Browsing",
+          "RDAP",
+          "Google Gemini"
+        ],
+        "status_layanan": {
+          "safe_browsing": "ok",
+          "rdap": "ok",
+          "ai": "ok"
+        }
+      }
+    },
+    {
+      "id": "link-marketplace-typo",
+      "judul": "Tautan promo marketplace tiruan dengan huruf pengganti",
+      "url": "https://sh0pee-promo-spesial.test/login-verifikasi",
+      "responsSimulasi": {
+        "safeBrowsing": {
+          "ditemukan": true,
+          "ancaman": [
+            "SOCIAL_ENGINEERING"
+          ]
+        },
+        "rdap": {
+          "tersedia": true,
+          "tanggalRegistrasi": "2025-02-18T10:00:00Z",
+          "umurHari": 2
+        },
+        "leksikal": [
+          {
+            "judul": "Nama mirip merek dengan substitusi karakter",
+            "penjelasan": "Domain menggunakan variasi tulisan sh0pee dengan angka nol menggantikan huruf o. Pola ini merupakan teknik typosquatting untuk mengecoh pengguna.",
+            "bukti": "sh0pee-promo-spesial.test",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Kata pemicu verifikasi dan login",
+            "penjelasan": "Jalur URL memuat kata pemicu login dan verifikasi yang dirancang untuk menjebak pengguna memasukkan kata sandi akun.",
+            "bukti": "/login-verifikasi",
+            "sumber": "aturan"
+          }
+        ]
+      },
+      "hasilSimulasi": {
+        "halaman": "link",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan tautan tiruan marketplace. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Nama mirip merek dengan substitusi karakter",
+            "penjelasan": "Domain menggunakan variasi tulisan sh0pee dengan angka nol menggantikan huruf o. Pola ini merupakan teknik typosquatting untuk mengecoh pengguna.",
+            "bukti": "sh0pee-promo-spesial.test",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Terindikasi rekayasa sosial oleh Safe Browsing",
+            "penjelasan": "Pemeriksaan Google Safe Browsing mendeteksi tautan ini sebagai indikasi phishing yang berupaya mencuri akun pengguna.",
+            "bukti": "sh0pee-promo-spesial.test",
+            "sumber": "safe_browsing"
+          },
+          {
+            "judul": "Domain baru didaftarkan",
+            "penjelasan": "Domain baru didaftarkan 2 hari yang lalu menurut catatan RDAP. Situs resmi marketplace besar telah terdaftar selama bertahun-tahun.",
+            "bukti": "umur 2 hari",
+            "sumber": "rdap"
+          },
+          {
+            "judul": "Kata pemicu verifikasi dan login",
+            "penjelasan": "Jalur URL memuat kata pemicu login dan verifikasi yang dirancang untuk menjebak pengguna memasukkan kata sandi akun.",
+            "bukti": "/login-verifikasi",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [],
+        "langkah": [
+          "Jangan membuka atau login ke halaman tersebut.",
+          "Periksa penawaran promo resmi hanya melalui aplikasi resmi marketplace di ponsel kamu.",
+          "Jika sudah terlanjur memasukkan data login, segera ubah kata sandi akunmu lewat aplikasi resmi."
+        ],
+        "situasi_darurat": [
+          "klik_link",
+          "isi_data"
+        ],
+        "batasan": "Hasil didasarkan pada perbandingan merek, analisis pola URL, dan data ancaman pihak ketiga.",
+        "pihak_ketiga": [
+          "Google Safe Browsing",
+          "RDAP",
+          "Google Gemini"
+        ],
+        "status_layanan": {
+          "safe_browsing": "ok",
+          "rdap": "ok",
+          "ai": "ok"
+        }
+      }
+    },
+    {
+      "id": "link-pemendek-saldo",
+      "judul": "Tautan tiruan pemendek link berisi klaim saldo",
+      "url": "https://s.id-update-akun.invalid/dana-kaget",
+      "responsSimulasi": {
+        "safeBrowsing": {
+          "ditemukan": false,
+          "ancaman": []
+        },
+        "rdap": {
+          "tersedia": true,
+          "tanggalRegistrasi": "2025-02-10T12:00:00Z",
+          "umurHari": 10
+        },
+        "leksikal": [
+          {
+            "judul": "Domain baru menyerupai layanan tautan",
+            "penjelasan": "Alamat web menggunakan nama yang menyerupai pemendek tautan resmi namun didaftarkan pada domain baru berusia 10 hari.",
+            "bukti": "s.id-update-akun.invalid",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Mencantumkan nama dompet digital pada jalur URL",
+            "penjelasan": "Path memuat kata dana-kaget untuk menarik perhatian pengguna agar mengira ini pembagian saldo resmi.",
+            "bukti": "/dana-kaget",
+            "sumber": "aturan"
+          }
+        ]
+      },
+      "hasilSimulasi": {
+        "halaman": "link",
+        "level": "sedang",
+        "ringkasan": "Ada tanda yang perlu kamu cek dulu sebelum lanjut. Alamat domain tergolong baru dan mencantumkan klaim saldo.",
+        "temuan": [
+          {
+            "judul": "Domain baru didaftarkan",
+            "penjelasan": "Catatan registrasi domain menunjukkan alamat ini terdaftar 10 hari yang lalu. Domain yang sangat baru perlu diwaspadai.",
+            "bukti": "umur 10 hari",
+            "sumber": "rdap"
+          },
+          {
+            "judul": "Mencantumkan nama dompet digital pada jalur URL",
+            "penjelasan": "Path memuat kata dana-kaget untuk menarik perhatian pengguna agar mengira ini pembagian saldo resmi.",
+            "bukti": "/dana-kaget",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Nama domain menyerupai pemendek tautan",
+            "penjelasan": "Domain memodifikasi format pemendek tautan untuk mengaburkan tujuan asli dari halaman tersebut.",
+            "bukti": "s.id-update-akun.invalid",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Belum terdaftar di daftar blokir Google Safe Browsing saat ini (bukan jaminan bebas risiko)"
+        ],
+        "langkah": [
+          "Hindari membuka atau memasukkan nomor ponsel, PIN, maupun data dompet digital ke halaman tersebut.",
+          "Buka aplikasi dompet digital resmi untuk memeriksa ada atau tidaknya pemberitahuan resmi terkait pembagian saldo."
+        ],
+        "situasi_darurat": [
+          "klik_link",
+          "isi_data"
+        ],
+        "batasan": "Domain yang belum terdaftar di basis data Safe Browsing bisa jadi merupakan situs baru yang belum sempat dilaporkan.",
+        "pihak_ketiga": [
+          "Google Safe Browsing",
+          "RDAP",
+          "Google Gemini"
+        ],
+        "status_layanan": {
+          "safe_browsing": "ok",
+          "rdap": "ok",
+          "ai": "ok"
+        }
+      }
+    }
+  ]
+}

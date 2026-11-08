@@ -1,0 +1,74 @@
+{
+  "merek": [
+    {
+      "nama": "BCA",
+      "variasi": ["bca", "b.c.a", "bc4", "bc@", "bankbca", "klikbca", "bca-klik", "bcafinance", "klik-bca"],
+      "kategori": "bank"
+    },
+    {
+      "nama": "BRI",
+      "variasi": ["bri", "br1", "brii", "bankbri", "ibibr1", "brimo", "bri-mo", "br1m0", "bank-bri"],
+      "kategori": "bank"
+    },
+    {
+      "nama": "BNI",
+      "variasi": ["bni", "bn1", "bnii", "bankbni", "bni-mobile", "bnimobile", "bn1m0b1le", "bank-bni"],
+      "kategori": "bank"
+    },
+    {
+      "nama": "Mandiri",
+      "variasi": ["mandiri", "m4ndiri", "mandir1", "m4ndir1", "bankmandiri", "livin", "l1v1n", "livinbymandiri", "bank-mandiri"],
+      "kategori": "bank"
+    },
+    {
+      "nama": "BSI",
+      "variasi": ["bsi", "bs1", "bankbsi", "bsi-mobile", "bsimobile", "bs1m0b1le", "bank-bsi", "bsi-net"],
+      "kategori": "bank"
+    },
+    {
+      "nama": "DANA",
+      "variasi": ["dana", "d4na", "danaindonesia", "dana-id", "danaid", "dana-wallet", "d4n4"],
+      "kategori": "ewallet"
+    },
+    {
+      "nama": "OVO",
+      "variasi": ["ovo", "0v0", "ov0", "0vo", "ovo-id", "ovoid", "ovo-wallet"],
+      "kategori": "ewallet"
+    },
+    {
+      "nama": "GoPay",
+      "variasi": ["gopay", "g0pay", "go-pay", "g0-pay", "gopayindonesia", "g0p4y", "gop4y"],
+      "kategori": "ewallet"
+    },
+    {
+      "nama": "Shopee",
+      "variasi": ["shopee", "sh0pee", "shop3e", "sh0p3e", "shopie", "shope", "shopeepay", "sh0peepay", "sh0p33"],
+      "kategori": "marketplace"
+    },
+    {
+      "nama": "Tokopedia",
+      "variasi": ["tokopedia", "t0k0pedia", "tokoped1a", "t0kopedi4", "tokped", "t0kped", "tokopedia-id", "t0k0ped1a"],
+      "kategori": "marketplace"
+    },
+    {
+      "nama": "BPJS",
+      "variasi": ["bpjs", "bpj5", "bpjskesehatan", "bpjstk", "bpjs-kesehatan", "bpjs-ketenagakerjaan", "bpj5kesehatan", "bpj5-kesehatan"],
+      "kategori": "instansi"
+    },
+    {
+      "nama": "JNE",
+      "variasi": ["jne", "jn3", "jne-express", "jneexpress", "jn3-express", "tracking-jne"],
+      "kategori": "ekspedisi"
+    },
+    {
+      "nama": "J&T",
+      "variasi": ["jnt", "j&t", "jet", "jtexpress", "j-and-t", "jnt-express", "jntkargo", "jandtexpress"],
+      "kategori": "ekspedisi"
+    },
+    {
+      "nama": "Pos Indonesia",
+      "variasi": ["posindonesia", "pos-indonesia", "posindo", "p0sindonesia", "kantorpos", "pospay", "p0spay", "pos-indo"],
+      "kategori": "ekspedisi"
+    }
+  ]
+}

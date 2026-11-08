@@ -1,0 +1,159 @@
+{
+  "skenario": [
+    {
+      "id": "chat-like-review",
+      "judul": "Tawaran kerja like & review",
+      "teks": "Halo kak! Kami dari Talent Media Agency menawarkan pekerjaan paruh waktu mudah dari rumah hanya dengan like dan review produk Shopee & Tokopedia. Gaji harian Rp300.000 - Rp800.000 langsung cair ke rekening kamu setiap sore tanpa pengalaman. Pekerjaan cukup dari HP. Untuk mulai mengambil tugas perdana, silakan lanjut di Telegram kami t.me/talentmedia_job dan lakukan pembayaran biaya pendaftaran & aktivasi akun sebesar Rp150.000 ya kak. Slot terbatas hari ini saja!",
+      "konteks": "Pesan dari nomor tidak dikenal via WhatsApp",
+      "hasilSimulasi": {
+        "halaman": "chat",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan tawaran kerja paruh waktu. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Biaya di muka untuk pekerjaan",
+            "penjelasan": "Pemberi kerja resmi tidak pernah memungut biaya pendaftaran atau deposit uang kepada calon pekerja. Modus ini meminta uang di awal dengan janji komisi yang tidak pernah dicairkan.",
+            "bukti": "lakukan pembayaran biaya pendaftaran & aktivasi akun sebesar Rp150.000",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Janji penghasilan besar tanpa kualifikasi",
+            "penjelasan": "Penawaran penghasilan tinggi untuk tugas yang sangat ringan seperti like dan review adalah pola umum penipuan tugas paruh waktu (task scam).",
+            "bukti": "hanya dengan like dan review produk... Gaji harian Rp300.000 - Rp800.000 langsung cair... tanpa pengalaman",
+            "sumber": "ai"
+          },
+          {
+            "judul": "Mengarahkan percakapan ke Telegram",
+            "penjelasan": "Pelaku sering mengalihkan korban dari platform awal ke aplikasi pesan lain seperti Telegram agar jejak komunikasi sulit ditelusuri.",
+            "bukti": "silakan lanjut di Telegram kami",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Desakan waktu semu",
+            "penjelasan": "Pelaku menciptakan kesan keterbatasan waktu agar korban tergesa-gesa mengambil keputusan tanpa berpikir kritis.",
+            "bukti": "Slot terbatas hari ini saja!",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Menyebutkan nama platform e-commerce populer yang dikenal luas"
+        ],
+        "langkah": [
+          "Jangan mentransfer uang pendaftaran atau deposit dalam jumlah berapa pun.",
+          "Blokir nomor kontak pengirim dan jangan bergabung ke kanal atau grup Telegram yang ditautkan.",
+          "Laporkan pesan ini sebagai spam atau penipuan melalui fitur pelaporan aplikasi pesan kamu."
+        ],
+        "situasi_darurat": [
+          "transfer"
+        ],
+        "batasan": "Hasil analisis ini didasarkan pada pola teks yang umum ditemukan pada penipuan kerja paruh waktu, bukan keputusan hukum.",
+        "pihak_ketiga": [
+          "Google Gemini"
+        ],
+        "status_layanan": {
+          "ai": "ok"
+        }
+      }
+    },
+    {
+      "id": "chat-otp-kurir",
+      "judul": "Permintaan OTP dari kurir",
+      "teks": "Selamat siang, saya Budi kurir J&T Express. Paket pesanan atas nama Anda sedang tertahan di gudang penyortiran karena alamat kurang lengkap. Untuk verifikasi pengiriman dan pelepasan paket segera hari ini, kami sudah mengirimkan kode verifikasi 6 digit ke SMS Anda. Mohon segera sebutkan atau balas pesan ini dengan kode OTP 6 digit tersebut sekarang juga agar paket tidak dikembalikan ke pengirim.",
+      "konteks": "Pesan WhatsApp mengaku dari kurir ekspedisi",
+      "hasilSimulasi": {
+        "halaman": "chat",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan pengambilalihan akun berkedok kurir ekspedisi. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Permintaan kode OTP atau verifikasi",
+            "penjelasan": "Kurir resmi tidak pernah meminta kode OTP atau kode verifikasi SMS dari penerima paket. Kode OTP adalah kunci akses keamanan pribadi ke akun atau layanan perbankan.",
+            "bukti": "Mohon segera sebutkan atau balas pesan ini dengan kode OTP 6 digit tersebut sekarang juga",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Mencatut nama ekspedisi resmi",
+            "penjelasan": "Pelaku menyamar sebagai petugas ekspedisi resmi untuk membangun rasa percaya penerima pesan.",
+            "bukti": "saya Budi kurir J&T Express. Paket pesanan atas nama Anda sedang tertahan",
+            "sumber": "ai"
+          },
+          {
+            "judul": "Desakan waktu dengan ancaman paket gagal kirim",
+            "penjelasan": "Pelaku menakut-nakuti penerima dengan ancaman paket akan dikembalikan agar korban panik dan langsung menyerahkan kode tanpa verifikasi.",
+            "bukti": "segera hari ini... sekarang juga agar paket tidak dikembalikan ke pengirim",
+            "sumber": "aturan"
+          }
+        ],
+        "hal_wajar": [
+          "Menggunakan gaya bahasa sopan dan menyebutkan prosedur pengiriman barang"
+        ],
+        "langkah": [
+          "Jangan pernah membagikan kode OTP atau SMS 6 digit kepada siapa pun, termasuk pihak yang mengaku kurir.",
+          "Lacak status paket secara mandiri lewat aplikasi atau situs resmi ekspedisi menggunakan nomor resi asli.",
+          "Hubungi call center resmi ekspedisi jika ragu mengenai status pengiriman paket kamu."
+        ],
+        "situasi_darurat": [
+          "kirim_otp",
+          "akun_diambil"
+        ],
+        "batasan": "Hasil analisis mengidentifikasi pola permintaan kode verifikasi yang berisiko tinggi terhadap keamanan akun.",
+        "pihak_ketiga": [
+          "Google Gemini"
+        ],
+        "status_layanan": {
+          "ai": "ok"
+        }
+      }
+    },
+    {
+      "id": "chat-keluarga-ganti-nomor",
+      "judul": "Pesan mengaku keluarga ganti nomor",
+      "teks": "Halo nak, ini nomor baru Ibu. HP Ibu yang lama tadi jatuh dan layarnya rusak total jadi pinjam HP teman dulu sementara. Tolong transfer uang Rp500.000 dulu ke rekening teman Ibu di BCA 1234567890 atas nama Ahmad buat bayar servis HP, penting banget sekarang ya nak. Nanti kalau HP Ibu sudah hidup Ibu ganti uangnya.",
+      "konteks": "Pesan WhatsApp dari nomor tidak dikenal mengaku Ibu",
+      "hasilSimulasi": {
+        "halaman": "chat",
+        "level": "tinggi",
+        "ringkasan": "Ada beberapa tanda kuat yang mirip pola penipuan rekayasa sosial mengaku keluarga ganti nomor. Jangan lanjutkan sebelum memverifikasi.",
+        "temuan": [
+          {
+            "judul": "Mengaku keluarga dengan nomor baru",
+            "penjelasan": "Pelaku mengaku sebagai anggota keluarga dekat dengan alasan ganti nomor atau meminjam ponsel orang lain untuk menghindari kecurigaan saat nomornya tidak tersimpan di kontak.",
+            "bukti": "ini nomor baru Ibu. HP Ibu yang lama tadi jatuh... pinjam HP teman",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Permintaan transfer uang mendesak ke pihak ketiga",
+            "penjelasan": "Pelaku meminta bantuan dana secara mendadak dengan dalih darurat ke rekening pihak ketiga atau nama yang tidak dikenal.",
+            "bukti": "Tolong transfer uang Rp500.000 dulu ke rekening teman Ibu di BCA [disensor]",
+            "sumber": "aturan"
+          },
+          {
+            "judul": "Kondisi darurat dan desakan waktu",
+            "penjelasan": "Tekanan waktu diciptakan agar korban merasa iba dan segera mentransfer tanpa sempat memverifikasi ke anggota keluarga lain.",
+            "bukti": "penting banget sekarang ya nak",
+            "sumber": "ai"
+          }
+        ],
+        "hal_wajar": [
+          "Gaya sapaan akrab seperti percakapan keluarga sehari-hari"
+        ],
+        "langkah": [
+          "Tutup pesan dan jangan lakukan transfer uang ke nomor rekening tersebut.",
+          "Hubungi nomor lama yang tersimpan di kontak kamu untuk mengonfirmasi kebenarannya secara langsung.",
+          "Tanyakan hal atau informasi yang hanya diketahui oleh keluarga inti kamu.",
+          "Konfirmasikan situasi ini kepada anggota keluarga lain yang berada dekat dengan yang bersangkutan."
+        ],
+        "situasi_darurat": [
+          "transfer"
+        ],
+        "batasan": "Hasil ini merupakan deteksi pola rekayasa sosial berbasis teks dan bukan konfirmasi identitas pemegang nomor telepon.",
+        "pihak_ketiga": [
+          "Google Gemini"
+        ],
+        "status_layanan": {
+          "ai": "ok"
+        }
+      }
+    }
+  ]
+}

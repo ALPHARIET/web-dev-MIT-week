@@ -1,0 +1,74 @@
+{
+  "situasi": [
+    {
+      "id": "klik_link",
+      "label": "Sudah klik link, belum mengisi apa pun",
+      "langkah": [
+        "Tutup halaman web tersebut segera.",
+        "Jangan mengisi formulir atau data apa pun.",
+        "Jangan memasang file .apk atau file lain yang terunduh.",
+        "Hapus file unduhan tersebut dari perangkatmu jika sempat terunduh."
+      ]
+    },
+    {
+      "id": "isi_data",
+      "label": "Sudah mengisi password atau data akun",
+      "langkah": [
+        "Ganti password lewat aplikasi atau situs web resmi, bukan dari link yang tadi dibuka.",
+        "Aktifkan verifikasi dua langkah (2FA / Two-Factor Authentication).",
+        "Keluarkan (log out) semua sesi perangkat yang tidak dikenal dari menu setelan akun."
+      ]
+    },
+    {
+      "id": "kirim_otp",
+      "label": "Sudah mengirim OTP",
+      "langkah": [
+        "Hubungi call center bank atau penyedia layanan lewat nomor resmi di kartu atau aplikasi sekarang juga.",
+        "Minta pemblokiran sementara transaksi atau akun yang bersangkutan.",
+        "Untuk WhatsApp, periksa menu Perangkat Tertaut (Linked Devices) dan segera keluarkan perangkat asing yang tidak dikenal."
+      ]
+    },
+    {
+      "id": "transfer",
+      "label": "Sudah transfer",
+      "langkah": [
+        "Hubungi bank pengirim sekarang juga untuk meminta pemblokiran rekening tujuan transfer.",
+        "Lapor ke Indonesia Anti-Scam Centre (IASC) di iasc.ojk.go.id secepatnya.",
+        "Siapkan bukti transaksi, nomor rekening pelaku, kronologi kejadian, dan nilai kerugian.",
+        "Buat laporan kepolisian di kantor polisi terdekat untuk proses hukum lebih lanjut."
+      ]
+    },
+    {
+      "id": "akun_diambil",
+      "label": "Akun diambil alih",
+      "langkah": [
+        "Pulihkan akun lewat fitur pemulihan resmi di aplikasi terkait (misalnya Pusat Bantuan WhatsApp, Instagram, atau Google).",
+        "Segera kabari kontak, keluarga, dan teman bahwa akunmu sedang dikuasai orang lain agar mereka tidak tertipu jika dihubungi pelaku.",
+        "Laporkan pengambilalihan akun ke penyedia platform terkait."
+      ]
+    }
+  ],
+  "kanal_lapor": [
+    {
+      "nama": "Indonesia Anti-Scam Centre (IASC)",
+      "kontak": "iasc.ojk.go.id",
+      "keterangan": "Laporan penipuan keuangan resmi dari OJK dan perbankan. Siapkan identitas korban, kronologi, nomor rekening pelaku, nilai kerugian, dan bukti transaksi. Semakin cepat melapor, semakin besar peluang dana diselamatkan."
+    },
+    {
+      "nama": "Kontak OJK 157",
+      "kontak": "Telepon 157, WhatsApp 081-157-157-157, email konsumen@ojk.go.id",
+      "keterangan": "Layanan informasi dan pengaduan konsumen sektor jasa keuangan resmi dari Otoritas Jasa Keuangan."
+    },
+    {
+      "nama": "Call Center Bank / Dompet Digital",
+      "kontak": "Nomor resmi di kartu ATM atau aplikasi resmi",
+      "keterangan": "Hubungi call center resmi yang tertera di kartu ATM atau aplikasi mobile banking / dompet digitalmu untuk meminta pemblokiran rekening atau akun."
+    },
+    {
+      "nama": "Fitur Laporkan di Platform Pesan",
+      "kontak": "Fitur Laporkan & Blokir di aplikasi",
+      "keterangan": "Gunakan fitur Laporkan (Report) dan Blokir (Block) pada WhatsApp, Telegram, Instagram, TikTok, atau platform tempat pesan diterima."
+    }
+  ],
+  "peringatan": "Waspadai pihak yang mengaku perwakilan IASC dan menjanjikan uang kembali. IASC dan OJK tidak pernah meminta imbalan biaya atau meminta data rahasia seperti PIN dan OTP."
+}
