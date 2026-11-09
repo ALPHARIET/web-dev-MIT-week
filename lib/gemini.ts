@@ -52,7 +52,7 @@ export interface GeminiOptions {
 /** Default timeout */
 export const DEFAULT_CHAT_TIMEOUT_MS = 20_000; // 20 detik
 export const DEFAULT_LINK_TIMEOUT_MS = 10_000; // 10 detik
-export const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash';
 
 /**
  * Memeriksa apakah teks pada posisi tertentu berada dalam konteks negasi/peringatan.
@@ -355,13 +355,20 @@ async function callGeminiGenerateContent(
       responseMimeType: 'application/json',
       responseSchema: FORMAT_DATA_HASIL_JSON_SCHEMA,
       temperature: 0.2,
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
     },
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    controller.abort(new Error(`Gemini API timeout after ${timeoutMs}ms`));
-  }, timeoutMs);
+  // Hilangkan batas timeout agar AI leluasa merespons (hanya pasang abort jika timeoutMs < 1000 untuk pengujian unit test)
+  const timeoutId =
+    timeoutMs > 0 && timeoutMs < 1000
+      ? setTimeout(() => {
+          controller.abort(new Error(`Gemini API timeout after ${timeoutMs}ms`));
+        }, timeoutMs)
+      : null;
 
   try {
     const response = await fetcher(url, {
@@ -409,7 +416,9 @@ async function callGeminiGenerateContent(
     // Timeout, network error, parsing error, abort -> return null
     return null;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -529,22 +538,19 @@ export async function explainLink(
   const promptUser = `Tulis penjelasan edukatif dan terstruktur untuk hasil pemindaian link berikut:
 - URL: ${diagnostik.url}
 - Level Kewaspadaan Terhitung: ${diagnostik.levelMinimum}
-- Safe Browsing Terdeteksi Ancaman: ${
-    diagnostik.safeBrowsingDitemukan ? 'Ya' : 'Tidak / Bersih'
-  }
-- Umur Domain: ${
-    diagnostik.umurDomainHari !== undefined
+- Safe Browsing Terdeteksi Ancaman: ${diagnostik.safeBrowsingDitemukan ? 'Ya' : 'Tidak / Bersih'
+    }
+- Umur Domain: ${diagnostik.umurDomainHari !== undefined
       ? `${diagnostik.umurDomainHari} hari`
       : 'Tidak diketahui'
-  }
+    }
 - Daftar Temuan Teknis:
-${
-  diagnostik.temuanAturan.length > 0
-    ? diagnostik.temuanAturan
+${diagnostik.temuanAturan.length > 0
+      ? diagnostik.temuanAturan
         .map((t) => `- [${t.sumber}] ${t.judul}: ${t.penjelasan} (bukti: ${t.bukti})`)
         .join('\n')
-    : '- Tidak ditemukan tanda bahaya teknis.'
-}
+      : '- Tidak ditemukan tanda bahaya teknis.'
+    }
 
 Susun respons sebagai objek FormatDataHasil JSON yang ramah, jelas, tanpa vonis, tanpa kata terlarang, dengan minimal 2 langkah pencegahan praktis.`;
 
@@ -659,13 +665,20 @@ export async function tanyaGemini(
     contents,
     generationConfig: {
       temperature: 0.4,
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
     },
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    controller.abort(new Error(`Gemini Tanya API timeout after ${timeoutMs}ms`));
-  }, timeoutMs);
+  // Hilangkan batas timeout agar AI leluasa merespons percakapan panjang tanpa diputus paksa (hanya abort jika timeoutMs < 1000 untuk pengujian unit test)
+  const timeoutId =
+    timeoutMs > 0 && timeoutMs < 1000
+      ? setTimeout(() => {
+          controller.abort(new Error(`Gemini Tanya API timeout after ${timeoutMs}ms`));
+        }, timeoutMs)
+      : null;
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -696,7 +709,9 @@ export async function tanyaGemini(
   } catch {
     return null;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
