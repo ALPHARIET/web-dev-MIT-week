@@ -104,11 +104,8 @@ export default function CekLinkPage(): React.JSX.Element {
     // 1. Jalankan analisis leksikal lokal di browser (Requirement 19.1 - 19.11)
     const hasilLokal = generateHasilLinkLokal(trimmedUrl);
 
-    // 2. Kirim ke API POST /api/cek-link dengan batas waktu 10 detik (Requirement 28.2)
+    // 2. Kirim ke API POST /api/cek-link (tanpa timeout abort paksa)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 10000);
 
     try {
       const response = await fetch('/api/cek-link', {
@@ -123,8 +120,6 @@ export default function CekLinkPage(): React.JSX.Element {
         }),
         signal: controller.signal,
       });
-
-      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data: FormatDataHasil = await response.json();
@@ -148,8 +143,7 @@ export default function CekLinkPage(): React.JSX.Element {
         setHasil(fallbackHasil);
       }
     } catch (_error) {
-      clearTimeout(timeoutId);
-      // Network error, abort timeout, atau offline: gunakan fallback hasil lokal
+      // Network error atau offline: gunakan fallback hasil lokal
       setIsFallback(true);
       const fallbackHasil: FormatDataHasil = {
         ...hasilLokal,

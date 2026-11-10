@@ -666,50 +666,130 @@ export function evaluasiLeksikalUrl(
 }
 
 /**
- * Menghasilkan langkah tindakan yang disarankan untuk pemeriksaan link (Requirement 5.4, 19.9).
- * Selalu mengembalikan minimal 2 langkah tindakan.
+ * Menghasilkan langkah tindakan yang disarankan secara dinamis sesuai konteks URL
+ * untuk pemeriksaan link (Requirement 5.4, 19.9).
+ * Selalu mengembalikan minimal 2 langkah tindakan tanpa kata terlarang.
  */
-function tentukanLangkahLink(hasilAturan: HasilAturan): string[] {
+function tentukanLangkahLink(
+  hasilAturan: HasilAturan,
+  inputUrl?: string,
+  options?: EvaluasiLinkOptions
+): string[] {
   const langkah: string[] = [];
-  const judulSet = new Set(hasilAturan.temuan.map((t) => t.judul));
+  const rawUrl = (inputUrl || hasilAturan.linkDitemukan[0] || '').trim();
+  const parsed = rawUrl
+    ? parseUrl(rawUrl.includes('://') ? rawUrl : `http://${rawUrl}`)
+    : null;
+  const hostname = parsed?.hostname || cleanHostString(rawUrl) || 'tautan ini';
+  const pathLower = (parsed?.path || rawUrl).toLowerCase();
 
-  const hasShortener = Array.from(judulSet).some((j) =>
-    j.toLowerCase().includes('pemendek link')
+  const infoMerek = rawUrl ? deteksiMerek(rawUrl) : { cocok: false, merek: null };
+  const merek = infoMerek.cocok && infoMerek.merek ? infoMerek.merek : null;
+
+  const judulLower = hasilAturan.temuan.map((t) => t.judul.toLowerCase());
+  const hasShortener = judulLower.some((j) => j.includes('pemendek link'));
+  const hasPunycode = judulLower.some(
+    (j) => j.includes('punycode') || j.includes('homograf')
   );
+  const hasIp = judulLower.some((j) => j.includes('ip numerik'));
+  const hasSubdomainTrick = judulLower.some((j) => j.includes('subdomain'));
+  const hasRiskyTld = judulLower.some((j) => j.includes('tld berisiko'));
+  const hasTriggerWord = judulLower.some((j) => j.includes('kata pemicu'));
+  const hasApkOrExec = /\.(apk|exe|msi|scr|bat|zip|rar)(\b|$)/i.test(pathLower);
+  const hasMalwarePath = /malware|virus|trojan|payload/i.test(pathLower);
 
   if (hasilAturan.level === 'tinggi') {
-    langkah.push(
-      'Jangan membuka atau mengklik tautan ini, dan jangan memasukkan data pribadi, nomor rekening, PIN, atau kata sandi apa pun.'
-    );
-    langkah.push(
-      'Jika kamu menerima tautan ini dari pesan singkat atau media sosial, segera abaikan atau laporkan pesan tersebut.'
-    );
-    langkah.push(
-      'Jika sudah terlanjur membuka dan memasukkan data akun, segera ganti kata sandi akun resmi kamu dan hubungi pihak bank atau penyedia layanan terkait.'
-    );
-  } else if (hasilAturan.level === 'sedang') {
-    langkah.push(
-      'Periksa kembali alamat domain dengan teliti untuk memastikan tidak ada huruf atau angka pengganti yang menyerupai situs resmi.'
-    );
-    if (hasShortener) {
+    if (merek) {
       langkah.push(
-        'Tautan menggunakan pemendek link; gunakan fitur pratinjau (misal: tambahkan tanda + di akhir alamat pada bit.ly) untuk melihat alamat tujuan asli sebelum membuka.'
+        `Jangan memasukkan PIN, kata sandi, atau kode OTP akun ${merek} di domain "${hostname}", karena alamat ini terindikasi mencatut nama ${merek}.`
+      );
+      langkah.push(
+        `Tutup halaman "${hostname}" dan buka langsung aplikasi resmi ${merek} di ponsel kamu atau ketik sendiri alamat situs resmi ${merek} untuk mengecek kebenaran informasi tersebut.`
+      );
+    } else if (hasApkOrExec || hasMalwarePath || options?.isSafeBrowsingThreat) {
+      langkah.push(
+        `Jangan membuka atau mengunduh file apa pun dari "${hostname}" karena tautan ini terdeteksi berisiko menyusupkan program berbahaya (malware) atau halaman jebakan.`
+      );
+      langkah.push(
+        `Jika halaman "${hostname}" sudah terlanjur terbuka di peramban, segera tutup tab tersebut, tolak semua permintaan izin unduhan atau notifikasi, dan pindai keamanan perangkat kamu.`
       );
     } else {
       langkah.push(
-        'Jangan terburu-buru mengisi formulir atau melakukan login sebelum memverifikasi keaslian pengirim melalui kanal resmi mandiri.'
+        `Jangan membuka atau memasukkan data pribadi, nomor rekening, PIN, maupun kata sandi apa pun pada halaman "${hostname}".`
+      );
+    }
+
+    if (hasShortener) {
+      langkah.push(
+        `Tautan "${hostname}" menggunakan layanan pemendek link; gunakan fitur pratinjau URL untuk memeriksa domain tujuan asli tanpa membukanya.`
+      );
+    } else if (options?.rdapAgeDays !== undefined && options.rdapAgeDays < 30) {
+      langkah.push(
+        `Domain "${hostname}" baru terdaftar ${options.rdapAgeDays} hari yang lalu; hindari bertransaksi dan blokir pengirim yang menyebarkan tautan baru ini.`
+      );
+    }
+
+    langkah.push(
+      `Jika kamu sudah terlanjur mengisi data sensitif di "${hostname}", segera ubah kata sandi akun terkait dan hubungi layanan pelanggan resmi atau bank kamu untuk pemblokiran darurat.`
+    );
+  } else if (hasilAturan.level === 'sedang') {
+    if (hasShortener) {
+      langkah.push(
+        `Tautan "${hostname}" menggunakan pemendek link; gunakan fitur pratinjau (misal: tambahkan tanda + di akhir alamat pada bit.ly atau gunakan pemeriksa tujuan URL) untuk melihat alamat tujuan asli sebelum membuka.`
+      );
+    }
+
+    if (merek) {
+      langkah.push(
+        `Periksa kembali ejaan domain "${hostname}" dengan teliti karena terdapat kemiripan dengan nama ${merek}; pastikan kamu hanya mengakses aplikasi atau kanal resmi ${merek}.`
+      );
+    } else if (hasPunycode) {
+      langkah.push(
+        `Waspadai karakter samaran (punycode/homograf) pada domain "${hostname}"; jangan mengklik tautan tersebut dan ketik sendiri alamat situs resmi di peramban.`
+      );
+    } else if (hasIp) {
+      langkah.push(
+        `Hindari memasukkan akun atau data sensitif pada alamat berbasis angka IP (${hostname}), karena layanan resmi selalu menggunakan nama domain terdaftar.`
+      );
+    } else if (hasSubdomainTrick) {
+      langkah.push(
+        `Perhatikan struktur subdomain pada "${hostname}"; pastikan domain utamanya benar-benar milik instansi resmi dan bukan sekadar awalan mengecoh.`
+      );
+    } else {
+      langkah.push(
+        `Periksa kembali ejaan domain "${hostname}" dengan teliti untuk memastikan tidak ada huruf atau angka pengganti yang menyerupai situs resmi.`
+      );
+    }
+
+    if (options?.rdapAgeDays !== undefined && options.rdapAgeDays < 30) {
+      langkah.push(
+        `Karena domain "${hostname}" baru berumur ${options.rdapAgeDays} hari, tunda pengisian formulir atau transaksi apa pun hingga kamu memverifikasi keaslian layanan melalui kanal resmi.`
+      );
+    } else if (hasTriggerWord || hasRiskyTld) {
+      langkah.push(
+        `Jangan terburu-buru mengisi formulir login atau klaim di "${hostname}" sebelum memverifikasi informasi tersebut langsung melalui aplikasi resmi terkait.`
+      );
+    } else {
+      langkah.push(
+        `Akses layanan atau informasi terkait langsung melalui aplikasi resmi atau situs yang kamu ketik sendiri di peramban, bukan dari tautan "${hostname}".`
+      );
+    }
+  } else {
+    // level === 'tidak_ditemukan'
+    if (hasShortener) {
+      langkah.push(
+        `Meskipun belum tampak indikasi bahaya, tautan "${hostname}" adalah pemendek link; gunakan fitur pratinjau untuk melihat domain tujuan sebenarnya sebelum mengaksesnya.`
+      );
+    } else {
+      langkah.push(
+        `Pastikan ejaan domain "${hostname}" pada bilah alamat peramban kamu tetap sesuai dan tidak dialihkan (redirect) ke domain asing saat halaman dibuka.`
       );
     }
     langkah.push(
-      'Akses layanan atau promo terkait langsung melalui aplikasi resmi atau situs yang kamu ketik sendiri di browser.'
-    );
-  } else {
-    // level === 'tidak_ditemukan'
-    langkah.push(
-      'Tetap berhati-hati dan jangan pernah membagikan kode OTP, PIN, atau kata sandi perbankan di situs mana pun.'
+      `Jika kamu hendak masuk (login) atau bertransaksi di "${hostname}", pastikan koneksi menggunakan HTTPS dan jangan pernah membagikan kode OTP atau PIN kepada siapa pun.`
     );
     langkah.push(
-      'Selalu akses layanan resmi melalui alamat situs resmi yang tersimpan atau aplikasi terpercaya.'
+      `Simpan alamat resmi "${hostname}" di markah (bookmark) peramban kamu agar ke depannya terhindar dari salah ketik atau tautan tiruan.`
     );
   }
 
@@ -747,7 +827,7 @@ export function generateHasilLinkLokal(
     halWajar.push('Tidak terdeteksi pola nama domain tiruan atau kata pemicu penipuan');
   }
 
-  const langkah = tentukanLangkahLink(hasilAturan);
+  const langkah = tentukanLangkahLink(hasilAturan, input, options);
 
   const situasiDarurat: SituasiDarurat[] =
     hasilAturan.level === 'tidak_ditemukan'
