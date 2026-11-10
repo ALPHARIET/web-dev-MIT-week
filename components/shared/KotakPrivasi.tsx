@@ -1,4 +1,6 @@
 import React from 'react';
+import Image from 'next/image';
+import logoFinal from '@/components/layout/LogoFinal.png';
 
 export type HalamanPrivasi = 'chat' | 'link' | 'video';
 
@@ -142,20 +144,30 @@ export function KotakPrivasi({
       className={`rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 text-gray-900 shadow-sm transition-all duration-200 space-y-4 ${className}`.trim()}
     >
       {/* Header Kotak Privasi: Ikon Perisai & Judul */}
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700 shrink-0"
-          aria-hidden="true"
-        >
-          <ShieldLockIcon className="w-4 h-4" />
-        </div>
-        <div>
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
-            Privasi & Keamanan Data
-          </h3>
-          <p className="text-xs text-gray-500">
-            Transparansi pengolahan data untuk {infoHalaman.namaHalaman}
-          </p>
+      <div className="flex items-center justify-between gap-3 mb-3.5">
+        <div className="flex items-start gap-2.5">
+          <div
+            className="flex h-8 w-8 items-center justify-center flex-shrink-0 mt-0.5"
+            aria-hidden="true"
+          >
+            <Image
+              src={logoFinal}
+              alt="Logo Cek Penipuan"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+              data-testid="ikon-perisai-privasi"
+              aria-hidden="true"
+            />
+          </div>
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
+              Privasi & Keamanan Data
+            </h3>
+            <p className="text-xs text-blue-800 font-medium">
+              Transparansi pengolahan data untuk {infoHalaman.namaHalaman}
+            </p>
+          </div>
         </div>
       </div>
 

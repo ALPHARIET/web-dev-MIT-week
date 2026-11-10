@@ -52,18 +52,91 @@ export interface GeminiOptions {
 /** Default timeout */
 export const DEFAULT_CHAT_TIMEOUT_MS = 20_000; // 20 detik
 export const DEFAULT_LINK_TIMEOUT_MS = 10_000; // 10 detik
-export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+
+/** Timeout per percobaan satu model agar tidak menggantung jika salah satu model overload */
+const PER_MODEL_TIMEOUT_MS = 6_000;
+/** Durasi cooldown (2 menit) bagi model yang sedang error 404 / 429 / 503 / timeout */
+const MODEL_COOLDOWN_MS = 2 * 60 * 1000;
+
+/** Daftar prioritas model kandidat dari yang paling cepat & kuota paling longgar */
+const FALLBACK_MODEL_POOL = [
+  'gemini-3.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite',
+  'gemini-3.5-flash',
+  'gemini-3.8-flash',
+  'gemini-2.5-flash',
+  'gemini-flash-latest',
+];
+
+let lastWorkingModel: string | null = null;
+const failedModelsUntil = new Map<string, number>();
 
 /**
- * Memastikan nama model Gemini selalu valid.
- * Mengarahkan model usang atau overload (seperti 2.0, 1.5, 3.5, 3.8) ke model aktif stabil gemini-2.5-flash.
+ * Memastikan nama model Gemini selalu valid (mengganti model 1.5/2.0 yang sudah dipensiunkan).
  */
 export function resolveGeminiModel(modelInput?: string): string {
-  const m = modelInput || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
-  if (m === 'gemini-2.0-flash' || m === 'gemini-1.5-flash' || m.includes('3.5') || m.includes('3.8')) {
-    return 'gemini-2.5-flash';
+  const m = (modelInput || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL).trim();
+  if (!m || m === 'gemini-2.0-flash' || m === 'gemini-1.5-flash') {
+    return DEFAULT_GEMINI_MODEL;
   }
   return m;
+}
+
+/**
+ * Menyusun urutan model kandidat yang siap dipakai saat ini.
+ * Mengutamakan model terakhir yang berhasil (lastWorkingModel) dan melewati model yang sedang cooldown.
+ */
+function getAvailableCandidateModels(
+  requestedModel: string,
+  isCustomFetcher: boolean
+): string[] {
+  if (isCustomFetcher) {
+    return [requestedModel];
+  }
+
+  const now = Date.now();
+  const rawPool = Array.from(
+    new Set([
+      ...(lastWorkingModel ? [lastWorkingModel] : []),
+      ...FALLBACK_MODEL_POOL,
+      requestedModel,
+    ])
+  );
+
+  // Filter model yang tidak sedang dalam masa cooldown error
+  const activeModels = rawPool.filter((m) => {
+    const cooldownUntil = failedModelsUntil.get(m);
+    return !cooldownUntil || now >= cooldownUntil;
+  });
+
+  // Jika semua model kebetulan sedang cooldown, coba kembali seluruh pool
+  return activeModels.length > 0 ? activeModels : rawPool;
+}
+
+function markModelSuccess(model: string): void {
+  lastWorkingModel = model;
+  failedModelsUntil.delete(model);
+}
+
+function markModelFailed(model: string): void {
+  if (lastWorkingModel === model) {
+    lastWorkingModel = null;
+  }
+  failedModelsUntil.set(model, Date.now() + MODEL_COOLDOWN_MS);
+}
+
+/**
+ * Menentukan apakah suatu model mendukung parameter thinkingConfig.
+ * Varian '-lite' tidak memiliki mode thinking dan akan mengembalikan HTTP 400 jika diberi thinkingConfig.
+ */
+function supportsThinkingConfig(model: string): boolean {
+  const lower = model.toLowerCase();
+  if (lower.includes('lite') || lower.includes('gemma')) {
+    return false;
+  }
+  return lower.includes('3.') || lower.includes('2.5');
 }
 
 /**
@@ -347,60 +420,72 @@ async function callGeminiGenerateContent(
 
   const timeoutMs = options.timeoutMs ?? defaultTimeoutMs;
   const requestedModel = resolveGeminiModel(options.model);
-  const candidateModels = Array.from(
-    new Set([requestedModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-flash-latest'])
-  );
+  const isCustomFetcher = Boolean(options.fetchFn);
+  const candidateModels = getAvailableCandidateModels(requestedModel, isCustomFetcher);
   const fetcher = options.fetchFn || fetch;
-
-  const payload = {
-    systemInstruction: {
-      parts: [{ text: systemPrompt }],
-    },
-    contents: [
-      {
-        role: 'user',
-        parts,
-      },
-    ],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: FORMAT_DATA_HASIL_JSON_SCHEMA,
-      temperature: 0.2,
-      thinkingConfig: {
-        thinkingBudget: 0,
-      },
-    },
-  };
-
-  const controller = new AbortController();
-  // Hilangkan batas timeout agar AI leluasa merespons (hanya pasang abort jika timeoutMs < 1000 untuk pengujian unit test)
-  const timeoutId =
-    timeoutMs > 0 && timeoutMs < 1000
-      ? setTimeout(() => {
-          controller.abort(new Error(`Gemini API timeout after ${timeoutMs}ms`));
-        }, timeoutMs)
-      : null;
 
   try {
     for (const model of candidateModels) {
+      const generationConfig: Record<string, unknown> = {
+        responseMimeType: 'application/json',
+        responseSchema: FORMAT_DATA_HASIL_JSON_SCHEMA,
+        temperature: 0.2,
+      };
+      if (supportsThinkingConfig(model)) {
+        generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      }
+
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: systemPrompt }],
+        },
+        contents: [
+          {
+            role: 'user',
+            parts,
+          },
+        ],
+        generationConfig,
+      };
+
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
         model
       )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-      const response = await fetcher(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+      // Timeout per model agar langsung pindah ke kandidat berikutnya jika satu model lambat/overload
+      const perModelTimeout =
+        timeoutMs > 0 && timeoutMs < PER_MODEL_TIMEOUT_MS
+          ? timeoutMs
+          : PER_MODEL_TIMEOUT_MS;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort(new Error(`Gemini API timeout after ${perModelTimeout}ms`));
+      }, perModelTimeout);
+
+      let response: Response;
+      try {
+        response = await fetcher(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } catch {
+        clearTimeout(timeoutId);
+        if (!isCustomFetcher) {
+          markModelFailed(model);
+        }
+        continue;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
-        const errText = await response.text().catch(() => '');
-        console.error(
-          `[callGeminiGenerateContent Error] status=${response.status} model=${model} body=${errText.slice(0, 300)}`
-        );
+        if (!isCustomFetcher) {
+          markModelFailed(model);
+        }
         // Coba model kandidat berikutnya jika gagal
         continue;
       }
@@ -449,8 +534,11 @@ async function callGeminiGenerateContent(
       }
 
       if (!isValidFormatDataHasil(p)) {
-        console.warn(`[callGeminiGenerateContent Warn] model=${model} skema tidak valid:`, rawText.slice(0, 200));
         continue;
+      }
+
+      if (!isCustomFetcher) {
+        markModelSuccess(model);
       }
 
       // Normalisasi situasi_darurat ke nilai valid
@@ -488,10 +576,6 @@ async function callGeminiGenerateContent(
   } catch {
     // Timeout, network error, parsing error, abort -> return null
     return null;
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
   }
 }
 
@@ -625,7 +709,13 @@ ${diagnostik.temuanAturan.length > 0
       : '- Tidak ditemukan tanda bahaya teknis.'
     }
 
-Susun respons sebagai objek FormatDataHasil JSON yang ramah, jelas, tanpa vonis, tanpa kata terlarang, dengan minimal 2 langkah pencegahan praktis.`;
+INSTRUKSI KHUSUS UNTUK ARRAY "langkah" (WAJIB DINAMIS & KONTEKSTUAL):
+- Buat 3 sampai 4 langkah tindakan praktis yang SPESIFIK sesuai konteks URL "${diagnostik.url}" dan temuan teknis di atas.
+- DILARANG hanya menyalin kalimat template generik seperti "Jangan pernah mengklik, membuka, atau memasukkan data apa pun ke dalam tautan yang mencurigakan" atau "Gunakan aplikasi resmi yang diunduh dari toko aplikasi resmi".
+- Sebutkan secara spesifik nama domain/host dari URL yang diperiksa, merek/instansi yang dicatut (jika ada, beserta kanal/aplikasi resminya), jenis halaman atau path URL (misal: halaman login, klaim hadiah/promo, unduhan file .apk/malware, pemendek tautan, atau alamat IP), dan tindakan konkret yang relevan dengan skenario URL tersebut.
+- Jika level adalah "tidak_ditemukan", berikan 3 langkah verifikasi mandiri yang relevan khusus untuk domain "${diagnostik.url}" (misal: memeriksa kesesuaian ejaan domain di bilah alamat saat halaman dimuat, mengecek indikator koneksi HTTPS sebelum login/bertransaksi di domain tersebut, dan menyimpan alamat resminya di bookmark).
+
+Susun respons sebagai objek FormatDataHasil JSON yang ramah, jelas, tanpa vonis, serta tanpa kata terlarang seperti klausul kesimpulan mutlak.`;
 
   const parts: GeminiPart[] = [{ text: promptUser }];
 
@@ -696,9 +786,8 @@ export async function tanyaGemini(
 
   const timeoutMs = options?.timeoutMs ?? DEFAULT_TANYA_TIMEOUT_MS;
   const requestedModel = resolveGeminiModel(options?.model);
-  const candidateModels = Array.from(
-    new Set([requestedModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-flash-latest'])
-  );
+  const isCustomFetcher = Boolean(options?.fetchFn);
+  const candidateModels = getAvailableCandidateModels(requestedModel, isCustomFetcher);
   const fetcher = options?.fetchFn || fetch;
 
   const systemPrompt = getTanyaSystemPrompt({
@@ -734,48 +823,61 @@ export async function tanyaGemini(
     contents.push({ role: 'user', parts: [{ text: userText }] });
   }
 
-  const payload = {
-    systemInstruction: {
-      parts: [{ text: systemPrompt }],
-    },
-    contents,
-    generationConfig: {
-      temperature: 0.4,
-      thinkingConfig: {
-        thinkingBudget: 0,
-      },
-    },
-  };
-
-  const controller = new AbortController();
-  // Hilangkan batas timeout agar AI leluasa merespons percakapan panjang tanpa diputus paksa (hanya abort jika timeoutMs < 1000 untuk pengujian unit test)
-  const timeoutId =
-    timeoutMs > 0 && timeoutMs < 1000
-      ? setTimeout(() => {
-          controller.abort(new Error(`Gemini Tanya API timeout after ${timeoutMs}ms`));
-        }, timeoutMs)
-      : null;
-
   try {
     for (const model of candidateModels) {
+      const generationConfig: Record<string, unknown> = {
+        temperature: 0.4,
+      };
+      if (supportsThinkingConfig(model)) {
+        generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      }
+
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: systemPrompt }],
+        },
+        contents,
+        generationConfig,
+      };
+
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
         model
       )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-      const response = await fetcher(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+      // Timeout per model agar langsung pindah ke kandidat berikutnya jika satu model lambat/overload
+      const perModelTimeout =
+        timeoutMs > 0 && timeoutMs < PER_MODEL_TIMEOUT_MS
+          ? timeoutMs
+          : PER_MODEL_TIMEOUT_MS;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort(new Error(`Gemini Tanya API timeout after ${perModelTimeout}ms`));
+      }, perModelTimeout);
+
+      let response: Response;
+      try {
+        response = await fetcher(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } catch {
+        clearTimeout(timeoutId);
+        if (!isCustomFetcher) {
+          markModelFailed(model);
+        }
+        continue;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
-        const errText = await response.text().catch(() => '');
-        console.error(
-          `[tanyaGemini Error] status=${response.status} model=${model} body=${errText.slice(0, 300)}`
-        );
+        if (!isCustomFetcher) {
+          markModelFailed(model);
+        }
         continue;
       }
 
@@ -786,16 +888,16 @@ export async function tanyaGemini(
         continue;
       }
 
+      if (!isCustomFetcher) {
+        markModelSuccess(model);
+      }
+
       return filterKataTerlarang(rawText.trim());
     }
 
     return null;
   } catch {
     return null;
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
   }
 }
 
