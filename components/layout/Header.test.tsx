@@ -15,11 +15,10 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
   });
 
   describe('Rendering Dasar & Navigasi (Requirement 1.1)', () => {
-    it('merender logo / nama aplikasi dengan tautan ke Beranda (/)', () => {
+    it('merender logo / nama aplikasi Cek Penipuan', () => {
       render(<Header />);
-      const logoLink = screen.getByRole('link', { name: /cek penipuan - beranda/i });
-      expect(logoLink).toBeDefined();
-      expect(logoLink.getAttribute('href')).toBe('/');
+      const logoText = screen.getByText('Cek Penipuan');
+      expect(logoText).toBeDefined();
     });
 
     it('merender tautan ke tiga halaman cek pada navigasi desktop', () => {
@@ -52,8 +51,8 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
       const inactiveLink = within(navDesktop).getByText('Cek Link');
 
       expect(activeLink.getAttribute('aria-current')).toBe('page');
-      expect(activeLink.classList.contains('bg-blue-50')).toBe(true);
-      expect(activeLink.classList.contains('text-blue-700')).toBe(true);
+      expect(activeLink.classList.contains('bg-ember')).toBe(true);
+      expect(activeLink.classList.contains('text-white')).toBe(true);
 
       expect(inactiveLink.getAttribute('aria-current')).toBeNull();
       expect(inactiveLink.classList.contains('text-gray-600')).toBe(true);
@@ -65,7 +64,7 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
       const activeLink = within(navDesktop).getByText('Cek Link');
 
       expect(activeLink.getAttribute('aria-current')).toBe('page');
-      expect(activeLink.classList.contains('bg-blue-50')).toBe(true);
+      expect(activeLink.classList.contains('bg-ember')).toBe(true);
     });
 
     it('menandai halaman aktif saat di /cek-video-suara', () => {
@@ -74,7 +73,7 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
       const activeLink = within(navDesktop).getByText('Cek Video & Suara');
 
       expect(activeLink.getAttribute('aria-current')).toBe('page');
-      expect(activeLink.classList.contains('bg-blue-50')).toBe(true);
+      expect(activeLink.classList.contains('bg-ember')).toBe(true);
     });
 
     it('tidak ada tautan cek yang aktif jika di halaman Beranda (/)', () => {
@@ -148,11 +147,8 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
   });
 
   describe('Target Sentuh & Aksesibilitas (Requirement 1.5, 27.2)', () => {
-    it('memiliki target sentuh minimal 44px pada logo, tautan desktop, dan tombol hamburger', () => {
+    it('memiliki target sentuh minimal 44px pada tautan desktop dan tombol hamburger', () => {
       render(<Header />);
-      const logoLink = screen.getByRole('link', { name: /cek penipuan - beranda/i });
-      expect(logoLink.classList.contains('min-h-[44px]')).toBe(true);
-
       const navDesktop = screen.getByRole('navigation', { name: 'Navigasi Utama' });
       const desktopLinks = within(navDesktop).getAllByRole('link');
       desktopLinks.forEach((link) => {

@@ -116,7 +116,7 @@ export function PemanduKursor({ pathname }: { pathname: string }): React.JSX.Ele
       className="flex min-h-[72px] sm:min-h-[48px] items-center border-t-[1.5px] border-dotted border-obsidian/40 px-2 py-2.5"
     >
       <p aria-live="polite" className="text-[13px] sm:text-sm leading-snug text-obsidian">
-        <span data-testid="pemandu-judul" className="mr-2 inline-block rounded-full bg-sulfur px-2.5 py-0.5 text-xs text-obsidian">
+        <span data-testid="pemandu-judul" className="mr-2 inline-block px-2.5 py-0.5 text-xs font-semibold text-obsidian">
           {tampil.judul}
         </span>
         {/* Pembaca layar menerima kalimat utuh, bukan huruf demi huruf. */}
