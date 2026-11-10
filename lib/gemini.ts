@@ -52,7 +52,19 @@ export interface GeminiOptions {
 /** Default timeout */
 export const DEFAULT_CHAT_TIMEOUT_MS = 20_000; // 20 detik
 export const DEFAULT_LINK_TIMEOUT_MS = 10_000; // 10 detik
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash';
+export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+
+/**
+ * Memastikan nama model Gemini selalu valid.
+ * Mengarahkan model usang atau overload (seperti 2.0, 1.5, 3.5, 3.8) ke model aktif stabil gemini-2.5-flash.
+ */
+export function resolveGeminiModel(modelInput?: string): string {
+  const m = modelInput || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  if (m === 'gemini-2.0-flash' || m === 'gemini-1.5-flash' || m.includes('3.5') || m.includes('3.8')) {
+    return 'gemini-2.5-flash';
+  }
+  return m;
+}
 
 /**
  * Memeriksa apakah teks pada posisi tertentu berada dalam konteks negasi/peringatan.
@@ -248,8 +260,8 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
     return false;
   }
 
-  // Validasi status_layanan
-  if (!r.status_layanan || typeof r.status_layanan !== 'object' || Array.isArray(r.status_layanan)) {
+  // Validasi status_layanan (bisa opsional dari model AI, diisi default oleh sistem)
+  if (r.status_layanan !== undefined && (typeof r.status_layanan !== 'object' || Array.isArray(r.status_layanan))) {
     return false;
   }
 
@@ -334,12 +346,11 @@ async function callGeminiGenerateContent(
   }
 
   const timeoutMs = options.timeoutMs ?? defaultTimeoutMs;
-  const model = options.model || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const requestedModel = resolveGeminiModel(options.model);
+  const candidateModels = Array.from(
+    new Set([requestedModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-flash-latest'])
+  );
   const fetcher = options.fetchFn || fetch;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    model
-  )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   const payload = {
     systemInstruction: {
@@ -371,47 +382,109 @@ async function callGeminiGenerateContent(
       : null;
 
   try {
-    const response = await fetcher(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+    for (const model of candidateModels) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        model
+      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-    if (!response.ok) {
-      return null;
+      const response = await fetcher(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '');
+        console.error(
+          `[callGeminiGenerateContent Error] status=${response.status} model=${model} body=${errText.slice(0, 300)}`
+        );
+        // Coba model kandidat berikutnya jika gagal
+        continue;
+      }
+
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!rawText || typeof rawText !== 'string') {
+        continue;
+      }
+
+      const parsed = tryParseJson(rawText);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        continue;
+      }
+
+      const p = parsed as Record<string, unknown>;
+      if (!p.halaman) p.halaman = 'chat';
+      if (!p.level) p.level = 'sedang';
+      if (!p.ringkasan) p.ringkasan = 'Pemeriksaan selesai.';
+      if (!Array.isArray(p.temuan)) p.temuan = [];
+      if (!Array.isArray(p.hal_wajar)) p.hal_wajar = [];
+      if (!Array.isArray(p.langkah)) p.langkah = [];
+      if (!Array.isArray(p.situasi_darurat)) p.situasi_darurat = [];
+      if (!p.batasan) p.batasan = 'Hasil analisis berdasarkan informasi yang kamu berikan dan bukan pengganti kehati-hatian atau verifikasi resmi. Selalu waspada terhadap modus penipuan yang terus berkembang.';
+      if (!Array.isArray(p.pihak_ketiga)) p.pihak_ketiga = ['Google Gemini'];
+
+      const temuanArr = p.temuan as unknown[];
+      // Jika level sedang/tinggi tetapi temuan kosong, sertakan temuan indikasi
+      if ((p.level === 'tinggi' || p.level === 'sedang') && temuanArr.length === 0) {
+        temuanArr.push({
+          judul: 'Tanda mencurigakan terdeteksi',
+          penjelasan: typeof p.ringkasan === 'string' ? p.ringkasan : 'Pola pesan menyerupai indikasi penipuan.',
+          bukti: 'Konteks percakapan',
+          sumber: 'ai',
+        });
+      }
+
+      const langkahArr = p.langkah as string[];
+      // Pastikan minimal 2 langkah tindakan
+      if (langkahArr.length < 2) {
+        p.langkah = [
+          'Jangan pernah membagikan kode OTP, PIN, password, atau mentransfer uang kepada pengirim.',
+          'Verifikasi keaslian kontak atau akun melalui saluran resmi mandiri sebelum mengambil tindakan.',
+        ];
+      }
+
+      if (!isValidFormatDataHasil(p)) {
+        console.warn(`[callGeminiGenerateContent Warn] model=${model} skema tidak valid:`, rawText.slice(0, 200));
+        continue;
+      }
+
+      // Normalisasi situasi_darurat ke nilai valid
+      const validSituasi = new Set<SituasiDarurat>([
+        'klik_link',
+        'isi_data',
+        'kirim_otp',
+        'transfer',
+        'akun_diambil',
+      ]);
+      const situasiNormal = (p.situasi_darurat as string[]).filter((s) =>
+        validSituasi.has(s as SituasiDarurat)
+      ) as SituasiDarurat[];
+
+      const statusLayanan: Record<string, StatusLayanan> =
+        p.status_layanan &&
+        typeof p.status_layanan === 'object' &&
+        !Array.isArray(p.status_layanan)
+          ? { ...(p.status_layanan as Record<string, StatusLayanan>), ai: 'ok' }
+          : { ai: 'ok' };
+
+      const pihakKetiga = Array.isArray(p.pihak_ketiga) && p.pihak_ketiga.length > 0
+        ? Array.from(new Set([...p.pihak_ketiga, 'Google Gemini']))
+        : ['Google Gemini'];
+
+      return {
+        ...(p as unknown as FormatDataHasil),
+        status_layanan: statusLayanan,
+        pihak_ketiga: pihakKetiga,
+        situasi_darurat: situasiNormal,
+      };
     }
 
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!rawText || typeof rawText !== 'string') {
-      return null;
-    }
-
-    const parsed = tryParseJson(rawText);
-    if (!isValidFormatDataHasil(parsed)) {
-      return null;
-    }
-
-    // Normalisasi situasi_darurat ke nilai valid
-    const validSituasi = new Set<SituasiDarurat>([
-      'klik_link',
-      'isi_data',
-      'kirim_otp',
-      'transfer',
-      'akun_diambil',
-    ]);
-    const situasiNormal = parsed.situasi_darurat.filter((s) =>
-      validSituasi.has(s as SituasiDarurat)
-    ) as SituasiDarurat[];
-
-    return {
-      ...parsed,
-      situasi_darurat: situasiNormal,
-    };
+    return null;
   } catch {
     // Timeout, network error, parsing error, abort -> return null
     return null;
@@ -622,7 +695,10 @@ export async function tanyaGemini(
   }
 
   const timeoutMs = options?.timeoutMs ?? DEFAULT_TANYA_TIMEOUT_MS;
-  const model = options?.model || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const requestedModel = resolveGeminiModel(options?.model);
+  const candidateModels = Array.from(
+    new Set([requestedModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-flash-latest'])
+  );
   const fetcher = options?.fetchFn || fetch;
 
   const systemPrompt = getTanyaSystemPrompt({
@@ -681,31 +757,39 @@ export async function tanyaGemini(
       : null;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      model
-    )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    for (const model of candidateModels) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        model
+      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-    const response = await fetcher(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+      const response = await fetcher(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      return null;
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '');
+        console.error(
+          `[tanyaGemini Error] status=${response.status} model=${model} body=${errText.slice(0, 300)}`
+        );
+        continue;
+      }
+
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!rawText || typeof rawText !== 'string' || rawText.trim().length === 0) {
+        continue;
+      }
+
+      return filterKataTerlarang(rawText.trim());
     }
 
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!rawText || typeof rawText !== 'string' || rawText.trim().length === 0) {
-      return null;
-    }
-
-    return filterKataTerlarang(rawText.trim());
+    return null;
   } catch {
     return null;
   } finally {

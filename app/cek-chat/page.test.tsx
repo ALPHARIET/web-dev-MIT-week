@@ -135,15 +135,15 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       expect(screen.getByText(/periksa teks percakapan atau screenshot chat yang mencurigakan/i)).toBeDefined();
     });
 
-    it('merender KotakPrivasi dengan informasi Google Gemini sebelum area input (Requirements 8.1, 8.4, 8.6)', () => {
+    it('merender KotakPrivasi dengan informasi AI Cek Penipuan sebelum area input (Requirements 8.1, 8.4, 8.6)', () => {
       render(<CekChatPage />);
 
       const kotakPrivasi = screen.getByTestId('kotak-privasi');
       expect(kotakPrivasi).toBeDefined();
       expect(kotakPrivasi.getAttribute('data-halaman')).toBe('chat');
 
-      // Memastikan menyebutkan Google Gemini dan peringatan data sensitif
-      expect(within(kotakPrivasi).getAllByText(/Google Gemini/i).length).toBeGreaterThanOrEqual(1);
+      // Memastikan menyebutkan AI Cek Penipuan dan peringatan data sensitif
+      expect(within(kotakPrivasi).getAllByText(/AI Cek Penipuan/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/jangan masukkan OTP, PIN, password, atau nomor rekening asli/i)).toBeDefined();
 
       // Memastikan letak KotakPrivasi berada sebelum area input di DOM

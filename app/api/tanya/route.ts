@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { FormatDataHasil } from '@/lib/hasil';
 import { tanyaGemini, filterKataTerlarang } from '@/lib/gemini';
-import { TANYA_SYSTEM_PROMPT, getTanyaSystemPrompt } from '@/data/system-prompt';
-import {
-  isPertanyaanKeamananDigital,
-  bangunJawabanEdukasiBawaan,
-} from '@/lib/tanya-helper';
+import { bangunJawabanEdukasiBawaan } from '@/lib/tanya-helper';
 
 /**
  * Interface request body untuk POST /api/tanya

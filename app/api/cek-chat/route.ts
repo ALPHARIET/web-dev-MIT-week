@@ -14,6 +14,7 @@ import { cekMagicBytesGambar } from '@/lib/image-utils';
 import {
   evaluasiChat,
   generateHasilChatLokal,
+  tentukanSituasiDaruratChat,
 } from '@/lib/aturan/chat-rules';
 
 /** Batas maksimal payload 4 MB (Requirement 26.1: <= 4 MB, di bawah Vercel 4.5 MB) */
@@ -413,6 +414,15 @@ export async function POST(req: Request): Promise<Response> {
             existingJudul.add(t.judul.trim().toLowerCase());
           }
         }
+      }
+
+      // 8c-2. Gabungkan situasi darurat dari aturan lokal agar indikasi darurat (seperti APK, transfer, OTP) tidak terlewat
+      const teksUntukSituasi = body.mode === 'teks' ? body.teks : geminiResult.transkrip;
+      if (teksUntukSituasi && typeof teksUntukSituasi === 'string') {
+        const hasilLokal = evaluasiChat(teksUntukSituasi);
+        const situasiLokal = tentukanSituasiDaruratChat(teksUntukSituasi, hasilLokal);
+        const setSituasi = new Set([...(geminiResult.situasi_darurat || []), ...situasiLokal]);
+        geminiResult.situasi_darurat = Array.from(setSituasi);
       }
 
       // 8d. Pastikan ringkasan selaras jika level dinaikkan

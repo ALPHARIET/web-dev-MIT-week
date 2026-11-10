@@ -52,16 +52,16 @@ describe('components/shared/KotakPrivasi.tsx (Task 4.9)', () => {
       expect(screen.getByText(/Cek Chat/i)).toBeDefined();
     });
 
-    it('menyebutkan Google Gemini sebagai layanan pihak ketiga di Cek Chat (Requirement 8.4)', () => {
+    it('menyebutkan AI Cek Penipuan sebagai layanan analisis di Cek Chat', () => {
       render(<KotakPrivasi halaman="chat" />);
 
       const badgeList = screen.getAllByTestId('badge-layanan');
       const badgeTexts = badgeList.map((el) => el.textContent);
-      expect(badgeTexts).toContain('Google Gemini');
+      expect(badgeTexts).toContain('AI Cek Penipuan');
 
       const deskripsi = screen.getByTestId('deskripsi-layanan');
       expect(deskripsi.textContent).toContain(
-        'Teks atau screenshot akan dikirim ke Google Gemini untuk dianalisis. Jangan sertakan OTP, PIN, password, atau nomor rekening. Tutup nama dan nomor HP di screenshot kalau bisa.'
+        'Teks atau screenshot akan diproses oleh AI Cek Penipuan untuk dianalisis. Jangan sertakan OTP, PIN, password, atau nomor rekening. Tutup nama dan nomor HP di screenshot kalau bisa.'
       );
     });
 
@@ -198,7 +198,7 @@ describe('components/shared/KotakPrivasi.tsx (Task 4.9)', () => {
       expect(DATA_PRIVASI_PER_HALAMAN.link).toBeDefined();
       expect(DATA_PRIVASI_PER_HALAMAN.video).toBeDefined();
 
-      expect(DATA_PRIVASI_PER_HALAMAN.chat.layananPihakKetiga).toContain('Google Gemini');
+      expect(DATA_PRIVASI_PER_HALAMAN.chat.layananPihakKetiga).toContain('AI Cek Penipuan');
       expect(DATA_PRIVASI_PER_HALAMAN.link.layananPihakKetiga).toContain('Google Safe Browsing');
       expect(DATA_PRIVASI_PER_HALAMAN.video.catatanTransparansi).toBeDefined();
     });
