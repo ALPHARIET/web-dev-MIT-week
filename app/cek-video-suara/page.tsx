@@ -142,7 +142,7 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
 
       <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
       {/* Kotak Privasi (halaman="video") (Requirement 8.1, 8.2, 8.3) */}
-      <KotakPrivasi halaman="video" className={hasil ? '' : TATA_CEK.samping} />
+      {!hasil && <KotakPrivasi halaman="video" className={TATA_CEK.samping} />}
 
       {/* Konten Utama: Wizard Pemeriksaan atau Hasil Pemeriksaan */}
       {!hasil ? (

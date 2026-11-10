@@ -369,7 +369,7 @@ export default function CekChatPage(): React.JSX.Element {
 
       {/* Render KotakPrivasi sebelum area input (Requirement 8.1, 8.4, 8.6) */}
       <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
-      <KotakPrivasi halaman="chat" className={hasil ? '' : TATA_CEK.samping} />
+      {!hasil && <KotakPrivasi halaman="chat" className={TATA_CEK.samping} />}
 
       {/* Tampilan Kondisional: Area Input vs Komponen Hasil */}
       {!hasil ? (

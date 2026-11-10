@@ -179,9 +179,11 @@ export const FORMAT_DATA_HASIL_JSON_SCHEMA = {
     },
     status_layanan: {
       type: 'object',
-      additionalProperties: {
-        type: 'string',
-        enum: ['ok', 'gagal', 'tidak_dipakai'],
+      properties: {
+        ai: {
+          type: 'string',
+          enum: ['ok', 'gagal', 'tidak_dipakai'],
+        },
       },
       description: 'Status layanan pihak ketiga',
     },
@@ -245,7 +247,7 @@ PANDUAN TEMUAN DAN LANGKAH TINDAKAN:
 
 DETEKSI SITUASI DARURAT (JIKA PENGGUNA SUDAH TERLANJUR):
 Jika pengguna atau pesan mengindikasikan bahwa tindakan berisiko telah terjadi, masukkan kode situasi ke array "situasi_darurat":
-- "klik_link": jika pengguna sudah mengklik link asing.
+- "klik_link": jika pengguna atau pesan mengindikasikan pengiriman file APK, unduhan file mencurigakan, atau mengklik link asing.
 - "isi_data": jika pengguna sudah mengisi password, data akun, atau formulir dari link tersebut.
 - "kirim_otp": jika pengguna sudah memberikan kode OTP ke pihak lain.
 - "transfer": jika pengguna sudah mentransfer uang atau pulsa ke pihak lain.

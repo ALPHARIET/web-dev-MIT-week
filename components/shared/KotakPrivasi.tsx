@@ -21,9 +21,9 @@ export interface InfoPrivasiHalaman {
 export const DATA_PRIVASI_PER_HALAMAN: Record<HalamanPrivasi, InfoPrivasiHalaman> = {
   chat: {
     namaHalaman: 'Cek Chat',
-    layananPihakKetiga: ['Google Gemini'],
+    layananPihakKetiga: ['AI Cek Penipuan'],
     deskripsiLayanan:
-      'Teks atau screenshot akan dikirim ke Google Gemini untuk dianalisis. Jangan sertakan OTP, PIN, password, atau nomor rekening. Tutup nama dan nomor HP di screenshot kalau bisa.',
+      'Teks atau screenshot akan diproses oleh AI Cek Penipuan untuk dianalisis. Jangan sertakan OTP, PIN, password, atau nomor rekening. Tutup nama dan nomor HP di screenshot kalau bisa.',
   },
   link: {
     namaHalaman: 'Cek Link',
@@ -182,7 +182,7 @@ export function KotakPrivasi({
       >
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            Pengolahan Data & Layanan Luar
+            {halaman === 'chat' ? 'Pengolahan & Analisis Data AI' : 'Pengolahan Data & Layanan Luar'}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
             {infoHalaman.layananPihakKetiga.map((layanan) => (

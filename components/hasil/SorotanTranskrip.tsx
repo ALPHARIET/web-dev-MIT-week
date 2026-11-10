@@ -214,25 +214,27 @@ export function SorotanTranskrip({
   buktiList,
   className = '',
 }: SorotanTranskripProps): React.JSX.Element | null {
-  // Jika transkrip kosong, tidak perlu merender apa pun
-  if (!transkrip || transkrip.trim().length === 0) {
-    return null;
-  }
+  const isKosong = !transkrip || transkrip.trim().length === 0;
 
   const targetFrasa = useMemo(
-    () => ekstrakFrasaPencarian(buktiList || []),
-    [buktiList]
+    () => (isKosong ? [] : ekstrakFrasaPencarian(buktiList || [])),
+    [isKosong, buktiList]
   );
 
   const rentangSorotan = useMemo(
-    () => hitungRentangSorotan(transkrip, targetFrasa),
-    [transkrip, targetFrasa]
+    () => (isKosong ? [] : hitungRentangSorotan(transkrip, targetFrasa)),
+    [isKosong, transkrip, targetFrasa]
   );
 
   const segmenList = useMemo(
-    () => buatSegmenTeks(transkrip, rentangSorotan),
-    [transkrip, rentangSorotan]
+    () => (isKosong ? [] : buatSegmenTeks(transkrip, rentangSorotan)),
+    [isKosong, transkrip, rentangSorotan]
   );
+
+  // Jika transkrip kosong, tidak perlu merender apa pun
+  if (isKosong) {
+    return null;
+  }
 
   const jumlahSorotan = rentangSorotan.length;
 

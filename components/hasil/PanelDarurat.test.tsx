@@ -323,4 +323,157 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       expect(section.classList.contains('mt-6')).toBe(true);
     });
   });
+
+  describe('Penyesuaian Kontekstual Sesuai Modus Penipuan (Konteks APK)', () => {
+    it('menampilkan langkah darurat pencopotan APK dan mode pesawat saat konteks APK terdeteksi', () => {
+      render(
+        <PanelDarurat
+          situasiAktif={['klik_link']}
+          autoOpen={true}
+          isApk={true}
+        />
+      );
+
+      // Tab berlabel "Unduh / Pasang APK" alih-alih hanya "Klik link"
+      const tabApk = screen.getByTestId('tab-situasi-klik_link');
+      expect(tabApk.textContent).toContain('Unduh / Pasang APK');
+
+      // Banner peringatan menyebut "Unduh / Pasang APK"
+      const banner = screen.getByTestId('banner-situasi-terdeteksi');
+      expect(banner.textContent).toContain('Unduh / Pasang APK');
+
+      // Judul langkah penyelamatan menyebut File APK
+      const panel = screen.getByTestId('panel-langkah-klik_link');
+      expect(panel.textContent).toContain('Terlanjur Unduh atau Pasang File APK');
+
+      // Langkah 1 berfokus pada Mode Pesawat (matikan koneksi internet)
+      expect(panel.textContent).toContain('Segera aktifkan Mode Pesawat');
+
+      // Langkah 2 berfokus pada Copot Pemasangan (Uninstall)
+      expect(panel.textContent).toContain('Copot Pemasangan (Uninstall)');
+
+      // Langkah 3 berfokus pada hapus file .apk dari folder Download
+      expect(panel.textContent).toContain('hapus permanen berkas file berekstensi .apk');
+
+      // Langkah 4 berfokus pada izin Aksesibilitas dan SMS
+      expect(panel.textContent).toContain('Aksesibilitas dan Akses SMS');
+    });
+
+    it('otomatis mendeteksi konteks APK dari daftar temuan temuan[].judul atau temuan[].bukti', () => {
+      render(
+        <PanelDarurat
+          situasiAktif={['klik_link']}
+          autoOpen={true}
+          temuan={[
+            {
+              judul: 'Pengiriman atau ajakan memasang file aplikasi (APK)',
+              penjelasan: 'File .apk berbahaya dikirimkan kurir',
+              bukti: 'Surat_Paket.apk',
+            },
+          ]}
+        />
+      );
+
+      const tabApk = screen.getByTestId('tab-situasi-klik_link');
+      expect(tabApk.textContent).toContain('Unduh / Pasang APK');
+      expect(screen.getAllByText(/Segera aktifkan Mode Pesawat/).length).toBeGreaterThan(0);
+    });
+
+    it('menampilkan kelima tab dengan label dan langkah kontekstual dinamis saat modus APK aktif', () => {
+      render(
+        <PanelDarurat
+          isApk={true}
+          autoOpen={true}
+        />
+      );
+
+      // 1. Tab 1: Unduh / Pasang APK
+      const tab1 = screen.getByTestId('tab-situasi-klik_link');
+      expect(tab1.textContent).toContain('Unduh / Pasang APK');
+
+      // 2. Tab 2: Beri Izin / Akses HP
+      const tab2 = screen.getByTestId('tab-situasi-isi_data');
+      expect(tab2.textContent).toContain('Beri Izin / Akses HP');
+
+      // 3. Tab 3: SMS / OTP Disadap
+      const tab3 = screen.getByTestId('tab-situasi-kirim_otp');
+      expect(tab3.textContent).toContain('SMS / OTP Disadap');
+
+      // 4. Tab 4: Sudah Transfer
+      const tab4 = screen.getByTestId('tab-situasi-transfer');
+      expect(tab4.textContent).toContain('Sudah Transfer');
+
+      // 5. Tab 5: HP / Akun Dibobol
+      const tab5 = screen.getByTestId('tab-situasi-akun_diambil');
+      expect(tab5.textContent).toContain('HP / Akun Dibobol');
+
+      // Klik tab 2 (Beri Izin / Akses HP)
+      fireEvent.click(tab2);
+      const panel2 = screen.getByTestId('panel-langkah-isi_data');
+      expect(panel2.textContent).toContain('Terlanjur Memberi Izin Aksesibilitas atau SMS');
+      expect(panel2.textContent).toContain('Safe Mode');
+
+      // Klik tab 3 (SMS / OTP Disadap)
+      fireEvent.click(tab3);
+      const panel3 = screen.getByTestId('panel-langkah-kirim_otp');
+      expect(panel3.textContent).toContain('SMS atau Kode OTP Terbaca / Disadap Malware APK');
+      expect(panel3.textContent).toContain('Blokir M-Banking');
+
+      // Klik tab 5 (HP / Akun Dibobol)
+      fireEvent.click(tab5);
+      const panel5 = screen.getByTestId('panel-langkah-akun_diambil');
+      expect(panel5.textContent).toContain('Perangkat HP Dikuasai Jarak Jauh atau Akun Dibobol');
+    });
+
+    it('menampilkan tab dan langkah dinamis untuk konteks Bank Phishing', () => {
+      render(
+        <PanelDarurat
+          autoOpen={true}
+          ringkasan="Terdapat indikasi link phishing perubahan tarif perbankan BCA palsu"
+        />
+      );
+
+      const tab1 = screen.getByTestId('tab-situasi-klik_link');
+      expect(tab1.textContent).toContain('Buka Link Phishing');
+
+      const tab2 = screen.getByTestId('tab-situasi-isi_data');
+      expect(tab2.textContent).toContain('Isi User / PIN Bank');
+
+      const tab5 = screen.getByTestId('tab-situasi-akun_diambil');
+      expect(tab5.textContent).toContain('M-Banking Terkunci');
+    });
+
+    it('menampilkan tab dan langkah dinamis untuk konteks Task Scam / Misi Freelance', () => {
+      render(
+        <PanelDarurat
+          autoOpen={true}
+          ringkasan="Modus penipuan lowongan kerja paruh waktu komisi misi like YouTube di grup Telegram"
+        />
+      );
+
+      const tab1 = screen.getByTestId('tab-situasi-klik_link');
+      expect(tab1.textContent).toContain('Masuk Grup / Link Misi');
+
+      const tab4 = screen.getByTestId('tab-situasi-transfer');
+      expect(tab4.textContent).toContain('Transfer Deposit');
+
+      const tab5 = screen.getByTestId('tab-situasi-akun_diambil');
+      expect(tab5.textContent).toContain('Diancam / Akun Ditahan');
+    });
+
+    it('menampilkan tab dan langkah dinamis untuk konteks Mengaku Keluarga Ganti Nomor', () => {
+      render(
+        <PanelDarurat
+          autoOpen={true}
+          ringkasan="Pengirim mengaku keluarga pinjam hp teman karena nomor baru ganti"
+        />
+      );
+
+      const tab1 = screen.getByTestId('tab-situasi-klik_link');
+      expect(tab1.textContent).toContain('Percaya Chat Pengirim');
+
+      const tab5 = screen.getByTestId('tab-situasi-akun_diambil');
+      expect(tab5.textContent).toContain('Akun WhatsApp Dibajak');
+    });
+  });
 });

@@ -314,7 +314,7 @@ function tentukanLangkahChat(hasil: HasilAturan): string[] {
 /**
  * Mendeteksi situasi darurat yang relevan untuk pembukaan Panel Darurat.
  */
-function tentukanSituasiDaruratChat(
+export function tentukanSituasiDaruratChat(
   teks: string,
   hasil: HasilAturan
 ): SituasiDarurat[] {
@@ -346,11 +346,14 @@ function tentukanSituasiDaruratChat(
     situasi.add('kirim_otp');
   }
 
-  // Indikasi klik link
+  // Indikasi klik link atau unduh/pasang file APK
   if (
     hasil.linkDitemukan.length > 0 ||
     idsCocok.has('ada_link') ||
-    /\b(?:sudah|udah|sempat|terlanjur)\s*klik\b/i.test(teksLower)
+    idsCocok.has('kirim_apk') ||
+    /\b(?:sudah|udah|sempat|terlanjur)\s*(?:klik|buka|download|unduh|instal|install|pasang)\b/i.test(
+      teksLower
+    )
   ) {
     situasi.add('klik_link');
   }
