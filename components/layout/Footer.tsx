@@ -44,7 +44,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/#cara-kerja"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-800 underline underline-offset-4 focus:outline-none focus:ring-2 focus:ring-blue-600 rounded min-h-[44px] py-2"
+                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none min-h-[44px] py-2"
                 >
                   Cara kerja dan batasan deteksi
                 </Link>
@@ -52,7 +52,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/cek-chat"
-                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 rounded min-h-[44px] py-2"
+                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none rounded min-h-[44px] py-2"
                 >
                   Periksa pesan chat mencurigakan
                 </Link>
@@ -60,7 +60,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/cek-link"
-                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 rounded min-h-[44px] py-2"
+                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none rounded min-h-[44px] py-2"
                 >
                   Periksa tautan (link / URL)
                 </Link>
@@ -68,7 +68,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/cek-video-suara"
-                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 rounded min-h-[44px] py-2"
+                  className="inline-flex items-center text-gray-600 hover:text-gray-900 focus:outline-none rounded min-h-[44px] py-2"
                 >
                   Periksa panggilan video & suara
                 </Link>

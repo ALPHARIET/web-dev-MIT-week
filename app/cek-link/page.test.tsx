@@ -338,39 +338,20 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
     });
   });
 
-  describe('6. Atribusi Resmi Google Safe Browsing & Keterangan False Positive/Negative (Requirements 20.4, 20.5)', () => {
-    it('menampilkan atribusi "Advisory provided by Google" dengan tautan ke Safe Browsing Advisory (Requirement 20.4)', async () => {
+  describe('6. Penyederhanaan UI Hasil Pemeriksaan Link', () => {
+    it('menyembunyikan KotakPrivasi dan tidak merender kotak atribusi tambahan saat hasil ditampilkan', async () => {
       render(<CekLinkPage />);
+
+      // Saat masih di area input, KotakPrivasi tampil
+      expect(screen.getByTestId('kotak-privasi')).toBeDefined();
 
       // Pilih contoh untuk menampilkan hasil
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       await screen.findByTestId('area-hasil-link');
 
-      const atribusiSection = screen.getByTestId('atribusi-google-safe-browsing');
-      expect(atribusiSection).toBeDefined();
-
-      const tautanAdvisory = screen.getByTestId('tautan-safe-browsing-advisory');
-      expect(tautanAdvisory.textContent).toContain('Advisory provided by Google');
-      expect(tautanAdvisory.getAttribute('href')).toBe(
-        'https://developers.google.com/safe-browsing/v4/advisory'
-      );
-      expect(tautanAdvisory.getAttribute('target')).toBe('_blank');
-      expect(tautanAdvisory.getAttribute('rel')).toContain('noopener');
-      expect(tautanAdvisory.getAttribute('rel')).toContain('noreferrer');
-    });
-
-    it('menampilkan keterangan kemungkinan false positive dan false negative (Requirement 20.5)', async () => {
-      render(<CekLinkPage />);
-
-      fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
-      await screen.findByTestId('area-hasil-link');
-
-      const keterangan = screen.getByTestId('keterangan-false-positive-negative');
-      const text = keterangan.textContent?.toLowerCase() || '';
-
-      expect(text).toContain('false positive');
-      expect(text).toContain('false negative');
-      expect(text).toContain('google safe browsing');
+      // Setelah hasil tampil, KotakPrivasi disembunyikan dan kotak atribusi tidak ada
+      expect(screen.queryByTestId('kotak-privasi')).toBeNull();
+      expect(screen.queryByTestId('atribusi-google-safe-browsing')).toBeNull();
     });
   });
 

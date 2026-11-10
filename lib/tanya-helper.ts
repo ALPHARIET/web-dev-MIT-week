@@ -25,7 +25,8 @@ export function isPertanyaanKeamananDigital(
     const followupKeywords = [
       'selanjutnya', 'berikutnya', 'harus apa', 'gimana', 'bagaimana', 'apa yang harus',
       'lakukan', 'maksudnya', 'artinya', 'kenapa', 'mengapa', 'solusi', 'tindakan',
-      'langkah', 'sarannya', 'saran', 'solusinya', 'terus'
+      'langkah', 'sarannya', 'saran', 'solusinya', 'terus', 'contoh', 'kasus',
+      'nyata', 'dunia nyata', 'jelaskan', 'ceritakan', 'iya', 'ya', 'oke', 'ok'
     ];
     if (followupKeywords.some((kw) => p.includes(kw))) {
       return true;
