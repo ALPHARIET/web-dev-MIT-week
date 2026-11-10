@@ -50,6 +50,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  icons: {
+    icon: [
+      { url: "/LogoFinal.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/LogoFinal.png",
+    apple: "/LogoFinal.png",
+  },
 };
 
 export const viewport: Viewport = {
