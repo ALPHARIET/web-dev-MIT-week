@@ -111,7 +111,6 @@ describe('components/shared/KartuMenu.tsx (Task 4.11)', () => {
       expect(html).toContain('data-testid="kartu-menu-ikon"');
       expect(html).toContain('data-testid="test-icon"');
       expect(html).toContain('IkonKustom');
-      // Nomor tetap dirender saat ikon disertakan
       expect(html).toContain('data-testid="kartu-menu-nomor"');
       expect(html).toContain('1');
     });

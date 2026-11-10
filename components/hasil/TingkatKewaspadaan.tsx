@@ -7,9 +7,6 @@ export interface TingkatKewaspadaanProps {
   className?: string;
 }
 
-/**
- * Ikon ShieldAlert untuk tingkat kewaspadaan tinggi (merah)
- */
 export function ShieldAlertIcon({ className = 'w-6 h-6' }: { className?: string }) {
   return (
     <svg
@@ -31,9 +28,6 @@ export function ShieldAlertIcon({ className = 'w-6 h-6' }: { className?: string 
   );
 }
 
-/**
- * Ikon AlertTriangle untuk tingkat kewaspadaan sedang (oranye)
- */
 export function AlertTriangleIcon({ className = 'w-6 h-6' }: { className?: string }) {
   return (
     <svg
@@ -55,9 +49,6 @@ export function AlertTriangleIcon({ className = 'w-6 h-6' }: { className?: strin
   );
 }
 
-/**
- * Ikon Info / ShieldCheckAbu untuk tingkat kewaspadaan tidak ditemukan tanda bahaya (abu-abu)
- */
 export function InfoShieldIcon({ className = 'w-6 h-6' }: { className?: string }) {
   return (
     <svg
@@ -109,19 +100,6 @@ export const KONFIGURASI_LEVEL: Record<TingkatLevel, KonfigurasiTingkat> = {
   },
 };
 
-/**
- * Komponen TingkatKewaspadaan
- *
- * Menampilkan label, ikon visual, dan kalimat pembuka resmi sesuai tingkat kewaspadaan:
- * - Tinggi: "Waspada tinggi" (merah: bg-red-50, text-red-700, border-red-300) + ShieldAlert
- * - Sedang: "Perlu hati-hati" (oranye: bg-orange-50, text-orange-700, border-orange-300) + AlertTriangle
- * - Tidak ditemukan: "Tidak ditemukan tanda bahaya" (abu-abu, bukan hijau: bg-gray-50, text-gray-700, border-gray-300) + Info
- *
- * Aksesibilitas (WCAG AA):
- * - Level dibedakan menggunakan teks label DAN ikon, bukan hanya warna.
- * - Kontras warna memenuhi rasio WCAG AA.
- * - Memiliki atribut aria role="status" dan aria-label informatif.
- */
 export function TingkatKewaspadaan({
   level,
   ringkasan,

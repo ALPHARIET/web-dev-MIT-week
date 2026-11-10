@@ -295,14 +295,12 @@ describe('components/PratinjauSensor.tsx (Task 4.13)', () => {
       const btnTutup = screen.getByTestId('btn-tutup-modal');
       const btnLanjut = screen.getByTestId('btn-lanjut-periksa');
 
-      // Saat berada di elemen pertama (btnTutup) dan menekan Shift+Tab, siklus berpindah ke elemen terakhir (btnLanjut)
       btnTutup.focus();
       expect(document.activeElement).toBe(btnTutup);
 
       fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
       expect(document.activeElement).toBe(btnLanjut);
 
-      // Saat berada di elemen terakhir (btnLanjut) dan menekan Tab biasa, siklus berpindah ke elemen pertama (btnTutup)
       btnLanjut.focus();
       expect(document.activeElement).toBe(btnLanjut);
 

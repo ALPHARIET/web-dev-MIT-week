@@ -1,26 +1,6 @@
-/**
- * lib/aturan/link-rules.ts
- *
- * Implementasi aturan analisis leksikal URL untuk Aplikasi Web Cek Penipuan.
- * Menganalisis URL berdasarkan 10 aturan:
- * 1. Google Safe Browsing match (langsung waspada tinggi: langsung_tinggi = true)
- * 2. Nama mirip merek Indonesia (+3) dengan substitusi karakter (leetspeak)
- * 3. Domain berumur < 30 hari via RDAP (+3)
- * 4. Punycode atau karakter mirip (xn--) (+3)
- * 5. Alamat berupa IP (+3) (IPv4/IPv6)
- * 6. Kata pemicu di domain atau path (+2): hadiah, klaim, undian, verifikasi, login, promo
- * 7. Lebih dari 3 subdomain, atau nama merek di subdomain dan bukan di domain utama (+2)
- * 8. TLD berisiko (+1) - dimuat dari data/tld-berisiko.json
- * 9. Layanan pemendek link (+1) (bit.ly, s.id, tinyurl, linktr.ee, dll.)
- * 10. Karakter '@' di URL atau URL > 200 karakter (+1)
- *
- * References: Requirements 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7, 19.8, 19.9, 19.10, 19.11, and design.md
- */
-
 import { parseUrl } from '../sanitasi-url';
 import {
   hitungLevel,
-  type TingkatLevel,
   type Temuan,
   type FormatDataHasil,
   type StatusLayanan,
@@ -30,42 +10,24 @@ import { type HasilAturan } from './scoring';
 import daftarMerekJson from '../../data/merek.json';
 import tldBerisikoJson from '../../data/tld-berisiko.json';
 
-/**
- * Opsi tambahan untuk evaluasi leksikal URL
- */
 export interface EvaluasiLinkOptions {
-  /** Umur domain dalam satuan hari berdasarkan data registrasi RDAP */
   rdapAgeDays?: number;
-  /** Status apakah URL terdaftar dalam daftar ancaman Google Safe Browsing */
   isSafeBrowsingThreat?: boolean;
-  /** Status apakah URL ditandai berbahaya oleh VirusTotal (>= 2 vendor) */
   isVirusTotalThreat?: boolean;
-  /** Rincian vendor VirusTotal */
   virusTotalDetail?: {
     jumlahVendorBerbahaya: number;
     totalVendor: number;
   };
 }
 
-/**
- * Hasil deteksi kemiripan merek
- */
 export interface HasilDeteksiMerek {
-  /** Apakah cocok dengan merek terdaftar */
   cocok: boolean;
-  /** Nama resmi merek yang cocok (misal: "BCA", "Shopee") */
   merek: string | null;
-  /** String variasi atau pola yang memicu kecocokan */
   variasiCocok: string | null;
-  /** Kategori industri merek */
   kategori: string | null;
-  /** Skor bobot aturan (selalu 3 jika cocok, 0 jika tidak) */
   skor: number;
 }
 
-/**
- * Daftar kata pemicu yang sering digunakan pada domain atau path situs phishing (Requirement 19.6)
- */
 export const KATA_PEMICU_LINK = [
   'hadiah',
   'klaim',
@@ -75,9 +37,6 @@ export const KATA_PEMICU_LINK = [
   'promo',
 ] as const;
 
-/**
- * Daftar domain layanan pemendek tautan yang umum (Requirement 19.9)
- */
 export const PEMENDEK_LINK_DOMAINS = new Set<string>([
   'bit.ly',
   's.id',
@@ -100,30 +59,19 @@ export const PEMENDEK_LINK_DOMAINS = new Set<string>([
   'shorte.st',
 ]);
 
-/**
- * Set TLD berisiko yang dimuat dari data/tld-berisiko.json (Requirement 19.8)
- */
 export const TLD_BERISIKO_SET = new Set<string>(
   (tldBerisikoJson.tld || []).map((t: string) => t.toLowerCase().trim())
 );
 
-/**
- * Regex IPv4 standar untuk deteksi alamat host berbasis IP numerik
- */
 const IPV4_REGEX =
   /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
-/**
- * Memeriksa apakah suatu string merupakan alamat IPv4 atau IPv6
- */
 export function isIpAddress(host: string): boolean {
   if (!host) return false;
   const clean = host.replace(/^\[|\]$/g, '').trim();
 
-  // IPv4
   if (IPV4_REGEX.test(clean)) return true;
 
-  // IPv6
   if (clean.includes(':')) {
     const parts = clean.split(':');
     if (parts.length >= 2 && parts.length <= 8) {
@@ -136,10 +84,6 @@ export function isIpAddress(host: string): boolean {
   return false;
 }
 
-/**
- * Normalisasi leetspeak (substitusi angka pengganti huruf)
- * 0 -> o, 1 -> i, 3 -> e, 4 -> a, 5 -> s, @ -> a, $ -> s
- */
 export function normalizeLeetspeak(str: string): string {
   if (!str) return '';
   return str
@@ -153,17 +97,11 @@ export function normalizeLeetspeak(str: string): string {
     .replace(/\$/g, 's');
 }
 
-/**
- * Membersihkan input domain/URL menjadi format hostname sederhana
- */
 function cleanHostString(input: string): string {
   let s = (input || '').trim().toLowerCase();
-  // Buang protokol
   s = s.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '');
   s = s.replace(/^\/\//, '');
-  // Buang path, query, hash
   s = s.split(/[/?#]/)[0];
-  // Buang userinfo jika ada (hanya jika setelah @ terdapat nama host yang valid tanpa diawali titik)
   const atIdx = s.lastIndexOf('@');
   if (atIdx >= 0 && !s.slice(atIdx).startsWith('@.')) {
     const afterAt = s.slice(atIdx + 1);
@@ -171,7 +109,6 @@ function cleanHostString(input: string): string {
       s = afterAt;
     }
   }
-  // Buang port
   const colonIdx = s.lastIndexOf(':');
   if (colonIdx >= 0 && !s.includes(']')) {
     s = s.slice(0, colonIdx);
@@ -179,13 +116,6 @@ function cleanHostString(input: string): string {
   return s;
 }
 
-/**
- * Mendeteksi nama domain atau teks yang mirip merek Indonesia dengan substitusi karakter (leetspeak).
- * Muat daftar merek dari `data/merek.json` (Requirement 19.2, Property 8).
- *
- * @param domainInput String domain, URL, atau token nama domain yang diperiksa
- * @returns HasilDeteksiMerek dengan flag cocok, nama merek, variasi yang cocok, kategori, dan skor (+3)
- */
 export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
   if (!domainInput || typeof domainInput !== 'string') {
     return {
@@ -208,20 +138,16 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
     };
   }
 
-  // Urai komponen URL jika input berupa URL lengkap atau domain dengan TLD
   const parsed = parseUrl(rawClean.includes('://') ? rawClean : `http://${rawClean}`);
   const domainUtama = (parsed.domainUtama || rawClean).toLowerCase();
   const normalizedDomainUtama = normalizeLeetspeak(domainUtama);
 
-  // Kandidat potongan string untuk dicocokkan
   const candidates = new Set<string>();
   candidates.add(rawClean);
   candidates.add(normalizeLeetspeak(rawClean));
   candidates.add(domainUtama);
   candidates.add(normalizedDomainUtama);
 
-  // Jika input memuat ekstensi TLD di akhir (misal: bc@.net, sh0pee.co.id)
-  // Ekstrak bagian sebelum TLD langsung dari input mentah
   const noProto = domainInput
     .trim()
     .toLowerCase()
@@ -233,19 +159,16 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
     candidates.add(normalizeLeetspeak(withoutTld));
   }
 
-  // Token-token yang dipisahkan oleh tanda hubung, garis bawah, titik, atau angka
   const tokens = domainUtama.split(/[-_.]+/).filter(Boolean);
   for (const t of tokens) {
     candidates.add(t);
     candidates.add(normalizeLeetspeak(t));
   }
 
-  // Jika hostname memiliki beberapa bagian sebelum TLD (misal: b.c.a.co.id)
   if (parsed.subdomain) {
     const subPlusMain = `${parsed.subdomain}.${domainUtama}`.toLowerCase();
     candidates.add(subPlusMain);
     candidates.add(normalizeLeetspeak(subPlusMain));
-    // Bentuk tanpa titik: b.c.a -> bca
     const dotsStripped = subPlusMain.replace(/\./g, '');
     candidates.add(dotsStripped);
     candidates.add(normalizeLeetspeak(dotsStripped));
@@ -259,7 +182,6 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
     const brandNormalized = normalizeLeetspeak(brandLower);
     const variasiList = (item.variasi || []).map((v: string) => v.toLowerCase());
 
-    // 1. Cek kecocokan langsung dengan variasi yang terdaftar di JSON
     for (const v of variasiList) {
       if (candidates.has(v)) {
         return {
@@ -272,7 +194,6 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
       }
     }
 
-    // 2. Cek apakah ada token yang setelah dinormalisasi sama dengan nama merek
     for (const cand of candidates) {
       if (cand === brandLower || cand === brandNormalized) {
         return {
@@ -285,7 +206,6 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
       }
     }
 
-    // 3. Cek variasi leetspeak dari daftar variasi
     for (const v of variasiList) {
       const vNorm = normalizeLeetspeak(v);
       for (const cand of candidates) {
@@ -301,12 +221,8 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
       }
     }
 
-    // 4. Deteksi komposisi kata pada domainUtama (misal: sh0peepromo, bca-klik, danakaget)
-    // Hindari false positive kata umum (misal: 'perdana' mengandung 'dana', 'brian' mengandung 'bri')
     const brandMinLength = brandLower.length;
 
-    // Untuk merek pendek (<= 3 karakter, misal: bca, bri, bni, bsi, jne, ovo):
-    // Hanya cocok jika diawali/diakhiri batas kata, token, atau diawali/diakhiri oleh kata umum seperti promo, bank, klik, login, pay
     if (brandMinLength <= 3) {
       const patternShort = new RegExp(
         `(?:^|[-_0-9]|bank|klik|promo|login|hadiah|undian|pay|cs|link|app)${brandNormalized}(?:$|[-_0-9]|bank|klik|promo|login|hadiah|undian|pay|cs|link|app|mobile|id|indo)`,
@@ -322,10 +238,7 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
         };
       }
     } else {
-      // Untuk merek dengan panjang >= 4 (shopee, mandiri, tokopedia, dana, gopay, bpjs, posindonesia)
-      // Periksa kecocokan substring pada domainUtama yang dinormalisasi
       if (brandLower === 'dana' && (normalizedDomainUtama === 'perdana' || normalizedDomainUtama.includes('perdana'))) {
-        // Abaikan kata 'perdana' (kartu perdana)
         continue;
       }
 
@@ -339,7 +252,6 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
         };
       }
 
-      // Cek juga jika salah satu variasi substring ada di domainUtama
       for (const v of variasiList) {
         if (v.length >= 4 && domainUtama.includes(v)) {
           return {
@@ -363,25 +275,6 @@ export function deteksiMerek(domainInput: string): HasilDeteksiMerek {
   };
 }
 
-/**
- * Mengevaluasi URL secara leksikal berdasarkan 10 aturan kecurigaan.
- *
- * Aturan:
- * 1. Google Safe Browsing match (langsung waspada tinggi: langsung_tinggi = true)
- * 2. Nama mirip merek Indonesia (+3) dengan substitusi karakter (leetspeak)
- * 3. Domain berumur < 30 hari via RDAP (+3)
- * 4. Punycode atau karakter mirip (xn--) (+3)
- * 5. Alamat berupa IP (+3) (IPv4/IPv6)
- * 6. Kata pemicu di domain atau path (+2): hadiah, klaim, undian, verifikasi, login, promo
- * 7. Lebih dari 3 subdomain, atau nama merek di subdomain dan bukan di domain utama (+2)
- * 8. TLD berisiko (+1)
- * 9. Layanan pemendek link (+1)
- * 10. Karakter '@' di URL atau URL > 200 karakter (+1)
- *
- * @param input String URL atau nama domain yang dimasukkan pengguna
- * @param options Opsi status RDAP dan Google Safe Browsing
- * @returns HasilAturan dengan skor, level, temuan, linkDitemukan, dan modusVideoDitemukan
- */
 export function evaluasiLeksikalUrl(
   input: string,
   options?: EvaluasiLinkOptions
@@ -405,7 +298,6 @@ export function evaluasiLeksikalUrl(
   let adaLangsungTinggi = false;
   const temuan: Temuan[] = [];
 
-  // 1. Google Safe Browsing match (langsung waspada tinggi: langsung_tinggi = true) (Requirement 19.1)
   if (options?.isSafeBrowsingThreat === true) {
     adaLangsungTinggi = true;
     temuan.push({
@@ -417,7 +309,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 2. Nama mirip merek Indonesia (+3) dengan substitusi karakter (Requirement 19.2)
   let deteksiMerekHasil = deteksiMerek(parsed.domainUtama);
   if (!deteksiMerekHasil.cocok) {
     if (parsed.subdomain) {
@@ -443,7 +334,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 3. Domain berumur < 30 hari via RDAP (+3) (Requirement 19.3)
   if (typeof options?.rdapAgeDays === 'number' && options.rdapAgeDays < 30) {
     skor += 3;
     temuan.push({
@@ -454,7 +344,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 4. Punycode atau karakter mirip (xn--) (+3) (Requirement 19.4)
   const isPunycode =
     trimmed.toLowerCase().includes('xn--') ||
     hostClean.includes('xn--') ||
@@ -473,7 +362,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 5. Alamat berupa IP (+3) (IPv4/IPv6) (Requirement 19.5)
   if (isIpAddress(hostClean) || isIpAddress(parsed.domainUtama)) {
     skor += 3;
     const ipHost = isIpAddress(hostClean) ? hostClean : parsed.domainUtama;
@@ -486,7 +374,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 6. Kata pemicu di domain atau path (+2): hadiah, klaim, undian, verifikasi, login, promo (Requirement 19.6)
   const areaPemeriksaanKata = [
     parsed.domainUtama,
     parsed.subdomain,
@@ -513,7 +400,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 7. Lebih dari 3 subdomain, atau nama merek di subdomain dan bukan di domain utama (+2) (Requirement 19.7)
   const subdomainParts = parsed.subdomain
     ? parsed.subdomain.split('.').filter(Boolean)
     : [];
@@ -526,7 +412,6 @@ export function evaluasiLeksikalUrl(
     const deteksiSub = deteksiMerek(parsed.subdomain);
     if (deteksiSub.cocok && deteksiSub.merek) {
       namaMerekSubdomain = deteksiSub.merek;
-      // Periksa apakah domainUtama memuat merek yang sama
       if (!deteksiMerekHasil.cocok || deteksiMerekHasil.merek !== deteksiSub.merek) {
         merekDiSubdomainBukanUtama = true;
       }
@@ -553,7 +438,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 8. TLD berisiko (+1) (Requirement 19.8)
   const candidateTlds = [
     parsed.tld.replace(/^\./, '').toLowerCase(),
     parsed.tld.split('.').pop()?.toLowerCase() || '',
@@ -579,7 +463,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 9. Layanan pemendek link (+1) (Requirement 19.9)
   const hostDomainTld = [parsed.domainUtama, parsed.tld].filter(Boolean).join('.');
   let isShortener = false;
   let matchedShortener = '';
@@ -611,7 +494,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 10. Karakter '@' di URL atau URL > 200 karakter (+1) (Requirement 19.10)
   const adaKarakterAt = trimmed.includes('@');
   const urlTerlaluPanjang = trimmed.length > 200;
 
@@ -635,7 +517,6 @@ export function evaluasiLeksikalUrl(
     });
   }
 
-  // 11. Ditandai berbahaya oleh VirusTotal (+3) (Requirements LN-08, 18.1)
   if (options?.isVirusTotalThreat === true) {
     skor += 3;
     const detail = options.virusTotalDetail;
@@ -665,11 +546,6 @@ export function evaluasiLeksikalUrl(
   };
 }
 
-/**
- * Menghasilkan langkah tindakan yang disarankan secara dinamis sesuai konteks URL
- * untuk pemeriksaan link (Requirement 5.4, 19.9).
- * Selalu mengembalikan minimal 2 langkah tindakan tanpa kata terlarang.
- */
 function tentukanLangkahLink(
   hasilAturan: HasilAturan,
   inputUrl?: string,
@@ -680,7 +556,10 @@ function tentukanLangkahLink(
   const parsed = rawUrl
     ? parseUrl(rawUrl.includes('://') ? rawUrl : `http://${rawUrl}`)
     : null;
-  const hostname = parsed?.hostname || cleanHostString(rawUrl) || 'tautan ini';
+  const hostDariParsed = parsed
+    ? [parsed.subdomain, parsed.domainUtama, parsed.tld].filter(Boolean).join('.')
+    : '';
+  const hostname = hostDariParsed || cleanHostString(rawUrl) || 'tautan ini';
   const pathLower = (parsed?.path || rawUrl).toLowerCase();
 
   const infoMerek = rawUrl ? deteksiMerek(rawUrl) : { cocok: false, merek: null };
@@ -775,7 +654,6 @@ function tentukanLangkahLink(
       );
     }
   } else {
-    // level === 'tidak_ditemukan'
     if (hasShortener) {
       langkah.push(
         `Meskipun belum tampak indikasi bahaya, tautan "${hostname}" adalah pemendek link; gunakan fitur pratinjau untuk melihat domain tujuan sebenarnya sebelum mengaksesnya.`
@@ -796,14 +674,6 @@ function tentukanLangkahLink(
   return langkah;
 }
 
-/**
- * Menghasilkan objek FormatDataHasil lengkap langsung di browser (tanpa API)
- * menggunakan aturan leksikal URL lokal.
- *
- * @param input String URL atau nama domain yang dianalisis
- * @param options Opsi status RDAP dan Safe Browsing (jika tersedia)
- * @returns FormatDataHasil yang sesuai dengan kontrak data bersama
- */
 export function generateHasilLinkLokal(
   input: string,
   options?: EvaluasiLinkOptions

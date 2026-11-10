@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import fs from 'node:fs';
 
-// Halaman-halaman cek dan komponen layout
 import CekChatPage from '@/app/cek-chat/page';
 import CekLinkPage from '@/app/cek-link/page';
 import CekVideoSuaraPage from '@/app/cek-video-suara/page';
@@ -13,11 +12,9 @@ import Footer from '@/components/layout/Footer';
 import RootLayout, { metadata } from '@/app/layout';
 import { KotakPrivasi } from '@/components/shared/KotakPrivasi';
 
-// Route Handlers Backend
 import { POST as postCekChat } from '@/app/api/cek-chat/route';
 import { POST as postCekLink } from '@/app/api/cek-link/route';
 
-// Modul pihak ketiga & utilitas yang diuji
 import { analyzeChat, explainLink } from '@/lib/gemini';
 import { checkSafeBrowsing } from '@/lib/safe-browsing';
 import { queryDomainAge } from '@/lib/rdap';
@@ -26,7 +23,6 @@ import { parseUrl, sanitasiParams } from '@/lib/sanitasi-url';
 import packageJson from '@/package.json';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-// Mock modul backend eksternal (Gemini, Safe Browsing, RDAP)
 vi.mock('@/lib/gemini', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/gemini')>();
   return {
@@ -44,7 +40,6 @@ vi.mock('@/lib/rdap', () => ({
   queryDomainAge: vi.fn(),
 }));
 
-// Mock next/navigation untuk hook usePathname & useRouter
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
   useRouter: () => ({
@@ -54,7 +49,6 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-// Mock next/font/local agar tidak membaca file font biner saat pengujian
 vi.mock('next/font/local', () => ({
   default: (options: { variable: string }) => ({
     variable: options.variable,
@@ -65,7 +59,6 @@ vi.mock('next/font/local', () => ({
 describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.1, 12.4, 25.4, 31.1, 31.2, 31.3, 31.4)', () => {
   const originalFetch = global.fetch;
 
-  // Sampel gambar JPG valid (magic bytes FF D8 FF E0)
   const sampleJpgBase64 =
     'data:image/jpeg;base64,' +
     Buffer.from([
@@ -127,7 +120,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     localStorage.clear();
     sessionStorage.clear();
 
-    // Reset default mock third-party services
     vi.mocked(analyzeChat).mockResolvedValue(mockHasilChatSukses);
     vi.mocked(checkSafeBrowsing).mockResolvedValue({
       ditemukan: false,
@@ -143,7 +135,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     });
     vi.mocked(explainLink).mockResolvedValue(mockHasilLinkSukses);
 
-    // Mock HTMLCanvasElement & ImageBitmap untuk kompresi gambar di JSDOM
     const validJpgBuffer = new Uint8Array([
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
     ]);
@@ -188,7 +179,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       } as unknown as ImageBitmap);
     }
 
-    // Mock URL.createObjectURL & revokeObjectURL
     if (typeof window.URL.createObjectURL !== 'function') {
       window.URL.createObjectURL = vi.fn(() => 'blob:mock-preview-url');
     } else {
@@ -202,7 +192,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
     }
 
-    // Default global.fetch diarahkan langsung ke Route Handlers nyata
     global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const urlStr =
         typeof input === 'string'
@@ -240,9 +229,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     sessionStorage.clear();
   });
 
-  // =========================================================================
-  // 1. Pastikan Tidak Ada Penyimpanan Input Pengguna Setelah Sesi (Requirements 31.1, 31.3)
-  // =========================================================================
   describe('1. Pastikan Tidak Ada Penyimpanan Input Pengguna Setelah Sesi (Requirements 31.1, 31.3)', () => {
     it('Cek Chat: tidak pernah menyimpan teks atau screenshot pengguna ke localStorage atau cookie permanen', async () => {
       render(<CekChatPage />);
@@ -258,33 +244,27 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const btnPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(btnPeriksa);
 
-      // Konfirmasi di dialog pratinjau sensor
       await waitFor(() => {
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
       const btnKirim = screen.getByTestId('btn-lanjut-periksa');
       fireEvent.click(btnKirim);
 
-      // Tunggu hasil ditampilkan
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Tombol "Cek lagi" mengosongkan state input dan hasil (Requirement 35.1)
       const btnCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(btnCekLagi);
 
-      // Verifikasi input kembali kosong
       const textareaAfter = screen.getByRole('textbox', { name: /teks percakapan chat/i }) as HTMLTextAreaElement;
       expect(textareaAfter.value).toBe('');
 
-      // Pastikan localStorage tidak pernah digunakan untuk menyimpan input chat
       expect(localStorage.length).toBe(0);
       expect(localStorage.getItem('input_chat')).toBeNull();
       expect(localStorage.getItem('teks_chat')).toBeNull();
       expect(localStorage.getItem('hasil_chat')).toBeNull();
 
-      // Pastikan document.cookie tidak menyimpan input apa pun
       expect(document.cookie).not.toContain('123456789012');
       expect(document.cookie).not.toContain('081234567890');
     });
@@ -307,27 +287,23 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const btnCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(btnCekLagi);
 
-      // Verifikasi input kembali kosong
       const inputAfter = screen.getByTestId('input-link') as HTMLInputElement;
       expect(inputAfter.value).toBe('');
 
-      // Pastikan localStorage bersih
       expect(localStorage.length).toBe(0);
       expect(localStorage.getItem('input_url')).toBeNull();
       expect(localStorage.getItem('hasil_link')).toBeNull();
 
-      // Pastikan cookie bersih
       expect(document.cookie).not.toContain('bca-klaim-hadiah-palsu');
     });
 
     it('Cek Video & Suara: tidak pernah menyimpan jawaban wizard ke localStorage atau cookie permanen', () => {
       render(<CekVideoSuaraPage />);
+      fireEvent.click(screen.getByTestId('tab-mode-kuis'));
 
-      // Langkah 1: Pilih video call
       fireEvent.click(screen.getByTestId('kartu-situasi-video_call'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 2: Jawab pertanyaan konteks
       fireEvent.click(screen.getByTestId('opsi-apa_diminta-otp_pin'));
       fireEvent.click(screen.getByTestId('opsi-nomor_akun-nomor_baru'));
       fireEvent.click(screen.getByTestId('opsi-darurat-true'));
@@ -336,39 +312,31 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       fireEvent.click(screen.getByTestId('opsi-masih_tersambung-false'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 3: Checklist pengamatan visual & selesaikan
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 4: Hasil langsung muncul
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
 
-      // Klik tombol "Cek lagi"
       fireEvent.click(screen.getByTestId('tombol-cek-lagi'));
 
-      // Hasil tertutup dan kembali ke Langkah 1
       expect(screen.queryByTestId('komponen-hasil')).toBeNull();
       const indikator = screen.getByTestId('indikator-langkah');
       expect(indikator.textContent).toContain('Langkah 1 dari 4');
 
-      // Pastikan localStorage & cookie tetap kosong
       expect(localStorage.length).toBe(0);
       expect(document.cookie).toBe('');
     });
 
     it('Pembersihan data cross-link sessionStorage saat dibaca (Requirement 34.2)', () => {
-      // Simulasikan URL yang disimpan sementara oleh Cek Chat untuk diteruskan ke Cek Link
       const urlSementara = 'https://undian-berhadiah-palsu.xyz/klaim';
       sessionStorage.setItem('url_dari_chat', urlSementara);
 
       expect(sessionStorage.getItem('url_dari_chat')).toBe(urlSementara);
 
-      // Render CekLinkPage: komponen harus membaca URL dan segera membuangnya dari storage
       render(<CekLinkPage />);
 
       const input = screen.getByTestId('input-link') as HTMLInputElement;
       expect(input.value).toBe(urlSementara);
 
-      // Key url_dari_chat harus langsung dibersihkan dari sessionStorage agar tidak tertinggal
       expect(sessionStorage.getItem('url_dari_chat')).toBeNull();
     });
 
@@ -397,12 +365,8 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     });
   });
 
-  // =========================================================================
-  // 2. Pastikan File Gambar Screenshot Dibuang Setelah Respons Dikirim dan Tidak Disimpan di Server (Requirement 31.2)
-  // =========================================================================
   describe('2. Pembuangan File Gambar Screenshot di Server (Requirement 31.2)', () => {
     it('Route Handler POST /api/cek-chat tidak pernah menulis file gambar ke filesystem server', async () => {
-      // Spy pada seluruh metode penulisan file sistem Node.js
       const writeFileSyncSpy = vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {});
       const writeFileSpy = vi.spyOn(fs, 'writeFile').mockImplementation((...args: any[]) => {
         const callback = args[args.length - 1];
@@ -431,7 +395,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const json = await response.json();
       expect(json.level).toBeDefined();
 
-      // Verifikasi bahwa TIDAK ADA penulisan ke disk server sama sekali
       expect(writeFileSyncSpy).not.toHaveBeenCalled();
       expect(writeFileSpy).not.toHaveBeenCalled();
       expect(promisesWriteFileSpy).not.toHaveBeenCalled();
@@ -439,7 +402,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     });
 
     it('Data gambar bersifat ephemeral dalam lifecycle request dan tidak disimpan di variabel global server', async () => {
-      // Request 1: kirim gambar screenshot
       const req1 = new Request('http://localhost:3000/api/cek-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -452,7 +414,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const res1 = await postCekChat(req1);
       expect(res1.status).toBe(200);
 
-      // Request 2: kirim teks biasa tanpa gambar
       const req2 = new Request('http://localhost:3000/api/cek-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -465,20 +426,15 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       expect(res2.status).toBe(200);
 
       const res2Json = await res2.json();
-      // Hasil request 2 tidak boleh terkontaminasi atau menyimpan referensi gambar dari request 1
       expect(res2Json.halaman).toBe('chat');
       expect(JSON.stringify(res2Json)).not.toContain(sampleJpgBase64);
     });
   });
 
-  // =========================================================================
-  // 3. Pastikan Tidak Ada Fitur Login, Autentikasi, Akun, atau Riwayat Permanen (Requirement 31.3)
-  // =========================================================================
   describe('3. Tidak Ada Fitur Login, Autentikasi, Akun, atau Riwayat Permanen (Requirement 31.3)', () => {
     it('Header dan Footer bersama tidak memuat tautan atau tombol login, daftar, akun, atau riwayat', () => {
       const { unmount: unmountHeader, container: headerContainer } = render(<Header />);
 
-      // Periksa tombol dan link login di Header
       const headerAuthLinks = headerContainer.querySelectorAll(
         'a[href*="login"], a[href*="signin"], a[href*="register"], a[href*="auth"], a[href*="account"]'
       );
@@ -490,7 +446,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
 
       const { unmount: unmountFooter, container: footerContainer } = render(<Footer />);
 
-      // Periksa tombol dan link login di Footer
       const footerAuthLinks = footerContainer.querySelectorAll(
         'a[href*="login"], a[href*="signin"], a[href*="register"], a[href*="auth"], a[href*="account"]'
       );
@@ -498,7 +453,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       expect(screen.queryByRole('button', { name: /^login$|^masuk$|^daftar$|^register$/i })).toBeNull();
       expect(screen.queryByRole('link', { name: /^login$|^masuk$|^daftar$|^register$/i })).toBeNull();
 
-      // Footer menegaskan jaminan "Tanpa login"
       expect(footerContainer.textContent).toContain('Tanpa login');
       expect(footerContainer.textContent).toContain('Data input tidak disimpan di server');
 
@@ -515,7 +469,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       expect(screen.getByTestId('konten-uji')).toBeDefined();
       expect(screen.getByText('Halaman Tanpa Login')).toBeDefined();
 
-      // Tidak ada modal login atau auth redirect
       expect(screen.queryByText(/silakan login/i)).toBeNull();
       expect(screen.queryByText(/masuk ke akun/i)).toBeNull();
     });
@@ -559,9 +512,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     });
   });
 
-  // =========================================================================
-  // 4. Pastikan Tidak Ada Pelacakan Analitik yang Mengidentifikasi Pengguna Secara Individual (Requirement 31.4)
-  // =========================================================================
   describe('4. Tidak Ada Pelacakan Analitik yang Mengidentifikasi Pengguna Secara Individual (Requirement 31.4)', () => {
     it('RootLayout dan Metadata tidak memuat script analitik pelacak identitas pengguna (Google Analytics, Mixpanel, PostHog, Pixel)', () => {
       const { container } = render(
@@ -570,7 +520,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
         </RootLayout>
       );
 
-      // Cari semua elemen script yang di-render
       const scripts = container.querySelectorAll('script');
       for (const s of scripts) {
         const src = s.getAttribute('src') || '';
@@ -586,7 +535,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
         expect(innerContent).not.toContain('mixpanel');
       }
 
-      // Metadata deskripsi menegaskan penggunaan tanpa login
       expect(metadata.description).toContain('tanpa perlu login');
     });
 
@@ -596,7 +544,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       expect(rateLimitModule.RATE_LIMIT_PER_MINUTE).toBe(10);
       expect(rateLimitModule.RATE_LIMIT_PER_DAY).toBe(100);
 
-      // Identifier yang diterima adalah IP anonim, bukan email atau profil pengguna
       const result = await rateLimitModule.checkRateLimit('192.168.1.100', 'chat');
       expect(result).toHaveProperty('success');
       expect(result).toHaveProperty('limit');
@@ -605,9 +552,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     });
   });
 
-  // =========================================================================
-  // 5. Pastikan Sensor Otomatis di Browser Mengganti Data Sensitif Sebelum Dikirim ke Backend (Requirements 12.1, 12.4)
-  // =========================================================================
   describe('5. Sensor Otomatis di Browser Mengganti Data Sensitif Sebelum Dikirim ke Backend (Requirements 12.1, 12.4)', () => {
     it('sensorTeks: mendeteksi dan mengganti seluruh pola nomor HP, rekening, email, dan deretan angka dengan [disensor]', () => {
       const teksInput =
@@ -615,14 +559,12 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
 
       const { hasil, jumlahDiganti } = sensorTeks(teksInput);
 
-      // Seluruh data sensitif harus diganti dengan [disensor]
       expect(hasil).not.toContain('1234567890123456');
       expect(hasil).not.toContain('081234567890');
       expect(hasil).not.toContain('+628198765432');
       expect(hasil).not.toContain('korban@gmail.com');
       expect(hasil).not.toContain('987654');
 
-      // Teks non-sensitif di sekitarnya tetap utuh
       expect(hasil).toContain('Tolong transfer ke rekening [disensor]');
       expect(hasil).toContain('hubungi HP [disensor]');
       expect(hasil).toContain('email ke [disensor]');
@@ -634,7 +576,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     it('Cek Chat: payload yang dikirim ke endpoint /api/cek-chat HANYA memuat teks yang telah disensor', async () => {
       let interceptedPayload: any = null;
 
-      // Intercept fetch untuk memeriksa body request yang dikirimkan oleh browser
       global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const urlStr = typeof input === 'string' ? input : input.toString();
         if (urlStr === '/api/cek-chat' || urlStr.endsWith('/api/cek-chat')) {
@@ -658,26 +599,21 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const btnPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(btnPeriksa);
 
-      // Dialog pratinjau sensor harus muncul di browser sebelum data dikirim ke backend (Requirement 12.2)
       await waitFor(() => {
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
 
-      // Konfirmasi pengiriman
       const btnKirim = screen.getByTestId('btn-lanjut-periksa');
       fireEvent.click(btnKirim);
 
-      // Tunggu respons selesai
       await waitFor(() => {
         expect(interceptedPayload).not.toBeNull();
       });
 
-      // VERIFIKASI KRUSIAL: Payload yang dikirimkan ke backend TIDAK BOLEH memuat data sensitif asli
       expect(interceptedPayload.teks).not.toContain('5412345678901234');
       expect(interceptedPayload.teks).not.toContain('081299887766');
       expect(interceptedPayload.teks).not.toContain('admin@promo.id');
 
-      // Payload harus memuat placeholder [disensor]
       expect(interceptedPayload.teks).toContain('[disensor]');
       expect(interceptedPayload.mode).toBe('teks');
     });
@@ -689,10 +625,8 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const parsed = parseUrl(rawUrl);
       const sanitized = sanitasiParams(parsed);
 
-      // Parameter non-sensitif dipertahankan
       expect(sanitized.params).toEqual({ ref: 'whatsapp_group' });
 
-      // Parameter sensitif dibuang dari URL bersih
       expect(sanitized.urlBersih).toContain('ref=whatsapp_group');
       expect(sanitized.urlBersih).not.toContain('secretToken123');
       expect(sanitized.urlBersih).not.toContain('supersecret');
@@ -701,9 +635,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
     });
   });
 
-  // =========================================================================
-  // 6. Pastikan Console Logging Backend Tidak Mencatat Data Sensitif Pengguna (Requirement 25.4)
-  // =========================================================================
   describe('6. Console Logging Backend Tidak Mencatat Data Sensitif Pengguna (Requirement 25.4)', () => {
     it('POST /api/cek-chat: tidak mencatat teks pesan chat, rekening, nomor HP, email, atau password di log', async () => {
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -713,7 +644,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const sensitiveConversation =
         'Transfer sekarang ke rekening 9876543210123456 atas nama Penipu, kontak 081234567899, email target@scam.org, password rahasia_banget_123';
 
-      // 1. Request Sukses
       const reqSukses = new Request('http://localhost:3000/api/cek-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -725,7 +655,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const resSukses = await postCekChat(reqSukses);
       expect(resSukses.status).toBe(200);
 
-      // 2. Request Error / Invalid
       const reqError = new Request('http://localhost:3000/api/cek-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -737,14 +666,12 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
       const resError = await postCekChat(reqError);
       expect(resError.status).toBe(400);
 
-      // Kumpulkan seluruh log dari semua level
       const allLogOutputs = [
         ...logSpy.mock.calls.flat(),
         ...warnSpy.mock.calls.flat(),
         ...errorSpy.mock.calls.flat(),
       ].map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)));
 
-      // Verifikasi bahwa TIDAK ADA log yang memuat data sensitif pengguna
       for (const logMsg of allLogOutputs) {
         expect(logMsg).not.toContain('9876543210123456');
         expect(logMsg).not.toContain('081234567899');
@@ -753,7 +680,6 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
         expect(logMsg).not.toContain('Transfer sekarang ke rekening');
       }
 
-      // Log hanya boleh memuat metadata operasional
       const logGabungan = allLogOutputs.join(' ');
       expect(logGabungan).toContain('status=');
       expect(logGabungan).toContain('durasi=');
@@ -784,14 +710,12 @@ describe('Pengujian Privasi dan Pengelolaan Data — Task 15.7 (Requirements 12.
         ...errorSpy.mock.calls.flat(),
       ].map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)));
 
-      // Verifikasi tidak ada nilai parameter sensitif yang dicatat di console log
       for (const logMsg of allLogOutputs) {
         expect(logMsg).not.toContain('super_secret_token_999');
         expect(logMsg).not.toContain('korban_scam@gmail.com');
         expect(logMsg).not.toContain('554433221100');
       }
 
-      // Log hanya boleh memuat ringkasan struktural
       const logGabungan = allLogOutputs.join(' ');
       expect(logGabungan).toContain('POST /api/cek-link');
       expect(logGabungan).toContain('status');

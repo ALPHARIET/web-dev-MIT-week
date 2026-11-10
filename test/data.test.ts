@@ -51,20 +51,18 @@ describe('File Data Bersama (Task 1.5)', () => {
       const namaKanal = langkahDarurat.kanal_lapor.map((k) => k.nama.toLowerCase());
       const kontakKanal = langkahDarurat.kanal_lapor.map((k) => k.kontak.toLowerCase());
 
-      // IASC
+      // ===== IASC =====
       expect(
         namaKanal.some((n) => n.includes('iasc')) || kontakKanal.some((k) => k.includes('iasc.ojk.go.id'))
       ).toBe(true);
 
-      // OJK 157
+      // ===== OJK 157 =====
       expect(
         namaKanal.some((n) => n.includes('ojk')) || kontakKanal.some((k) => k.includes('157'))
       ).toBe(true);
 
-      // Bank / E-Wallet
       expect(namaKanal.some((n) => n.includes('bank'))).toBe(true);
 
-      // Platform pesan
       expect(
         namaKanal.some((n) => n.includes('platform') || n.includes('pesan'))
       ).toBe(true);
@@ -148,7 +146,6 @@ describe('File Data Bersama (Task 1.5)', () => {
 
     it('memuat variasi substitusi karakter umum (leetspeak)', () => {
       const allVariations = daftarMerek.merek.flatMap((m) => m.variasi);
-      // Contoh: sh0pee, bc4, br1, d4na, t0k0pedia, bpj5
       expect(allVariations.some((v) => v.includes('0') || v.includes('1') || v.includes('4') || v.includes('5'))).toBe(true);
     });
   });

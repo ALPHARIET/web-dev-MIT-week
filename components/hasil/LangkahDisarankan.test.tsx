@@ -73,16 +73,13 @@ describe('components/hasil/LangkahDisarankan', () => {
 
       const html = renderToStaticMarkup(<LangkahDisarankan langkah={langkah} />);
 
-      // Memastikan ol ada
       expect(html).toContain('<ol');
       expect(html).toContain('role="list"');
 
-      // Memastikan ketiga teks langkah ada
       for (const item of langkah) {
         expect(html).toContain(item);
       }
 
-      // Memastikan nomor bulat 1, 2, 3 ada
       expect(html).toContain('data-testid="langkah-nomor-0"');
       expect(html).toContain('data-testid="langkah-nomor-1"');
       expect(html).toContain('data-testid="langkah-nomor-2"');
@@ -96,20 +93,16 @@ describe('components/hasil/LangkahDisarankan', () => {
       const langkah = ['Periksa URL secara mandiri', 'Blokir nomor telepon'];
       const html = renderToStaticMarkup(<LangkahDisarankan langkah={langkah} />);
 
-      // Checkbox inputs
       expect(html).toContain('type="checkbox"');
       expect(html).toContain('id="langkah-check-0"');
       expect(html).toContain('id="langkah-check-1"');
 
-      // Labels terhubung dengan htmlFor
       expect(html).toContain('for="langkah-check-0"');
       expect(html).toContain('for="langkah-check-1"');
 
-      // Target sentuh minimal 44px
       expect(html).toContain('min-w-[44px]');
       expect(html).toContain('min-h-[44px]');
 
-      // Aksesibilitas aria-label
       expect(html).toContain('aria-label="Tandai langkah 1 sudah dilakukan: Periksa URL secara mandiri"');
     });
 
@@ -158,9 +151,7 @@ describe('components/hasil/LangkahDisarankan', () => {
         <LangkahDisarankan langkah={['Tindakan pencegahan pertama', 'Tindakan kedua']} />
       );
 
-      // Teks kontras tinggi menggunakan text-gray-900 / text-gray-700
       expect(html).toContain('text-gray-900');
-      // Badge nomor kontras tinggi bg-blue-700 text-white
       expect(html).toContain('bg-blue-700');
       expect(html).toContain('text-white');
     });

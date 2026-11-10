@@ -14,38 +14,12 @@ import { KomponenHasil } from '@/components/hasil/KomponenHasil';
 import { generateHasilLinkLokal } from '@/lib/aturan/link-rules';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-/**
- * Halaman Cek Link (/cek-link)
- *
- * Komponen client ('use client') untuk memeriksa alamat tautan atau nama domain
- * yang mencurigakan tanpa perlu membukanya.
- *
- * Alur pemeriksaan:
- * 1. Pengguna memasukkan URL / domain (atau memilih dari skenario contoh).
- * 2. Cek URL yang diteruskan dari Cek Chat via sessionStorage.getItem('url_dari_chat') saat mount,
- *    isi otomatis ke input dan bersihkan dari storage.
- * 3. Render KotakPrivasi (halaman="link") sebelum area input.
- * 4. Render TombolContoh (halaman="link") dan InputLink.
- * 5. Jalankan analisis leksikal lokal di browser via generateHasilLinkLokal.
- * 6. Kirim ke API POST /api/cek-link dengan batas timeout 10 detik.
- * 7. Jika API berhasil (200), gunakan FormatDataHasil dari server.
- * 8. Jika API gagal / offline / timeout: gunakan hasil aturan lokal generateHasilLinkLokal (fallback).
- * 9. Render KomponenHasil dengan format seragam.
- * 10. Tampilkan atribusi resmi Google: "Advisory provided by Google" dengan tautan ke Safe Browsing Advisory
- *     dan keterangan kemungkinan false positive dan false negative (Requirement 20.4, 20.5).
- * 11. Tombol "Cek lagi" mengosongkan input dan hasil untuk kembali ke kondisi awal.
- * 12. Dukungan "Coba contoh": jika contoh dipilih dari TombolContoh, gunakan hasilSimulasi langsung
- *     tanpa memanggil API (Requirement 21.1).
- *
- * References: Requirements 8.5, 8.6, 17.2, 17.5, 18.4, 20.4, 20.5, 21.1, 21.2, 21.3, 34.2
- */
 export default function CekLinkPage(): React.JSX.Element {
   const [urlInput, setUrlInput] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasil, setHasil] = useState<FormatDataHasil | null>(null);
   const [isFallback, setIsFallback] = useState<boolean>(false);
 
-  // Pemandu halaman berbasis skrip di Cek Link (Requirement LN-09)
   const {
     pemicu: pemanduPemicu,
     handleFokus: handlePemanduFokus,
@@ -55,10 +29,9 @@ export default function CekLinkPage(): React.JSX.Element {
     resetPemandu,
   } = usePemanduHalaman({
     idleTimeoutMs: 8000,
-    enabled: !hasil, // Hanya aktif selama pengguna berada di formulir input
+    enabled: !hasil,
   });
 
-  // Cek URL yang diteruskan dari Cek Chat via sessionStorage saat mount (Requirement 34.2)
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -69,14 +42,9 @@ export default function CekLinkPage(): React.JSX.Element {
         }
       }
     } catch (_err) {
-      // Abaikan jika akses sessionStorage dibatasi oleh peramban
     }
   }, []);
 
-  /**
-   * Menangani pemilihan skenario dari TombolContoh.
-   * Langsung menggunakan respons API simulasi dari file contoh tanpa memanggil API (Requirement 21.1).
-   */
   const handleContohDipilih = useCallback((contoh: SkenarioContoh) => {
     if ('url' in contoh && 'hasilSimulasi' in contoh) {
       const linkContoh = contoh as SkenarioLink;
@@ -88,11 +56,6 @@ export default function CekLinkPage(): React.JSX.Element {
     }
   }, [handlePemanduTutup]);
 
-  /**
-   * Menangani pengiriman URL untuk diperiksa.
-   * Menjalankan analisis leksikal lokal di browser, lalu memanggil API /api/cek-link
-   * dengan timeout 10 detik. Jika API gagal/offline, fallback ke hasil lokal.
-   */
   const handlePeriksaUrl = async (url: string) => {
     const trimmedUrl = url.trim();
     if (!trimmedUrl) return;
@@ -101,10 +64,8 @@ export default function CekLinkPage(): React.JSX.Element {
     setIsLoading(true);
     setIsFallback(false);
 
-    // 1. Jalankan analisis leksikal lokal di browser (Requirement 19.1 - 19.11)
     const hasilLokal = generateHasilLinkLokal(trimmedUrl);
 
-    // 2. Kirim ke API POST /api/cek-link (tanpa timeout abort paksa)
     const controller = new AbortController();
 
     try {
@@ -126,7 +87,6 @@ export default function CekLinkPage(): React.JSX.Element {
         setHasil(data);
         setIsFallback(false);
       } else {
-        // API non-200: fallback ke hasil aturan lokal dengan status layanan gagal
         setIsFallback(true);
         const fallbackHasil: FormatDataHasil = {
           ...hasilLokal,
@@ -143,7 +103,6 @@ export default function CekLinkPage(): React.JSX.Element {
         setHasil(fallbackHasil);
       }
     } catch (_error) {
-      // Network error atau offline: gunakan fallback hasil lokal
       setIsFallback(true);
       const fallbackHasil: FormatDataHasil = {
         ...hasilLokal,
@@ -163,9 +122,6 @@ export default function CekLinkPage(): React.JSX.Element {
     }
   };
 
-  /**
-   * Mengosongkan kolom input dan hasil pemeriksaan untuk kembali ke kondisi awal.
-   */
   const handleCekLagi = useCallback(() => {
     setUrlInput('');
     setHasil(null);
@@ -176,7 +132,7 @@ export default function CekLinkPage(): React.JSX.Element {
 
   return (
     <div className="w-full max-w-4xl lg:max-w-none mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4">
-      {/* Header Halaman Cek Link */}
+      {/* ===== HEADER HALAMAN CEK LINK ===== */}
       <header data-testid="header-cek-link" className="space-y-2">
         <h1
           data-testid="judul-cek-link"
@@ -194,10 +150,8 @@ export default function CekLinkPage(): React.JSX.Element {
       </header>
 
       <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
-      {/* Kotak Privasi: Hanya ditampilkan sebelum hasil keluar (saat di area input) */}
       {!hasil && <KotakPrivasi halaman="link" className={`w-full ${TATA_CEK.samping}`} />}
 
-      {/* Konten Utama: Area Formulir Input vs Area Hasil Pemeriksaan */}
       {!hasil ? (
         <section
           data-testid="area-input-link"
@@ -214,7 +168,7 @@ export default function CekLinkPage(): React.JSX.Element {
               </p>
             </div>
 
-            {/* Tombol Contoh Fiktif (Requirement 9.1, 9.3, 21.1) */}
+            {/* ===== TOMBOL CONTOH FIKTIF ===== */}
             <div className="flex-shrink-0">
               <TombolContoh
                 halaman="link"
@@ -224,14 +178,14 @@ export default function CekLinkPage(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Pemandu Halaman Berbasis Skrip (Requirement LN-09) */}
+          {/* ===== PEMANDU HALAMAN BERBASIS SKRIP ===== */}
           <PemanduHalaman
             pemicu={pemanduPemicu}
             onTutup={handlePemanduTutup}
             onClose={handlePemanduTutup}
           />
 
-          {/* Input Kolom URL (Requirement 17.1, 17.2, 17.5) */}
+          {/* ===== INPUT KOLOM URL ===== */}
           <InputLink
             onSubmit={handlePeriksaUrl}
             isLoading={isLoading}
@@ -247,7 +201,6 @@ export default function CekLinkPage(): React.JSX.Element {
           aria-label="Hasil Pemeriksaan Link"
           className="space-y-6 animate-fadeIn"
         >
-          {/* Banner Fallback saat API gagal / timeout (Requirement 29.1, 29.3) */}
           {isFallback && (
             <div
               role="alert"
@@ -279,7 +232,6 @@ export default function CekLinkPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {/* Tombol Coba Lagi saat API gagal (Requirement 29.1) */}
               <button
                 type="button"
                 data-testid="tombol-coba-lagi"
@@ -305,7 +257,7 @@ export default function CekLinkPage(): React.JSX.Element {
             </div>
           )}
 
-          {/* Komponen Hasil Bersama (Requirement 6.1, LN-07) */}
+          {/* ===== KOMPONEN HASIL BERSAMA ===== */}
           <KomponenHasil
             hasil={hasil}
             url={urlInput}

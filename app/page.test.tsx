@@ -51,23 +51,19 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const langkahContainer = screen.getByTestId('hero-langkah-list');
       expect(langkahContainer.children).toHaveLength(4);
 
-      // Langkah 1
       const langkah1 = screen.getByTestId('hero-langkah-1');
       expect(langkah1.textContent).toContain('1');
       expect(langkah1.textContent).toContain('Pilih yang mau dicek');
       expect(langkah1.textContent).toContain('pesan chat, tautan web, atau panggilan video dan suara');
 
-      // Langkah 2
       const langkah2 = screen.getByTestId('hero-langkah-2');
       expect(langkah2.textContent).toContain('2');
       expect(langkah2.textContent).toContain('Tempel isinya atau jawab beberapa pertanyaan');
 
-      // Langkah 3
       const langkah3 = screen.getByTestId('hero-langkah-3');
       expect(langkah3.textContent).toContain('3');
       expect(langkah3.textContent).toContain('Lihat tanda bahaya dan alasannya');
 
-      // Langkah 4
       const langkah4 = screen.getByTestId('hero-langkah-4');
       expect(langkah4.textContent).toContain('4');
       expect(langkah4.textContent).toContain('Ikuti langkah yang disarankan');
@@ -90,7 +86,6 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const heroSection = screen.getByTestId('hero-panduan');
       const text = (heroSection.textContent || '').toLowerCase();
 
-      // Memeriksa kata terlarang
       expect(text).not.toContain('pasti aman');
       expect(text).not.toContain('terbukti aman');
       expect(text).not.toContain('100%');
@@ -188,15 +183,10 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const konten = screen.getByTestId('akordeon-konten-cara-penilaian');
       const text = konten.textContent || '';
 
-      // Aturan lokal di browser
       expect(text).toContain('Aturan lokal di browser');
-      // AI Gemini
       expect(text).toContain('AI Gemini');
-      // Google Safe Browsing
       expect(text).toContain('Google Safe Browsing');
-      // Layanan Data Domain (RDAP)
       expect(text).toContain('Layanan Data Domain (RDAP)');
-      // Skor ambang batas dan 3 tingkat kewaspadaan
       expect(text).toContain('ambang batas');
       expect(text).toContain('Waspada tinggi');
       expect(text).toContain('Perlu hati-hati');
@@ -211,12 +201,9 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const konten = screen.getByTestId('akordeon-konten-batasan-deteksi');
       const text = konten.textContent || '';
 
-      // Hal yang tidak bisa dideteksi
       expect(text).toContain('Hal-hal yang tidak bisa dideteksi');
       expect(text).toContain('rekening bank asli');
-      // Bukan jaminan mutlak
       expect(text).toContain('Bukan jaminan mutlak');
-      // False positive & negative
       expect(text).toContain('positif palsu');
       expect(text).toContain('negatif palsu');
     });
@@ -229,12 +216,9 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const konten = screen.getByTestId('akordeon-konten-data-dan-privasi');
       const text = konten.textContent || '';
 
-      // Sensor otomatis
       expect(text).toContain('Sensor otomatis di browser');
       expect(text).toContain('[disensor]');
-      // Tanpa login
       expect(text).toContain('Tanpa login');
-      // Layanan pihak ketiga
       expect(text).toContain('Google Gemini');
       expect(text).toContain('Google Safe Browsing');
       expect(text).toContain('RDAP');
@@ -245,16 +229,13 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const headerPenilaian = screen.getByTestId('akordeon-header-cara-penilaian');
       const kontenPenilaian = screen.getByTestId('akordeon-konten-cara-penilaian');
 
-      // Awalnya tertutup
       expect(headerPenilaian.getAttribute('aria-expanded')).toBe('false');
       expect(kontenPenilaian.hasAttribute('hidden')).toBe(true);
 
-      // Klik 1: Terbuka
       fireEvent.click(headerPenilaian);
       expect(headerPenilaian.getAttribute('aria-expanded')).toBe('true');
       expect(kontenPenilaian.hasAttribute('hidden')).toBe(false);
 
-      // Klik 2: Tertutup kembali
       fireEvent.click(headerPenilaian);
       expect(headerPenilaian.getAttribute('aria-expanded')).toBe('false');
       expect(kontenPenilaian.hasAttribute('hidden')).toBe(true);
@@ -265,14 +246,12 @@ describe('app/page.tsx — Halaman Beranda (Task 6.1)', () => {
       const sectionCaraKerja = screen.getByTestId('section-cara-kerja');
       const text = (sectionCaraKerja.textContent || '').toLowerCase();
 
-      // Verifikasi kata terlarang tidak muncul sebagai klaim/kesimpulan
       expect(text).not.toContain('pasti aman');
       expect(text).not.toContain('terbukti aman');
       expect(text).not.toContain('100%');
       expect(text).not.toContain('terbukti');
       expect(text).not.toContain('dijamin');
       expect(/\bpasti\b/i.test(text)).toBe(false);
-      // Kecuali Safe Browsing (frasa bahasa Inggris)
       const nonSafeBrowsingText = text.replace(/safe browsing/g, '');
       expect(/\baman\b/i.test(nonSafeBrowsingText)).toBe(false);
     });

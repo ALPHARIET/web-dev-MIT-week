@@ -11,21 +11,6 @@ export interface KartuMenuProps {
   className?: string;
 }
 
-/**
- * Komponen kartu menu navigasi di halaman Beranda.
- * Menghubungkan pengguna ke halaman Cek Chat, Cek Link, atau Cek Video & Suara.
- *
- * Fitur & Aksesibilitas:
- * - Menggunakan Next.js <Link href={href}>
- * - Target sentuh minimal 44px (Requirement 27.2)
- * - Tampilan full-width, stackable vertikal, responsif di layar mobile 360px hingga desktop (Requirement 3.1, 27.1)
- * - Nomor / badge penanda kartu yang jelas (Requirement 3.1)
- * - Judul kartu yang menonjol dan deskripsi singkat (Requirement 3.2)
- * - Tombol aksi / panah navigasi yang jelas
- * - Hover state dan focus-visible styling yang ramah navigasi keyboard (WCAG AA)
- *
- * References: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 27.2
- */
 export function KartuMenu({
   nomor,
   judul,
@@ -44,7 +29,7 @@ export function KartuMenu({
     >
       <div className="flex items-start sm:items-center lg:items-start justify-between gap-3.5 sm:gap-5">
         <div className="flex items-start sm:items-center lg:flex-col lg:items-start gap-3.5 sm:gap-5 flex-1 min-w-0">
-          {/* Penanda Nomor & Ikon Kartu */}
+          {/* ===== PENANDA NOMOR & IKON KARTU ===== */}
           <div
             data-testid="kartu-menu-penanda"
             className="relative flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-obsidian text-limestone transition-colors duration-200"
@@ -75,7 +60,6 @@ export function KartuMenu({
             )}
           </div>
 
-          {/* Konten Teks: Judul, Badge, dan Deskripsi */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-2xl text-gray-900">
@@ -96,7 +80,7 @@ export function KartuMenu({
           </div>
         </div>
 
-        {/* Tombol aksi / panah navigasi */}
+        {/* ===== TOMBOL AKSI / PANAH NAVIGASI ===== */}
         <div
           data-testid="kartu-menu-panah"
           className="flex-shrink-0 self-center lg:self-start text-obsidian group-hover:translate-x-1 transition-transform duration-200 min-w-[24px]"

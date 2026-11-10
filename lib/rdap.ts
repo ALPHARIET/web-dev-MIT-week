@@ -1,54 +1,32 @@
-/**
- * lib/rdap.ts
- *
- * Helper pengecekan umur domain via Registration Data Access Protocol (RDAP).
- * Menghubungi https://rdap.org/domain/{domain} dengan batas timeout 5 detik (default).
- * Ekstrak domain dari URL menggunakan parseUrl dari lib/sanitasi-url.
- *
- * References: Requirements 18.1, 18.2, 19.3, 19.11
- */
-
 import { parseUrl } from './sanitasi-url';
 
-/**
- * Interface hasil pengecekan RDAP sesuai spesifikasi tugas
- */
 export interface RdapResult {
   tersedia: boolean;
-  tanggalRegistrasi?: string; // ISO string
+  tanggalRegistrasi?: string;
   umurHari?: number;
   status: 'ok' | 'gagal' | 'tidak_tersedia';
   keterangan?: string;
 }
 
-/**
- * Opsi tambahan untuk fungsi queryDomainAge
- */
+interface EventRdap {
+  eventAction?: unknown;
+  eventDate?: unknown;
+}
+
+interface RdapRespons {
+  events?: EventRdap[];
+}
+
 export interface QueryDomainAgeOptions {
-  /** Batas waktu permintaan dalam milidetik (default: 5.000 ms) */
   timeoutMs?: number;
-  /** Implementasi fetch kustom (berguna untuk pengujian atau interceptor) */
   fetchFn?: typeof fetch;
-  /** Waktu acuan saat ini untuk menghitung umur (Date atau timestamp ms) */
   now?: Date | number;
 }
 
-/** Base URL untuk bootstrap query RDAP domain */
 export const RDAP_BASE_URL = 'https://rdap.org/domain';
 
-/** Timeout default untuk panggilan RDAP: 5.000 ms (Requirement 18.2) */
 export const DEFAULT_RDAP_TIMEOUT_MS = 5000;
 
-/**
- * Mengekstrak nama domain terdaftar dari URL atau string nama domain
- * menggunakan parseUrl dari lib/sanitasi-url.
- *
- * Mengembalikan nama domain (misal: "example.com" atau "shopee.co.id") dalam huruf kecil,
- * atau null jika tidak valid, tidak memiliki TLD, atau berupa alamat IP.
- *
- * @param domainOrUrl String URL lengkap atau nama domain
- * @returns Nama domain bersih atau null
- */
 export function extractDomain(domainOrUrl: string): string | null {
   if (!domainOrUrl || typeof domainOrUrl !== 'string') {
     return null;
@@ -60,7 +38,6 @@ export function extractDomain(domainOrUrl: string): string | null {
   }
 
   const parsed = parseUrl(trimmed);
-  // Domain harus memiliki domainUtama dan tld yang valid (bukan IP dan bukan tanpa TLD)
   if (parsed.domainUtama && parsed.tld) {
     return `${parsed.domainUtama}.${parsed.tld}`.toLowerCase();
   }
@@ -68,13 +45,6 @@ export function extractDomain(domainOrUrl: string): string | null {
   return null;
 }
 
-/**
- * Menghitung umur domain dalam satuan hari berdasarkan tanggal registrasi RDAP.
- *
- * @param eventDateStr String tanggal registrasi ISO dari response RDAP
- * @param now Waktu acuan saat ini (Date atau number)
- * @returns Objek berisi tanggal registrasi ISO string dan umur dalam hari
- */
 export function calculateDomainAge(
   eventDateStr: string,
   now?: Date | number
@@ -100,26 +70,10 @@ export function calculateDomainAge(
   };
 }
 
-/**
- * Memeriksa umur domain melalui RDAP service.
- *
- * Alur pemeriksaan:
- * 1. Ekstrak nama domain dari URL menggunakan parseUrl dari lib/sanitasi-url.
- * 2. Panggil RDAP service: `https://rdap.org/domain/{domain}` dengan batas waktu 5 detik.
- * 3. Cari event "registration" di array events response RDAP JSON.
- * 4. Hitung selisih hari dari eventDate ke hari ini.
- * 5. Jika RDAP mengembalikan 404 / 501 / network error / TLD tidak mendukung:
- *    return `{ tersedia: false, status: 'tidak_tersedia' }` tanpa crash.
- *
- * @param domainOrUrl Nama domain atau URL lengkap yang ingin diperiksa
- * @param options Opsi timeout dan kustomisasi lainnya
- * @returns Objek RdapResult
- */
 export async function queryDomainAge(
   domainOrUrl: string,
   options?: QueryDomainAgeOptions
 ): Promise<RdapResult> {
-  // 1. Ekstrak nama domain dari input
   const domain = extractDomain(domainOrUrl);
 
   if (!domain) {
@@ -150,11 +104,7 @@ export async function queryDomainAge(
       signal: controller.signal,
     });
 
-    // 2. Tangani status HTTP error
     if (!response.ok) {
-      // 404 = Domain tidak ditemukan
-      // 501 = Not Implemented (TLD tidak mendukung RDAP)
-      // 400 / 422 = Bad request / parameter tidak didukung
       if (
         response.status === 404 ||
         response.status === 501 ||
@@ -173,7 +123,6 @@ export async function queryDomainAge(
         };
       }
 
-      // Kesalahan server lainnya (HTTP 500, 502, 503, dll.)
       return {
         tersedia: false,
         status: 'gagal',
@@ -181,10 +130,9 @@ export async function queryDomainAge(
       };
     }
 
-    // 3. Parse JSON body
-    let data: any;
+    let data: RdapRespons | null;
     try {
-      data = await response.json();
+      data = (await response.json()) as RdapRespons | null;
     } catch {
       return {
         tersedia: false,
@@ -193,10 +141,9 @@ export async function queryDomainAge(
       };
     }
 
-    // 4. Cari event 'registration' di array events
-    const events = Array.isArray(data?.events) ? data.events : [];
+    const events: EventRdap[] = Array.isArray(data?.events) ? data.events : [];
     const regEvent = events.find(
-      (e: any) =>
+      (e) =>
         typeof e?.eventAction === 'string' &&
         e.eventAction.trim().toLowerCase() === 'registration'
     );
@@ -209,8 +156,7 @@ export async function queryDomainAge(
       };
     }
 
-    // 5. Hitung selisih hari dari eventDate ke hari ini
-    const calculated = calculateDomainAge(regEvent.eventDate, options?.now);
+    const calculated = calculateDomainAge(regEvent.eventDate as string, options?.now);
     if (!calculated) {
       return {
         tersedia: false,
@@ -227,7 +173,6 @@ export async function queryDomainAge(
       keterangan: `Domain terdaftar sejak ${calculated.tanggalRegistrasi.slice(0, 10)} (umur: ${calculated.umurHari} hari)`,
     };
   } catch (err: unknown) {
-    // 6. Tangani network error, timeout, dan exception lainnya tanpa crash
     const isTimeout =
       err instanceof Error &&
       (err.name === 'AbortError' ||

@@ -7,12 +7,8 @@ export interface KartuTemuanProps {
   className?: string;
 }
 
-/**
- * Pemetaan kode sumber temuan ke label yang mudah dipahami pengguna.
- * References: Requirement 6.6
- */
 export const SUMBER_TEMUAN_LABEL: Record<SumberTemuan, string> = {
-  aturan: 'Aturan Lokal',
+  aturan: 'Pola penipuan',
   ai: 'Analisis AI',
   safe_browsing: 'Google Safe Browsing',
   rdap: 'Data Domain (RDAP)',
@@ -20,9 +16,6 @@ export const SUMBER_TEMUAN_LABEL: Record<SumberTemuan, string> = {
   reality_defender: 'Reality Defender',
 };
 
-/**
- * Styling badge sumber dengan kontras warna WCAG AA (rasio kontras > 4.5:1 terhadap latar).
- */
 const SUMBER_BADGE_STYLE: Record<SumberTemuan, string> = {
   aturan: 'bg-blue-50 text-blue-800 border-blue-200',
   ai: 'bg-purple-50 text-purple-800 border-purple-200',
@@ -32,19 +25,10 @@ const SUMBER_BADGE_STYLE: Record<SumberTemuan, string> = {
   reality_defender: 'bg-indigo-50 text-indigo-800 border-indigo-200',
 };
 
-/**
- * Mengambil label sumber yang ramah pengguna.
- */
 export function getLabelSumber(sumber: SumberTemuan): string {
   return SUMBER_TEMUAN_LABEL[sumber] ?? sumber;
 }
 
-/**
- * Komponen kartu untuk merender satu temuan mencurigakan.
- * Memuat judul, badge sumber, penjelasan modus & risiko, serta kotak kutipan/kode untuk bukti.
- *
- * References: Requirements 6.6, 27.3
- */
 export function KartuTemuan({ temuan, nomor, className = '' }: KartuTemuanProps) {
   const labelSumber = getLabelSumber(temuan.sumber);
   const badgeStyle =
@@ -61,7 +45,7 @@ export function KartuTemuan({ temuan, nomor, className = '' }: KartuTemuanProps)
           : `Temuan: ${temuan.judul}`
       }
     >
-      {/* Header: Judul Temuan dan Badge Sumber */}
+      {/* ===== HEADER: JUDUL TEMUAN DAN BADGE SUMBER ===== */}
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           {nomor !== undefined && (
@@ -87,12 +71,10 @@ export function KartuTemuan({ temuan, nomor, className = '' }: KartuTemuanProps)
         </span>
       </header>
 
-      {/* Penjelasan temuan: cara kerja modus dan risiko */}
       <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
         {temuan.penjelasan}
       </p>
 
-      {/* Bukti (kutipan kalimat atau bagian URL) ditampilkan dalam kotak kode/kutipan */}
       {adaBukti && (
         <div className="pt-1" data-testid="kotak-bukti">
           <div className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1.5">

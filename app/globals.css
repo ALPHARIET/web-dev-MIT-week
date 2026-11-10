@@ -5,7 +5,6 @@
 :root {
   --background: #e2e2df;
   --foreground: #070607;
-  /* Satu skala judul untuk semua halaman. */
   --judul-1: clamp(2.5rem, 1.8rem + 2.6vw, 4.25rem);
   --judul-2: clamp(1.625rem, 1.3rem + 1.1vw, 2.5rem);
   --judul-3: clamp(1.375rem, 1.2rem + 0.4vw, 1.75rem);
@@ -16,9 +15,8 @@ body {
   background: var(--background);
 }
 
-/* ---------- Tipografi ---------- */
+/* ===== TIPOGRAFI ===== */
 
-/* Semua judul memakai satu font. Judul yang sangat kecil tetap DM Sans agar terbaca. */
 h1,
 h2:not(.text-xs):not(.text-sm),
 h3[class*="text-lg"],
@@ -53,7 +51,6 @@ b {
   font-weight: 500;
 }
 
-/* Label kecil kapital bukan bagian dari gaya ini. */
 .uppercase {
   text-transform: none;
 }
@@ -64,32 +61,46 @@ b {
   letter-spacing: 0;
 }
 
-/* ---------- Tombol dan kontrol ---------- */
+/* ===== TOMBOL DAN KONTROL ===== */
 
-/* Tombol utama: pill ember dengan teks gelap (kontras ember + putih tidak lolos AA). */
 .bg-blue-500,
 .bg-blue-600,
 .bg-red-500,
 .bg-red-600 {
-  background-color: #fc5000;
-  color: #070607;
-  border-radius: 800px;
+  background-color: #fc5000 !important;
+  color: #070607 !important;
+  border-radius: 800px !important;
 }
 
+.hover\:bg-blue-600:hover,
 .hover\:bg-blue-700:hover,
 .hover\:bg-blue-800:hover,
+.hover\:bg-red-600:hover,
 .hover\:bg-red-700:hover,
 .hover\:bg-red-800:hover {
-  background-color: #ff6f2b;
-  color: #070607;
+  background-color: #ff6f2b !important;
+  color: #070607 !important;
 }
 
-/* Tidak ada tombol bersudut kecil. */
+.active\:bg-blue-700:active,
+.active\:bg-blue-800:active,
+.active\:bg-red-700:active,
+.active\:bg-red-800:active {
+  background-color: #e04600 !important;
+  color: #070607 !important;
+}
+
+.bg-blue-500 *,
+.bg-blue-600 *,
+.bg-red-500 *,
+.bg-red-600 * {
+  color: inherit;
+}
+
 :is(button, a):is(.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
   border-radius: 40px;
 }
 
-/* Tombol sekunder: garis obsidian 1.5px. */
 :is(button, a).border:is(.border-blue-100, .border-blue-200, .border-blue-300) {
   border-color: #070607;
   border-width: 1.5px;
@@ -102,7 +113,6 @@ select {
   border-radius: 100px !important;
 }
 
-/* Kolom dengan ikon di kiri sudah punya padding sendiri. */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([class*="pl-"]),
 select:not([class*="pl-"]) {
   padding-left: 24px !important;
@@ -115,7 +125,6 @@ textarea {
   padding: 20px 24px !important;
 }
 
-/* Navigasi header. */
 header nav a {
   color: #070607;
   border: none;
@@ -129,7 +138,6 @@ header nav a[aria-current="page"] {
   box-shadow: none;
 }
 
-/* Navigasi footer: tanpa border/outline kotak saat difokuskan atau diklik, jarak tautan rapat proporsional. */
 footer a,
 footer a:focus,
 footer a:focus-visible,
@@ -143,14 +151,12 @@ footer ul a {
   min-height: 28px !important;
 }
 
-/* ---------- Permukaan ---------- */
+/* ===== PERMUKAAN ===== */
 
-/* Tingkat kewaspadaan dibedakan lewat warna permukaan, bukan garis. */
 [data-level] {
   border-width: 0;
 }
 
-/* Teks abu tidak terbaca di atas permukaan ember. */
 .bg-red-50,
 .bg-red-100 {
   color: #070607;
@@ -161,7 +167,6 @@ footer ul a {
   color: #070607;
 }
 
-/* Pemisah khas: titik-titik obsidian 1.5px. */
 .border-t:is(.border-gray-100, .border-gray-200),
 .border-b:is(.border-gray-100, .border-gray-200) {
   border-style: dotted;
@@ -176,7 +181,6 @@ footer ul a {
   border-bottom-width: 1.5px;
 }
 
-/* Kursor ketik pemandu. Margin negatif menjaga lebarnya tidak menggeser baris. */
 .pemandu-caret {
   display: inline-block;
   width: 2px;

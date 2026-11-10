@@ -10,10 +10,6 @@ export const metadata: Metadata = {
     'Ragu sama chat, link, atau video call yang kamu terima? Cek dulu di sini tanpa login untuk mengenali indikasi penipuan digital sedini mungkin.',
 };
 
-/**
- * Daftar 4 langkah cara pakai aplikasi untuk Panel Panduan (Hero).
- * References: Requirement 2.1
- */
 const LANGKAH_CARA_PAKAI = [
   {
     nomor: 1,
@@ -37,16 +33,6 @@ const LANGKAH_CARA_PAKAI = [
   },
 ] as const;
 
-/**
- * Daftar item untuk Akordeon "Cara kerja dan batasan" (#cara-kerja).
- * Memuat minimal 3 bagian:
- * 1. Cara penilaian tiap halaman cek (aturan lokal browser, AI Gemini, Safe Browsing, RDAP, skor ambang batas, 3 tingkat kewaspadaan)
- * 2. Batasan deteksi (hal-hal yang tidak bisa dideteksi, tidak menjamin seratus persen, false positive/negative)
- * 3. Data apa yang dikirim ke mana (sensor otomatis di browser, data tanpa login, transparansi pihak ketiga)
- *
- * Seluruh teks mematuhi aturan bebas kata terlarang ("aman", "pasti", "terbukti", "100%") sebagai kesimpulan.
- * References: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 30.1
- */
 const CARA_KERJA_ITEMS: ItemAkordeon[] = [
   {
     id: 'cara-penilaian',
@@ -155,12 +141,6 @@ const CARA_KERJA_ITEMS: ItemAkordeon[] = [
 export default function Home(): React.JSX.Element {
   return (
     <div className="w-full space-y-8 sm:space-y-12">
-      {/* =========================================================================
-          Bagian 1: Panel Panduan (Hero)
-          - Ditampilkan langsung tanpa klik
-          - Memuat judul sambutan, tujuan aplikasi, 4 langkah cara pakai, catatan privasi
-          - References: Requirements 2.1, 2.2, 2.3, 2.4, 27.1
-          ========================================================================= */}
       <section
         data-testid="hero-panduan"
         aria-labelledby="hero-judul"
@@ -186,13 +166,6 @@ export default function Home(): React.JSX.Element {
         <DemoPemeriksaan />
       </section>
 
-      {/* =========================================================================
-          Bagian 2: Tiga Kartu Menu Navigasi
-          - Tiga kartu menu bertumpuk vertikal dan selebar layar
-          - Urutan: Cek Chat, Cek Link, Cek Video & Suara
-          - Menggunakan komponen KartuMenu
-          - References: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 27.1, 27.2
-          ========================================================================= */}
       <section
         data-testid="menu-kartu-container"
         aria-labelledby="menu-heading"
@@ -202,7 +175,7 @@ export default function Home(): React.JSX.Element {
           Pilihan Menu Pengecekan
         </h2>
 
-        {/* Kartu 1: Cek Chat */}
+        {/* ===== KARTU 1: CEK CHAT ===== */}
         <KartuMenu
           nomor={1}
           judul="Cek Chat"
@@ -226,7 +199,7 @@ export default function Home(): React.JSX.Element {
           }
         />
 
-        {/* Kartu 2: Cek Link */}
+        {/* ===== KARTU 2: CEK LINK ===== */}
         <KartuMenu
           nomor={2}
           judul="Cek Link"
@@ -250,7 +223,7 @@ export default function Home(): React.JSX.Element {
           }
         />
 
-        {/* Kartu 3: Cek Video & Suara */}
+        {/* ===== KARTU 3: CEK VIDEO & SUARA ===== */}
         <KartuMenu
           nomor={3}
           judul="Cek Video & Suara"
@@ -276,7 +249,7 @@ export default function Home(): React.JSX.Element {
       </section>
 
       <section aria-label="Cara pakai dan privasi" className="rounded-2xl bg-limestone p-6 sm:p-10">
-        {/* 4 Langkah Cara Pakai */}
+        {/* ===== 4 LANGKAH CARA PAKAI ===== */}
         <div>
           <h2 className="text-obsidian">
             Cara pakai
@@ -310,7 +283,7 @@ export default function Home(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Catatan Privasi Transparan */}
+        {/* ===== CATATAN PRIVASI TRANSPARAN ===== */}
         <div
           data-testid="hero-catatan-privasi"
           className="mt-8 p-5 rounded-xl bg-sulfur text-obsidian text-sm leading-relaxed flex items-start gap-3"
@@ -344,13 +317,6 @@ export default function Home(): React.JSX.Element {
         </div>
       </section>
 
-      {/* =========================================================================
-          Bagian 3: Akordeon "Cara kerja dan batasan"
-          - Tautan anchor target: #cara-kerja (terhubung dari Footer)
-          - Menjelaskan cara penilaian tiap halaman, batasan deteksi, dan data dikirim ke mana
-          - Menggunakan komponen Akordeon
-          - References: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 27.1
-          ========================================================================= */}
       <section
         id="cara-kerja"
         data-testid="section-cara-kerja"

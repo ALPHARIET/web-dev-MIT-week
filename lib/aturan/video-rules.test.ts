@@ -94,19 +94,17 @@ describe('lib/aturan/video-rules.ts', () => {
 
     it('menjumlahkan bobot beberapa jawaban secara aditif', () => {
       const jawaban: JawabanWizardVideo = {
-        apa_diminta: 'transfer', // +3
-        nomor_akun: 'nomor_baru', // +2
-        bisa_telepon_balik: false, // +3
-        tanda_checklist: ['bibir tidak sinkron'], // +1
+        apa_diminta: 'transfer',
+        nomor_akun: 'nomor_baru',
+        bisa_telepon_balik: false,
+        tanda_checklist: ['bibir tidak sinkron'],
       };
-      // 3 + 2 + 3 + 1 = 9
       expect(evaluasiVideo(jawaban).skor).toBe(9);
     });
   });
 
   describe('Kombinasi Khusus Langsung Tinggi (Requirement 23.2)', () => {
     it('menetapkan level "tinggi" pada kombinasi: (minta uang/transfer/OTP) AND (darurat/desakan)', () => {
-      // transfer (+3) + darurat (+2) = skor 5 (seharusnya sedang jika tanpa kombinasi khusus)
       const res1 = evaluasiVideo({
         apa_diminta: 'transfer',
         darurat_desakan: true,
@@ -114,7 +112,6 @@ describe('lib/aturan/video-rules.ts', () => {
       expect(res1.skor).toBe(5);
       expect(res1.level).toBe('tinggi');
 
-      // voucher (+3) + darurat (+2) = skor 5 -> tinggi
       const res2 = evaluasiVideo({
         apa_diminta: 'voucher',
         darurat_desakan: true,
@@ -122,7 +119,6 @@ describe('lib/aturan/video-rules.ts', () => {
       expect(res2.skor).toBe(5);
       expect(res2.level).toBe('tinggi');
 
-      // pulsa (+3) + darurat (+2) = skor 5 -> tinggi
       const res3 = evaluasiVideo({
         apa_diminta: 'pulsa',
         darurat_desakan: true,
@@ -132,7 +128,6 @@ describe('lib/aturan/video-rules.ts', () => {
     });
 
     it('menetapkan level "tinggi" pada kombinasi: (minta uang/transfer/OTP) AND (diminta_rahasiakan)', () => {
-      // transfer (+3) + rahasia (+2) = skor 5 -> tinggi
       const res = evaluasiVideo({
         apa_diminta: 'transfer',
         diminta_rahasiakan: true,
@@ -142,7 +137,6 @@ describe('lib/aturan/video-rules.ts', () => {
     });
 
     it('menetapkan level "tinggi" pada kombinasi: (tokoh_publik) AND (janji_untung_ajakan)', () => {
-      // tokoh (+1) + janji untung (+3) = skor 4 (seharusnya sedang jika tanpa kombinasi khusus)
       const res = evaluasiVideo({
         siapa_tampil: 'tokoh_publik',
         janji_untung_ajakan: true,
@@ -152,7 +146,6 @@ describe('lib/aturan/video-rules.ts', () => {
     });
 
     it('menetapkan level "tinggi" pada kombinasi: (tokoh_publik) AND (apa_diminta === "investasi")', () => {
-      // tokoh (+1) + investasi (+3) = skor 4 -> tinggi
       const res = evaluasiVideo({
         siapa_tampil: 'tokoh_publik',
         apa_diminta: 'investasi',
@@ -162,7 +155,6 @@ describe('lib/aturan/video-rules.ts', () => {
     });
 
     it('menetapkan level "tinggi" pada kombinasi: (situasi === "tokoh") AND (janji_untung_ajakan)', () => {
-      // situasi tokoh (0) + janji untung (+3) = skor 3 -> tinggi karena kombinasi khusus
       const res = evaluasiVideo({
         situasi: 'tokoh',
         janji_untung_ajakan: true,
@@ -172,7 +164,6 @@ describe('lib/aturan/video-rules.ts', () => {
     });
 
     it('menetapkan level "tinggi" pada kombinasi: (situasi === "tokoh") AND (apa_diminta === "investasi")', () => {
-      // situasi tokoh (0) + investasi (+3) = skor 3 -> tinggi karena kombinasi khusus
       const res = evaluasiVideo({
         situasi: 'tokoh',
         apa_diminta: 'investasi',
@@ -187,42 +178,42 @@ describe('lib/aturan/video-rules.ts', () => {
       expect(evaluasiVideo({}).level).toBe('tidak_ditemukan');
       expect(evaluasiVideo({ nomor_akun: 'akun_tidak_dikenal' }).level).toBe(
         'tidak_ditemukan'
-      ); // skor 1
+      );
       expect(evaluasiVideo({ apa_diminta: 'link_apk' }).level).toBe(
         'tidak_ditemukan'
-      ); // skor 2
+      );
     });
 
     it('mengembalikan "sedang" jika skor 3 sampai 5 dan bukan kombinasi khusus', () => {
       expect(
         evaluasiVideo({
-          apa_diminta: 'link_apk', // +2
-          nomor_akun: 'akun_tidak_dikenal', // +1
+          apa_diminta: 'link_apk',
+          nomor_akun: 'akun_tidak_dikenal',
         }).level
-      ).toBe('sedang'); // skor 3
+      ).toBe('sedang');
 
       expect(
         evaluasiVideo({
-          bisa_telepon_balik: false, // +3
-          nomor_akun: 'nomor_baru', // +2
+          bisa_telepon_balik: false,
+          nomor_akun: 'nomor_baru',
         }).level
-      ).toBe('sedang'); // skor 5, bukan minta uang dan bukan tokoh
+      ).toBe('sedang');
     });
 
     it('mengembalikan "tinggi" jika skor >= 6', () => {
       expect(
         evaluasiVideo({
-          apa_diminta: 'otp_pin', // +4
-          nomor_akun: 'nomor_baru', // +2
+          apa_diminta: 'otp_pin',
+          nomor_akun: 'nomor_baru',
         }).level
-      ).toBe('tinggi'); // skor 6
+      ).toBe('tinggi');
 
       expect(
         evaluasiVideo({
-          bisa_telepon_balik: false, // +3
-          checklist: ['a', 'b', 'c', 'd'], // +4
+          bisa_telepon_balik: false,
+          checklist: ['a', 'b', 'c', 'd'],
         }).level
-      ).toBe('tinggi'); // skor 7
+      ).toBe('tinggi');
     });
   });
 

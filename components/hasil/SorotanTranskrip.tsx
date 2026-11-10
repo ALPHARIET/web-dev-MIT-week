@@ -20,26 +20,16 @@ interface Segment {
   buktis?: string[];
 }
 
-/**
- * Escape karakter spesial regex.
- */
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Membersihkan kutipan pembungkus dan whitespace dari potongan bukti.
- */
 function bersihkanKutipan(teks: string): string {
   return teks
     .replace(/^["'“”‘’\s]+|["'“”‘’\s]+$/g, '')
     .trim();
 }
 
-/**
- * Memecah item bukti menjadi frasa-frasa pencarian.
- * Menangani elipsis (...) jika bukti memuat kutipan terputus.
- */
 function ekstrakFrasaPencarian(
   buktiList: string[]
 ): Array<{ frasa: string; buktiAsli: string }> {
@@ -50,7 +40,6 @@ function ekstrakFrasaPencarian(
     const itemBersih = bersihkanKutipan(item);
     if (!itemBersih) continue;
 
-    // Jika memuat elipsis (...) atau (…), pecah menjadi beberapa bagian
     const potongan = itemBersih
       .split(/\.{2,}|\u2026/)
       .map(bersihkanKutipan)
@@ -65,15 +54,10 @@ function ekstrakFrasaPencarian(
     }
   }
 
-  // Urutkan berdasarkan panjang frasa secara menurun agar frasa lebih panjang diprioritaskan
   hasil.sort((a, b) => b.frasa.length - a.frasa.length);
   return hasil;
 }
 
-/**
- * Menemukan rentang indeks (start, end) dari semua frasa di dalam transkrip
- * serta menggabungkan rentang yang tumpang tindih.
- */
 function hitungRentangSorotan(
   transkrip: string,
   targetFrasa: Array<{ frasa: string; buktiAsli: string }>
@@ -86,7 +70,6 @@ function hitungRentangSorotan(
     const kataList = frasa.split(/\s+/).filter(Boolean);
     if (kataList.length === 0) continue;
 
-    // Gunakan regex case-insensitive dengan kelonggaran spasi
     const polaString = kataList.map(escapeRegex).join('\\s+');
     try {
       const regex = new RegExp(polaString, 'gi');
@@ -99,13 +82,11 @@ function hitungRentangSorotan(
           intervalMentah.push({ start, end, bukti: buktiAsli });
         }
 
-        // Hindari infinite loop pada regex zero-length match
         if (regex.lastIndex === match.index) {
           regex.lastIndex++;
         }
       }
     } catch {
-      // Fallback ke indexOf sederhana jika regex gagal
       const lowerTranskrip = transkrip.toLowerCase();
       const lowerFrasa = frasa.toLowerCase();
       let pos = 0;
@@ -122,10 +103,8 @@ function hitungRentangSorotan(
 
   if (intervalMentah.length === 0) return [];
 
-  // Urutkan berdasarkan posisi start menaik, lalu end menurun
   intervalMentah.sort((a, b) => a.start - b.start || b.end - a.end);
 
-  // Gabungkan rentang yang beririsan atau bersebelahan
   const rentangTergabung: IntervalMatch[] = [];
   for (const item of intervalMentah) {
     if (rentangTergabung.length === 0) {
@@ -139,7 +118,6 @@ function hitungRentangSorotan(
 
     const prev = rentangTergabung[rentangTergabung.length - 1];
     if (item.start <= prev.end) {
-      // Tumpang tindih atau bersambung
       prev.end = Math.max(prev.end, item.end);
       if (!prev.buktis.includes(item.bukti)) {
         prev.buktis.push(item.bukti);
@@ -156,9 +134,6 @@ function hitungRentangSorotan(
   return rentangTergabung;
 }
 
-/**
- * Memecah transkrip menjadi segmen teks biasa dan segmen yang disorot.
- */
 function buatSegmenTeks(
   transkrip: string,
   rentang: IntervalMatch[]
@@ -195,20 +170,6 @@ function buatSegmenTeks(
   return segmen;
 }
 
-/**
- * SorotanTranskrip
- *
- * Komponen untuk menampilkan transkrip pesan chat dengan sorotan (<mark>) pada
- * kalimat atau frasa pemicu temuan mencurigakan.
- *
- * Kepatuhan Desain & Aksesibilitas:
- * - Menggunakan tag `<mark>` semantik
- * - Styling amber/red berlatar kontras tinggi (WCAG AA compliant, rasio > 10:1)
- * - Menyertakan badge visual penanda temuan pada setiap sorotan
- * - Menyertakan tooltip (via atribut `title` dan aria-label) untuk pembaca layar
- *
- * References: Requirements CH-07 (P1)
- */
 export function SorotanTranskrip({
   transkrip,
   buktiList,
@@ -231,7 +192,6 @@ export function SorotanTranskrip({
     [isKosong, transkrip, rentangSorotan]
   );
 
-  // Jika transkrip kosong, tidak perlu merender apa pun
   if (isKosong) {
     return null;
   }
@@ -244,7 +204,7 @@ export function SorotanTranskrip({
       aria-label="Sorotan Transkrip Pesan"
       className={`rounded-2xl border border-amber-200/90 bg-gradient-to-b from-amber-50/40 via-white to-white p-4 sm:p-5 shadow-sm space-y-3.5 ${className}`.trim()}
     >
-      {/* Header Bagian Sorotan */}
+      {/* ===== HEADER BAGIAN SOROTAN ===== */}
       <div className="flex items-center justify-between flex-wrap gap-2.5">
         <div className="flex items-center gap-2.5">
           <div
@@ -288,7 +248,6 @@ export function SorotanTranskrip({
         )}
       </div>
 
-      {/* Kotak Transkrip dengan Kalimat yang Disorot */}
       <div
         data-testid="konten-transkrip"
         className="p-3.5 sm:p-4 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-800 leading-relaxed font-sans whitespace-pre-wrap break-words shadow-inner"
@@ -338,7 +297,7 @@ export function SorotanTranskrip({
         })}
       </div>
 
-      {/* Keterangan / Legenda */}
+      {/* ===== KETERANGAN / LEGENDA ===== */}
       {jumlahSorotan > 0 ? (
         <div
           data-testid="legenda-sorotan"

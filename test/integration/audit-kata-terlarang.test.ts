@@ -1,16 +1,4 @@
 // @vitest-environment jsdom
-/**
- * test/integration/audit-kata-terlarang.test.ts
- *
- * Audit komprehensif kepatuhan larangan kata terlarang di seluruh proyek:
- * - Kata terlarang: "aman", "pasti", "terbukti", "100%"
- * - Memindai seluruh direktori `app/`, `components/`, `lib/`, `data/`
- * - Memastikan tidak ada penggunaan kata-kata tersebut sebagai KESIMPULAN, vonis, atau janji hasil pasti
- * - Memastikan penggunaan dalam konteks edukatif negasi tetap dipertahankan
- *   (misal: "Ini tidak berarti pasti aman", "bukan jaminan aman", "belum tentu aman")
- *
- * References: Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4
- */
 
 import React from 'react';
 import fs from 'fs';
@@ -18,7 +6,6 @@ import path from 'path';
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 
-// Import komponen UI
 import Home from '@/app/page';
 import { KomponenHasil } from '@/components/hasil/KomponenHasil';
 import { KotakPrivasi } from '@/components/shared/KotakPrivasi';
@@ -28,7 +15,6 @@ import { PanelDarurat } from '@/components/hasil/PanelDarurat';
 import { TombolContoh } from '@/components/input/TombolContoh';
 import Footer from '@/components/layout/Footer';
 
-// Import data & rules
 import {
   KATA_TERLARANG,
   CHAT_SYSTEM_PROMPT,
@@ -41,9 +27,6 @@ import { generateHasilLinkLokal } from '@/lib/aturan/link-rules';
 import { generateHasilVideoLokal } from '@/lib/aturan/video-rules';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-/**
- * Daftar konteks negasi / edukatif yang diizinkan sesuai Requirement 6.4, 30.4 & PRD.
- */
 const ALLOWED_EDUCATIONAL_NEGATIONS = [
   /tidak\s+berarti\s+pasti\s+aman/i,
   /bukan\s+berarti\s+pasti\s+aman/i,
@@ -59,9 +42,6 @@ const ALLOWED_EDUCATIONAL_NEGATIONS = [
   /bukan\s+berarti\s+pasti/i,
 ];
 
-/**
- * Struktur laporan pelanggaran audit
- */
 interface AuditViolation {
   file: string;
   lineNo: number;
@@ -70,18 +50,12 @@ interface AuditViolation {
   reason: string;
 }
 
-/**
- * Memeriksa satu baris kode apakah memuat kata terlarang sebagai KESIMPULAN atau vonis.
- * Mengembalikan null jika baris sah, atau AuditViolation jika ada pelanggaran.
- */
 function auditLine(line: string, filePath: string, lineNo: number): AuditViolation | null {
-  // Hanya periksa baris yang memuat kata terlarang (word boundary)
   const forbiddenMatch = line.match(/(?:\b100%|\bpasti\b|\bterbukti\b|\baman\b)/i);
   if (!forbiddenMatch) return null;
 
   const trimmed = line.trim();
 
-  // 1. Abaikan baris komentar kode teknis penuh (bukan teks yang tampil ke user atau hasil)
   if (
     trimmed.startsWith('//') ||
     trimmed.startsWith('*') ||
@@ -91,7 +65,6 @@ function auditLine(line: string, filePath: string, lineNo: number): AuditViolati
     return null;
   }
 
-  // 2. Abaikan file implementasi filter (lib/gemini.ts) pada baris logika penggantian kata atau regex
   if (filePath.endsWith('gemini.ts')) {
     if (
       trimmed.includes('targetRegex') ||
@@ -106,7 +79,6 @@ function auditLine(line: string, filePath: string, lineNo: number): AuditViolati
     }
   }
 
-  // 3. Abaikan definisi KATA_TERLARANG dan teks aturan pelarangan pada data/system-prompt.ts
   if (filePath.endsWith('system-prompt.ts')) {
     if (
       trimmed.includes('KATA_TERLARANG =') ||
@@ -119,8 +91,6 @@ function auditLine(line: string, filePath: string, lineNo: number): AuditViolati
     }
   }
 
-  // 4. Jika baris memiliki trailing comment (misal: code // komentar aman),
-  // abaikan jika kata terlarang hanya muncul di dalam komentarnya
   let codeOnly = line;
   const commentIndex = line.indexOf('//');
   if (commentIndex !== -1) {
@@ -132,20 +102,16 @@ function auditLine(line: string, filePath: string, lineNo: number): AuditViolati
     codeOnly = codePart;
   }
 
-  // 5. Bersihkan konteks edukatif negasi yang diizinkan
   let lineCleared = codeOnly;
   for (const pattern of ALLOWED_EDUCATIONAL_NEGATIONS) {
     lineCleared = lineCleared.replace(pattern, ' ');
   }
 
-  // 6. Khusus aturan video: pertanyaan/bukti wizard mengenai janji untung dari penipu
-  // Sesuai Requirement 22.4: "ada janji untung pasti atau ajakan ke WA/Telegram"
   if (filePath.includes('video-rules.ts')) {
     lineCleared = lineCleared.replace(/Janji keuntungan pasti/i, ' ');
     lineCleared = lineCleared.replace(/janji untung pasti/i, ' ');
   }
 
-  // 7. Evaluasi apakah masih ada kata terlarang yang berdiri sebagai kesimpulan/vonis
   const remaining = lineCleared.match(/(?:\b100%|\bpasti\b|\bterbukti\b|\baman\b)/i);
   if (remaining) {
     return {
@@ -160,9 +126,6 @@ function auditLine(line: string, filePath: string, lineNo: number): AuditViolati
   return null;
 }
 
-/**
- * Memindai satu direktori secara rekursif dan mengembalikan daftar file non-test
- */
 function getAllSourceFiles(dirPath: string): string[] {
   let fileList: string[] = [];
   if (!fs.existsSync(dirPath)) return fileList;
@@ -175,7 +138,6 @@ function getAllSourceFiles(dirPath: string): string[] {
         fileList = fileList.concat(getAllSourceFiles(fullPath));
       }
     } else if (entry.isFile()) {
-      // Ambil file source kode & data JSON, kecualikan file tes
       const ext = path.extname(entry.name).toLowerCase();
       const isTest = entry.name.includes('.test.') || entry.name.includes('.spec.');
       if (['.ts', '.tsx', '.js', '.jsx', '.json'].includes(ext) && !isTest) {
@@ -191,9 +153,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
     cleanup();
   });
 
-  // =========================================================================
-  // 1. Pemindaian Statis Seluruh File Kode & Data
-  // =========================================================================
   describe('1. Pemindaian Statis Direktori app/, components/, lib/, data/', () => {
     const dirsToScan = ['app', 'components', 'lib', 'data'];
 
@@ -231,7 +190,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
     });
 
     it('verifikasi validator audit menangkap pelanggaran sintetis dan meloloskan negasi sah', () => {
-      // Kasus pelanggaran klaim pasti
       const v1 = auditLine('const text = "Link ini pasti aman untuk diklik.";', 'dummy.ts', 1);
       expect(v1).not.toBeNull();
       expect(v1?.word.toLowerCase()).toBe('pasti');
@@ -247,7 +205,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
       expect(v4).not.toBeNull();
       expect(v4?.word.toLowerCase()).toBe('aman');
 
-      // Kasus negasi yang diizinkan (Requirement 6.4, 30.4)
       const allowed1 = auditLine(
         'const ringkasan = "Kami tidak menemukan tanda bahaya yang kami kenali. Ini tidak berarti pasti aman.";',
         'dummy.ts',
@@ -266,9 +223,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
     });
   });
 
-  // =========================================================================
-  // 2. Audit File Data JSON
-  // =========================================================================
   describe('2. Audit File Data JSON di data/ dan data/contoh/', () => {
     it('memastikan data JSON contoh dan darurat tidak mengandung kata terlarang sebagai kesimpulan', () => {
       const dataDir = path.resolve(process.cwd(), 'data');
@@ -280,10 +234,8 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
 
       function checkJsonValue(val: unknown, currentPath: string, filePath: string): void {
         if (typeof val === 'string') {
-          // Khusus URL atau kode identifier teknis
           if (val.startsWith('http://') || val.startsWith('https://')) return;
 
-          // Periksa apakah string mengandung kata terlarang sebagai kesimpulan
           let cleared = val;
           for (const pattern of ALLOWED_EDUCATIONAL_NEGATIONS) {
             cleared = cleared.replace(pattern, ' ');
@@ -318,9 +270,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
     });
   });
 
-  // =========================================================================
-  // 3. Audit System Prompt (Requirement 30.1 & 30.2)
-  // =========================================================================
   describe('3. Audit System Prompt (Requirement 30.1 & 30.2)', () => {
     it('KATA_TERLARANG memuat persis daftar kata yang dilarang', () => {
       expect(KATA_TERLARANG).toContain('aman');
@@ -360,9 +309,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
     });
   });
 
-  // =========================================================================
-  // 4. Audit Filter Keluaran AI (Requirement 30.1 & 30.3)
-  // =========================================================================
   describe('4. Audit Filter Keluaran AI (filterKataTerlarang & filterFormatDataHasil)', () => {
     it('membersihkan kata terlarang "pasti aman", "terbukti aman", "100% aman"', () => {
       expect(filterKataTerlarang('Tautan ini pasti aman.')).not.toContain('pasti aman');
@@ -404,7 +350,7 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
           {
             judul: 'Tawaran pasti untung',
             penjelasan: 'Skema investasi ini terbukti penipuan di berbagai daerah.',
-            bukti: 'Dijamin 100% untung pasti cair!', // Bukti asli verbatim harus tetap dipertahankan
+            bukti: 'Dijamin 100% untung pasti cair!',
             sumber: 'ai',
           },
         ],
@@ -421,27 +367,20 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
 
       const filtered = filterFormatDataHasil(dummyInput);
 
-      // Ringkasan bersih dari pasti dan 100%
       expect(filtered.ringkasan).not.toMatch(/\b(pasti|100%)\b/i);
       expect(filtered.ringkasan).toBe('Pesan ini berindikasi penipuan sepenuhnya.');
 
-      // Temuan: judul dan penjelasan bersih
       expect(filtered.temuan[0].judul).not.toMatch(/\bpasti\b/i);
       expect(filtered.temuan[0].penjelasan).not.toMatch(/\bterbukti\b/i);
 
-      // Bukti kutipan verbatim TIDAK diubah
       expect(filtered.temuan[0].bukti).toBe('Dijamin 100% untung pasti cair!');
 
-      // Hal wajar, langkah, dan batasan bersih
       expect(filtered.hal_wajar[0]).not.toMatch(/\bpasti\b/i);
       expect(filtered.langkah[0]).not.toMatch(/\bpasti\b/i);
       expect(filtered.batasan).not.toMatch(/\bterbukti\b/i);
     });
   });
 
-  // =========================================================================
-  // 5. Audit Komponen UI yang Diterjemahkan (Rendered UI Audit)
-  // =========================================================================
   describe('5. Audit Teks UI Komponen dan Halaman (Requirements 2.4, 6.7, 30.1)', () => {
     it('halaman Beranda (Home): Hero, Akordeon, dan Menu bebas kata terlarang sebagai janji hasil (Requirement 2.4)', () => {
       render(React.createElement(Home));
@@ -449,7 +388,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
       const hero = screen.getByTestId('hero-panduan');
       const heroText = hero.textContent?.toLowerCase() || '';
 
-      // Tidak ada janji pasti aman / garansi keamanan
       expect(heroText).not.toContain('pasti aman');
       expect(heroText).not.toContain('terbukti aman');
       expect(heroText).not.toContain('100% aman');
@@ -486,12 +424,10 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
       const hasilEl = screen.getByTestId('komponen-hasil');
       const text = hasilEl.textContent || '';
 
-      // Memastikan kalimat wajib Requirement 6.4 & 30.4 tampil utuh
       expect(text).toContain(
         'Kami tidak menemukan tanda bahaya yang kami kenali. Ini tidak berarti pasti aman.'
       );
 
-      // Memastikan tidak ada klaim garansi lain seperti "pasti aman", "terbukti aman", "100% aman"
       expect(text.toLowerCase()).not.toContain('100% aman');
       expect(text.toLowerCase()).not.toContain('terbukti aman');
       expect(text.toLowerCase()).not.toContain('dijamin');
@@ -605,9 +541,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
     });
   });
 
-  // =========================================================================
-  // 6. Audit Aturan Penilaian Lokal (Chat, Link, Video)
-  // =========================================================================
   describe('6. Audit Aturan Penilaian Lokal (Chat, Link, Video)', () => {
     it('generateHasilChatLokal mengembalikan klausul wajib pada kondisi normal dan bebas kata terlarang', () => {
       const hasil = generateHasilChatLokal('Halo apa kabar');
@@ -616,7 +549,6 @@ describe('Audit Kata Terlarang (Requirements 2.4, 6.7, 30.1, 30.2, 30.3, 30.4)',
         'Kami tidak menemukan tanda bahaya yang kami kenali. Ini tidak berarti pasti aman.'
       );
 
-      // Verifikasi langkah dan batasan tidak mengandung kata terlarang
       for (const l of hasil.langkah) {
         expect(l).not.toMatch(/(?:\b100%|\bpasti\b|\bterbukti\b|\baman\b)/i);
       }

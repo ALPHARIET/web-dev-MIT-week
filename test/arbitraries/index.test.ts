@@ -340,12 +340,10 @@ describe('test/arbitraries/index.ts', () => {
         expect(typeof sample.expectedScore).toBe('number');
         expect(sample.expectedScore).toBeGreaterThanOrEqual(0);
 
-        // Setiap pattern ID yang dipilih harus valid
         for (const pid of sample.selectedPatternIds) {
           expect(allIds).toContain(pid);
         }
 
-        // expectedScore harus sama dengan jumlah bobot pattern yang dipilih
         let computed = 0;
         for (const pid of sample.selectedPatternIds) {
           computed += FRASE_POLA_CHAT[pid].bobot;
@@ -399,7 +397,6 @@ describe('test/arbitraries/index.ts', () => {
         expect(typeof sample.expectedScore).toBe('number');
         expect(sample.expectedScore).toBeGreaterThanOrEqual(0);
 
-        // expectedScore harus sama dengan jumlah bobot sinyal
         let computed = 0;
         for (const s of sample.signals) {
           computed += BOBOT_SINYAL_LEKSIKAL[s];

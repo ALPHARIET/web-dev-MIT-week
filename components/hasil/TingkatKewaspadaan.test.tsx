@@ -92,7 +92,6 @@ describe('TingkatKewaspadaan', () => {
       expect(html).toContain('text-gray-700');
       expect(html).toContain('border-gray-300');
 
-      // Memastikan bukan warna hijau (false sense of security)
       expect(html).not.toContain('bg-green');
       expect(html).not.toContain('text-green');
       expect(html).not.toContain('border-green');

@@ -41,10 +41,6 @@ export const LABEL_RINGKAS_SITUASI: Record<SituasiDarurat, string> = {
   akun_diambil: 'Akun diambil alih',
 };
 
-/**
- * Langkah darurat khusus ketika terindikasi pengiriman atau pemasangan file APK.
- * Memprioritaskan pemutusan jaringan dan pencopotan aplikasi berbahaya.
- */
 export const LANGKAH_DARURAT_APK: string[] = [
   'Tutup halaman web tersebut segera atau batalkan proses instalasi jika masih terbuka.',
   'Segera aktifkan Mode Pesawat (matikan Wi-Fi dan data seluler) agar aplikasi tidak dapat mengirim SMS/OTP atau data ke server pelaku.',
@@ -104,9 +100,6 @@ export interface KonteksSituasiItem {
   langkah: string[];
 }
 
-/**
- * Deteksi modus penipuan berdasarkan konteks temuan, langkah, ringkasan, transkrip, atau url.
- */
 export function deteksiModusPenipuan(params: {
   isApk?: boolean;
   temuan?: Array<{ judul: string; penjelasan: string; bukti?: string; sumber?: string }>;
@@ -127,28 +120,24 @@ export function deteksiModusPenipuan(params: {
     .join(' ')
     .toLowerCase();
 
-  // 1. Modus APK / Malware / Trojan / Aplikasi Berbahaya
   const polaApk =
     /(?:\.apk\b|\bapk\b|malware|trojan|surat.*tilang|foto.*paket|undangan.*pernikahan|\b(?:unduh|download|pasang|instal|install|kirim|mengunduh|memasang|menginstal)\s+(?:file|berkas|aplikasi|dokumen|surat|paket|undangan)?\s*(?:berupa\s*)?(?:\.apk|apk)\b|\b(?:unduh|download|pasang|instal|install|mengunduh|memasang|menginstal)\s+(?:aplikasi|apk)\b|aplikasi\s*(?:kurir|tilang|undangan|paket|resi)|izin\s*aksesibilitas|akses\s*sms)/i;
   if (polaApk.test(teksSemua)) {
     return 'apk';
   }
 
-  // 2. Modus Phishing Perbankan / Akun Keuangan / Login Palsu
   const polaPhishing =
     /(?:phishing|web\s*palsu|situs\s*palsu|login\s*palsu|tautan\s*palsu|perubahan\s*tarif|tarif\s*transaksi|kenaikan\s*tarif|tarif\s*(?:bca|bri|mandiri|bni)|klikbca|brimo|livin|bni\s*mobile|kartu\s*kredit|kartu\s*debit|cvv|nomor\s*kartu|m-banking|mobile\s*banking|internet\s*banking)/i;
   if (polaPhishing.test(teksSemua)) {
     return 'bank_phishing';
   }
 
-  // 3. Modus Tugas Online / Freelance / Misi / Deposit Pekerjaan Paruh Waktu
   const polaTask =
     /(?:tugas|freelance|kerja\s*paruh\s*waktu|job\s*scam|paruh\s*waktu|misi\s*(?:harian|berbayar)|like\s*(?:dan\s*|&)?(?:subscribe|follow|review)|like\s*youtube|komisi|gaji\s*harian|deposit\s*tugas|grup\s*telegram|penghasilan\s*tambahan)/i;
   if (polaTask.test(teksSemua)) {
     return 'task_scam';
   }
 
-  // 4. Modus Mengaku Keluarga / Kerabat Ganti Nomor
   const polaKeluarga =
     /(?:keluarga|ganti\s*nomor|nomor\s*baru|hp\s*rusak|pinjam\s*hp|mengaku\s*(?:teman|saudara|anak|ibu|ayah|mama|papa)|ini\s*nomor\s*baruku)/i;
   if (polaKeluarga.test(teksSemua)) {
@@ -158,9 +147,6 @@ export function deteksiModusPenipuan(params: {
   return 'umum';
 }
 
-/**
- * Basis data langkah darurat dinamis kontekstual untuk masing-masing modus penipuan.
- */
 export const KONTEKS_DARURAT_MAP: Record<
   Exclude<ModusPenipuan, 'umum'>,
   Record<SituasiDarurat, KonteksSituasiItem>
@@ -473,9 +459,6 @@ export const KONTEKS_DARURAT_MAP: Record<
   },
 };
 
-/**
- * Mengambil informasi langkah dan label kontekstual berdasarkan situasi dan modus.
- */
 export function getKonteksSituasi(
   situasiId: SituasiDarurat,
   modus: ModusPenipuan,
@@ -485,7 +468,6 @@ export function getKonteksSituasi(
     return KONTEKS_DARURAT_MAP[modus][situasiId];
   }
 
-  // Fallback ke data umum bawaan
   const item = langkahDaruratData.situasi.find((s) => s.id === situasiId);
   return {
     labelRingkas: LABEL_RINGKAS_SITUASI[situasiId] || situasiId,
@@ -509,37 +491,15 @@ export interface PanelDaruratProps {
     stepIndex: number,
     checked: boolean
   ) => void;
-  /** Daftar temuan dari hasil analisis untuk penyesuaian kontekstual */
   temuan?: Array<{ judul: string; penjelasan: string; bukti?: string; sumber?: string }>;
-  /** Daftar langkah pencegahan praktis dari hasil analisis */
   langkah?: string[];
-  /** Ringkasan hasil analisis */
   ringkasan?: string;
-  /** Halaman asal pemeriksaan */
   halaman?: string;
-  /** Teks transkrip atau pesan chat */
   transkrip?: string;
-  /** URL target yang diperiksa */
   url?: string;
-  /** Flag eksplisit penanda konteks APK */
   isApk?: boolean;
 }
 
-/**
- * Komponen PanelDarurat
- *
- * Menampilkan panduan darurat "Sudah terlanjur?" untuk 5 situasi:
- * 1. klik_link: Sudah klik link / unduh APK
- * 2. isi_data: Sudah mengisi password atau data akun
- * 3. kirim_otp: Sudah mengirim OTP
- * 4. transfer: Sudah transfer
- * 5. akun_diambil: Akun diambil alih
- *
- * Secara dinamis menyesuaikan seluruh tab, judul langkah, urgensi, dan checklist
- * sesuai dengan modus penipuan yang terdeteksi (APK, Phishing Bank, Task Scam, Impersonation).
- *
- * References: Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 27.2
- */
 export function PanelDarurat({
   situasiAktif,
   langkahDarurat = DEFAULT_LANGKAH_DARURAT,
@@ -550,12 +510,10 @@ export function PanelDarurat({
   temuan,
   langkah,
   ringkasan,
-  halaman,
   transkrip,
   url,
   isApk,
 }: PanelDaruratProps): React.JSX.Element {
-  // Deteksi modus penipuan kontekstual
   const modus = deteksiModusPenipuan({
     isApk,
     temuan,
@@ -629,7 +587,6 @@ export function PanelDarurat({
         setTimeout(() => setSalinDaruratStatus(false), 2500);
       }
     } catch {
-      // Fallback diam
     }
   };
 
@@ -650,7 +607,6 @@ export function PanelDarurat({
         setTimeout(() => setTemplateCopied(false), 2500);
       }
     } catch {
-      // Fallback diam
     }
   };
 
@@ -660,7 +616,7 @@ export function PanelDarurat({
       aria-label="Panel darurat: Sudah terlanjur?"
       className={`rounded-2xl border border-red-300 bg-white shadow-sm overflow-hidden transition-all duration-200 ${className}`.trim()}
     >
-      {/* Header Accordion Toggle */}
+      {/* ===== HEADER ACCORDION TOGGLE ===== */}
       <button
         type="button"
         data-testid="panel-darurat-toggle"
@@ -696,7 +652,7 @@ export function PanelDarurat({
               {adaSituasiAktif && (
                 <span
                   data-testid="badge-darurat-terdeteksi"
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white animate-pulse"
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white animate-pulse"
                 >
                   Tindakan Terdeteksi
                 </span>
@@ -727,18 +683,16 @@ export function PanelDarurat({
         </div>
       </button>
 
-      {/* Konten Utama Saat Terbuka */}
       {isOpen && (
         <div
           id="panel-darurat-content"
           data-testid="panel-darurat-content"
           className="p-4 sm:p-6 space-y-6 bg-white"
         >
-          {/* Banner situasi terdeteksi jika terpicu */}
           {adaSituasiAktif && (
             <div
               data-testid="banner-situasi-terdeteksi"
-              className="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl text-red-900 text-xs sm:text-sm shadow-sm space-y-1"
+              className="border-l-4 border-red-600 bg-red-50/80 px-4 py-3 rounded-r-md text-red-950 text-xs sm:text-sm space-y-1"
             >
               <div className="flex items-center gap-2 font-bold text-sm">
                 <span className="w-2 h-2 rounded-full bg-red-600" aria-hidden="true" />
@@ -756,18 +710,17 @@ export function PanelDarurat({
             </div>
           )}
 
-          {/* Tablist Pemilihan Situasi Dinamis Sesuai Modus (Requirement 7.1) */}
-          <div>
+          <div className="space-y-2">
             <span
               id="label-situasi-tablist"
-              className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-700 mb-2.5"
+              className="block text-xs font-bold uppercase tracking-wider text-gray-600"
             >
               Pilih situasi yang kamu alami:
             </span>
             <div
               role="tablist"
               aria-labelledby="label-situasi-tablist"
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 p-1.5 bg-gray-100/90 !rounded-lg border border-gray-200/80"
             >
               {DAFTAR_SITUASI_ID.map((situasiId) => {
                 const isSelected = situasiId === selectedSituasiId;
@@ -790,23 +743,21 @@ export function PanelDarurat({
                     aria-selected={isSelected}
                     aria-controls={`panel-langkah-${situasiId}`}
                     onClick={() => handleSelectTab(situasiId)}
-                    className={`relative p-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all min-h-[48px] flex items-center justify-center text-center ${
+                    className={`relative px-3 py-2.5 !rounded-md text-xs font-semibold transition-all min-h-[44px] flex items-center justify-center text-center ${
                       isSelected
-                        ? 'bg-red-700 text-white border-red-700 shadow-sm'
+                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80 font-bold'
                         : isDetected
-                        ? 'bg-red-50 text-red-900 border-red-300 hover:bg-red-100'
-                        : 'bg-gray-50 text-gray-800 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                        ? 'text-red-700 hover:bg-white/60 hover:text-red-800'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                     }`}
                   >
                     <span className="leading-tight">{ringkas}</span>
                     {showIndicator && (
                       <span
                         data-testid={`badge-terdeteksi-${situasiId}`}
-                        className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-[11px] font-bold shadow-sm"
+                        className="absolute top-1.5 right-1.5 flex items-center justify-center w-2 h-2 rounded-full bg-red-600"
                         title="Situasi ini terdeteksi dari pesan"
-                      >
-                        !
-                      </span>
+                      />
                     )}
                   </button>
                 );
@@ -814,15 +765,15 @@ export function PanelDarurat({
             </div>
           </div>
 
-          {/* Checklist Langkah Darurat per Situasi (Requirement 7.2, 7.3) */}
+          {/* ===== CHECKLIST LANGKAH DARURAT PER SITUASI ===== */}
           <div
             id={`panel-langkah-${selectedSituasiId}`}
             role="tabpanel"
             aria-labelledby={`tab-${selectedSituasiId}`}
             data-testid={`panel-langkah-${selectedSituasiId}`}
-            className="bg-white rounded-xl border border-red-200 p-4 sm:p-5 shadow-sm space-y-4"
+            className="space-y-4 pt-1"
           >
-            {/* Header Tab Panel & Status Singkat */}
+            {/* ===== HEADER TAB PANEL & STATUS SINGKAT ===== */}
             <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-100 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-600" aria-hidden="true" />
@@ -831,31 +782,35 @@ export function PanelDarurat({
                 </h4>
               </div>
               {completedDaruratCount > 0 && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                <span className="text-xs font-semibold px-2 py-0.5 !rounded bg-emerald-100 text-emerald-800">
                   {completedDaruratCount} dari {selectedSteps.length} langkah dijalankan
                 </span>
               )}
             </div>
 
-            {/* Banner Urgensi / Waktu Kritis Situasi (Golden Time) */}
+            {/* ===== BANNER URGENSI / WAKTU KRITIS SITUASI ===== */}
             {urgensi && (
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 text-xs text-red-950">
-                <div className="flex items-center gap-1 font-bold shrink-0 px-2 py-0.5 rounded-md bg-red-600 text-white text-[11px] shadow-xs">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="flex items-start gap-3 p-3.5 !rounded-md border-l-4 border-l-red-600 border border-gray-200 bg-gray-50/90 text-xs text-gray-800">
+                <div className="flex items-center justify-center w-6 h-6 !rounded bg-red-100 text-red-700 shrink-0 mt-0.5" aria-hidden="true">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
-                  <span>{urgensi.waktu}</span>
                 </div>
-                <p className="leading-relaxed font-medium">
-                  {urgensi.prioritas}
-                </p>
+                <div className="space-y-0.5">
+                  <p className="font-bold text-gray-900 text-xs">
+                    {urgensi.waktu}
+                  </p>
+                  <p className="text-gray-700 leading-relaxed font-normal">
+                    {urgensi.prioritas}
+                  </p>
+                </div>
               </div>
             )}
 
-            {/* Progress Bar Interaktif Langkah Darurat */}
+            {/* ===== PROGRESS BAR INTERAKTIF LANGKAH DARURAT ===== */}
             <div
-              className="p-3 bg-gray-50 rounded-xl border border-gray-200"
+              className="p-3 bg-gray-50/80 rounded-lg border border-gray-200/80"
               aria-label={`Progres penyelamatan darurat untuk ${judulSituasiTampil}`}
             >
               <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-1.5">
@@ -892,7 +847,7 @@ export function PanelDarurat({
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-label={`Progres penyelamatan: ${progressPct} persen`}
-                className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
+                className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden"
               >
                 <div
                   className={`h-full transition-all duration-300 ease-out rounded-full ${
@@ -911,160 +866,162 @@ export function PanelDarurat({
               Lakukan langkah-langkah darurat berikut secara berurutan secepatnya:
             </p>
 
-            <ol className="space-y-2.5 pt-1" role="list">
-              {selectedSteps.map((teks, idx) => {
-                const checkKey = `${selectedSituasiId}-${idx}`;
-                const isChecked = Boolean(checkedState[checkKey]);
-                const inputId = `darurat-input-${checkKey}`;
+            <div className="rounded-lg border border-gray-200 bg-white overflow-hidden divide-y divide-gray-100">
+              <ol role="list">
+                {selectedSteps.map((teks, idx) => {
+                  const checkKey = `${selectedSituasiId}-${idx}`;
+                  const isChecked = Boolean(checkedState[checkKey]);
+                  const inputId = `darurat-input-${checkKey}`;
 
-                const isIascStep = teks.includes('iasc.ojk.go.id') || teks.includes('IASC');
-                const isBankStep =
-                  teks.toLowerCase().includes('bank pengirim') ||
-                  teks.toLowerCase().includes('call center bank');
-                const isWaStep =
-                  teks.includes('Perangkat Tertaut') || teks.includes('Linked Devices');
-                const isBuktiStep =
-                  teks.toLowerCase().includes('bukti transaksi') ||
-                  teks.toLowerCase().includes('nomor rekening pelaku');
-                const isApkStep = modus === 'apk';
+                  const isIascStep = teks.includes('iasc.ojk.go.id') || teks.includes('IASC');
+                  const isBankStep =
+                    teks.toLowerCase().includes('bank pengirim') ||
+                    teks.toLowerCase().includes('call center bank');
+                  const isWaStep =
+                    teks.includes('Perangkat Tertaut') || teks.includes('Linked Devices');
+                  const isBuktiStep =
+                    teks.toLowerCase().includes('bukti transaksi') ||
+                    teks.toLowerCase().includes('nomor rekening pelaku');
+                  const isApkStep = modus === 'apk';
 
-                return (
-                  <li
-                    key={idx}
-                    data-testid={`darurat-step-${selectedSituasiId}-${idx}`}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
-                      isChecked
-                        ? 'bg-emerald-50/70 border-emerald-300 shadow-xs'
-                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center shrink-0 min-w-[44px] min-h-[44px] -m-2">
-                      <input
-                        id={inputId}
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleCheck(idx)}
-                        aria-label={`Tandai langkah darurat ${idx + 1} sudah dilakukan: ${teks}`}
-                        className="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer transition-colors"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <label
-                        htmlFor={inputId}
-                        className={`block text-xs sm:text-sm leading-relaxed font-semibold cursor-pointer select-none transition-colors ${
-                          isChecked
-                            ? 'text-gray-500 line-through'
-                            : 'text-gray-900'
-                        }`}
-                      >
-                        <span className="sr-only">Langkah {idx + 1}: </span>
-                        {teks}
-                      </label>
+                  return (
+                    <li
+                      key={idx}
+                      data-testid={`darurat-step-${selectedSituasiId}-${idx}`}
+                      className={`flex items-start gap-3.5 p-3.5 sm:p-4 transition-colors ${
+                        isChecked
+                          ? 'bg-emerald-50/30'
+                          : 'hover:bg-gray-50/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center shrink-0 min-w-[44px] min-h-[44px] -m-2">
+                        <input
+                          id={inputId}
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleCheck(idx)}
+                          aria-label={`Tandai langkah darurat ${idx + 1} sudah dilakukan: ${teks}`}
+                          className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer transition-colors"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5 space-y-2">
+                        <label
+                          htmlFor={inputId}
+                          className={`block text-xs sm:text-sm leading-relaxed font-semibold cursor-pointer select-none transition-colors ${
+                            isChecked
+                              ? 'text-gray-400 line-through'
+                              : 'text-gray-900'
+                          }`}
+                        >
+                          <span className="sr-only">Langkah {idx + 1}: </span>
+                          {teks}
+                        </label>
 
-                      {/* Status Selesai Badge */}
-                      {isChecked && (
-                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                          Sudah dilakukan
-                        </span>
-                      )}
+                        {/* ===== STATUS SELESAI BADGE ===== */}
+                        {isChecked && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                            Sudah dilakukan
+                          </span>
+                        )}
 
-                      {/* Quick Helper khusus konteks APK */}
-                      {isApkStep && selectedSituasiId === 'klik_link' && idx === 1 && (
-                        <div className="mt-2 flex items-center gap-1.5 text-xs text-red-800 font-semibold bg-red-50/90 px-2.5 py-1.5 rounded-lg border border-red-200">
-                          <svg className="w-3.5 h-3.5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          <span>Wajib: Putuskan koneksi internet seketika agar malware tidak mentransfer data atau SMS OTP.</span>
-                        </div>
-                      )}
-
-                      {isApkStep && selectedSituasiId === 'klik_link' && idx === 2 && (
-                        <div className="mt-2 p-2.5 rounded-lg bg-amber-50/90 border border-amber-200 text-xs text-amber-950 font-normal leading-relaxed">
-                          <strong className="font-semibold text-amber-900 block mb-0.5">Panduan Mencopot APK Berbahaya:</strong>
-                          Buka Pengaturan HP &gt; Aplikasi / Manajemen Aplikasi &gt; Cari aplikasi yang mencurigakan, tanpa ikon, atau baru saja dipasang &gt; Pilih <strong>Copot Pemasangan (Uninstall)</strong>.
-                        </div>
-                      )}
-
-                      {isApkStep && selectedSituasiId === 'klik_link' && idx === 3 && (
-                        <div className="mt-2 p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-700 leading-relaxed">
-                          Tip: Buka aplikasi File Manager / Pengelola File &gt; Folder <strong>Download / Unduhan</strong> &gt; Hapus berkas file berekstensi <strong>.apk</strong> secara permanen agar tidak sengaja terpasang kembali.
-                        </div>
-                      )}
-
-                      {isApkStep && selectedSituasiId === 'klik_link' && idx === 4 && (
-                        <div className="mt-2 p-2.5 rounded-lg bg-blue-50/90 border border-blue-200 text-xs text-blue-950 font-normal leading-relaxed">
-                          <strong className="font-semibold text-blue-900 block mb-0.5">Perhatian Izin Khusus:</strong>
-                          Buka Pengaturan &gt; Aksesibilitas. Periksa apakah ada aplikasi asing yang memiliki izin aktif. Jika ada, segera matikan izinnya lalu mulai ulang (restart) perangkat.
-                        </div>
-                      )}
-
-                      {/* Quick Helper: Tautan Langsung ke Form IASC */}
-                      {isIascStep && (
-                        <div className="pt-2">
-                          <a
-                            href="https://iasc.ojk.go.id"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors shadow-xs"
-                            aria-label="Buka form laporan resmi di situs IASC OJK di tab baru"
-                          >
-                            <span>Buka Form Aduan IASC</span>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        {/* ===== QUICK HELPER KHUSUS KONTEKS APK ===== */}
+                        {isApkStep && selectedSituasiId === 'klik_link' && idx === 1 && (
+                          <div className="flex items-start gap-2 border-l-2 border-red-500 bg-red-50/70 px-3 py-2 rounded-r text-xs text-red-950 leading-relaxed">
+                            <svg className="w-3.5 h-3.5 shrink-0 text-red-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                          </a>
-                        </div>
-                      )}
+                            <span><strong>Wajib:</strong> Putuskan koneksi internet seketika agar malware tidak mentransfer data atau SMS OTP.</span>
+                          </div>
+                        )}
 
-                      {/* Quick Helper: Salin Template Draf Laporan */}
-                      {isBuktiStep && (
-                        <div className="pt-2">
-                          <button
-                            type="button"
-                            onClick={handleSalinTemplateBukti}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 hover:bg-blue-100 text-xs font-semibold border border-blue-200 transition-colors"
-                            title="Salin template format laporan penipuan transaksi"
-                          >
-                            {templateCopied ? (
-                              <>
-                                <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span className="text-emerald-700">Format Draf Tersalin!</span>
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                                <span>Salin Format Draf Laporan</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )}
+                        {isApkStep && selectedSituasiId === 'klik_link' && idx === 2 && (
+                          <div className="border-l-2 border-amber-500 bg-amber-50/70 px-3 py-2 rounded-r text-xs text-amber-950 leading-relaxed space-y-0.5">
+                            <strong className="font-semibold text-amber-900 block">Panduan Mencopot APK Berbahaya:</strong>
+                            <p>Buka Pengaturan HP &gt; Aplikasi / Manajemen Aplikasi &gt; Cari aplikasi yang mencurigakan, tanpa ikon, atau baru saja dipasang &gt; Pilih <strong>Copot Pemasangan (Uninstall)</strong>.</p>
+                          </div>
+                        )}
 
-                      {/* Quick Helper: Panduan Keluar Sesi WA */}
-                      {isWaStep && (
-                        <div className="mt-2 p-2.5 rounded-lg bg-amber-50/90 border border-amber-200 text-xs text-amber-950 font-normal leading-relaxed">
-                          <strong className="font-semibold text-amber-900 block mb-0.5">Panduan Cepat Putus Akses WhatsApp:</strong>
-                          Buka WhatsApp &gt; Ketuk Setelan (titik tiga) &gt; Perangkat Tertaut &gt; Ketuk sesi komputer/perangkat yang tidak dikenal &gt; Pilih <strong>Keluar</strong>.
-                        </div>
-                      )}
+                        {isApkStep && selectedSituasiId === 'klik_link' && idx === 3 && (
+                          <div className="border-l-2 border-gray-300 bg-gray-50 px-3 py-2 rounded-r text-xs text-gray-700 leading-relaxed">
+                            <strong className="font-semibold text-gray-800">Tip: </strong>
+                            Buka aplikasi File Manager / Pengelola File &gt; Folder <strong>Download / Unduhan</strong> &gt; Hapus berkas file berekstensi <strong>.apk</strong> secara permanen agar tidak sengaja terpasang kembali.
+                          </div>
+                        )}
 
-                      {/* Quick Helper: Tip Nomor Bank */}
-                      {isBankStep && (
-                        <div className="mt-1.5 text-xs text-gray-700">
-                          Tip: Hubungi nomor resmi yang tercetak di kartu fisik debit/ATM atau menu bantuan aplikasi resmi bank Anda.
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+                        {isApkStep && selectedSituasiId === 'klik_link' && idx === 4 && (
+                          <div className="border-l-2 border-blue-500 bg-blue-50/70 px-3 py-2 rounded-r text-xs text-blue-950 leading-relaxed space-y-0.5">
+                            <strong className="font-semibold text-blue-900 block">Perhatian Izin Khusus:</strong>
+                            <p>Buka Pengaturan &gt; Aksesibilitas. Periksa apakah ada aplikasi asing yang memiliki izin aktif. Jika ada, segera matikan izinnya lalu mulai ulang (restart) perangkat.</p>
+                          </div>
+                        )}
 
-            {/* Footer Panel: Salin Catatan Status Penyelamatan */}
+                        {isIascStep && (
+                          <div className="pt-1">
+                            <a
+                              href="https://iasc.ojk.go.id"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors shadow-xs"
+                              aria-label="Buka form laporan resmi di situs IASC OJK di tab baru"
+                            >
+                              <span>Buka Form Aduan IASC</span>
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          </div>
+                        )}
+
+                        {/* ===== QUICK HELPER: SALIN TEMPLATE DRAF LAPORAN ===== */}
+                        {isBuktiStep && (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={handleSalinTemplateBukti}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 text-blue-800 hover:bg-blue-100 text-xs font-semibold border border-blue-200 transition-colors"
+                              title="Salin template format laporan penipuan transaksi"
+                            >
+                              {templateCopied ? (
+                                <>
+                                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  <span className="text-emerald-700">Format Draf Tersalin!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                  <span>Salin Format Draf Laporan</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* ===== QUICK HELPER: PANDUAN KELUAR SESI WA ===== */}
+                        {isWaStep && (
+                          <div className="border-l-2 border-amber-500 bg-amber-50/70 px-3 py-2 rounded-r text-xs text-amber-950 leading-relaxed space-y-0.5">
+                            <strong className="font-semibold text-amber-900 block">Panduan Cepat Putus Akses WhatsApp:</strong>
+                            <p>Buka WhatsApp &gt; Ketuk Setelan (titik tiga) &gt; Perangkat Tertaut &gt; Ketuk sesi komputer/perangkat yang tidak dikenal &gt; Pilih <strong>Keluar</strong>.</p>
+                          </div>
+                        )}
+
+                        {/* ===== QUICK HELPER: TIP NOMOR BANK ===== */}
+                        {isBankStep && (
+                          <div className="text-xs text-gray-600 italic">
+                            Tip: Hubungi nomor resmi yang tercetak di kartu fisik debit/ATM atau menu bantuan aplikasi resmi bank Anda.
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            {/* ===== FOOTER PANEL: SALIN CATATAN STATUS PENYELAMATAN ===== */}
             <div className="pt-3.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2.5">
               <span className="text-xs text-gray-700">
                 Pantau tindakan yang sudah selesai Anda ambil untuk penyelamatan dana atau akun.
@@ -1073,7 +1030,7 @@ export function PanelDarurat({
               <button
                 type="button"
                 onClick={handleSalinDarurat}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 min-h-[36px]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 text-xs font-semibold text-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 min-h-[36px]"
                 title="Salin catatan status tindakan darurat ke clipboard"
               >
                 {salinDaruratStatus ? (
@@ -1111,7 +1068,7 @@ export function PanelDarurat({
             </div>
           </div>
 
-          {/* Seksi 4 Kanal Lapor Resmi (Requirement 7.4) */}
+          {/* ===== SEKSI 4 KANAL LAPOR RESMI ===== */}
           <div
             data-testid="seksi-kanal-lapor"
             className="space-y-3 pt-2 border-t border-gray-100"
@@ -1137,8 +1094,7 @@ export function PanelDarurat({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* 1. IASC */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-2">
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <h5 className="text-xs sm:text-sm font-bold text-gray-900">
                     Indonesia Anti-Scam Centre (IASC)
@@ -1166,8 +1122,7 @@ export function PanelDarurat({
                 </div>
               </div>
 
-              {/* 2. Kontak OJK 157 */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-2">
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <h5 className="text-xs sm:text-sm font-bold text-gray-900">
                     Kontak OJK 157
@@ -1199,8 +1154,7 @@ export function PanelDarurat({
                 </div>
               </div>
 
-              {/* 3. Call Center Bank / Dompet Digital */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-2">
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <h5 className="text-xs sm:text-sm font-bold text-gray-900">
                     Call Center Bank / Dompet Digital
@@ -1214,8 +1168,7 @@ export function PanelDarurat({
                 </div>
               </div>
 
-              {/* 4. Fitur Laporkan di Platform Pesan */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-2">
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <h5 className="text-xs sm:text-sm font-bold text-gray-900">
                     Fitur Laporkan di Platform Pesan
@@ -1231,10 +1184,10 @@ export function PanelDarurat({
             </div>
           </div>
 
-          {/* Peringatan Resmi Mengaku IASC (Requirement 7.5) */}
+          {/* ===== PERINGATAN RESMI MENGAKU IASC ===== */}
           <div
             data-testid="peringatan-resmi-iasc"
-            className="bg-amber-50 border-l-4 border-amber-500 rounded-r-xl p-4 flex items-start gap-3 shadow-sm"
+            className="bg-amber-50 border-l-4 border-amber-500 rounded-r-md p-4 flex items-start gap-3 shadow-sm"
             role="alert"
           >
             <div className="text-amber-600 shrink-0 mt-0.5" aria-hidden="true">

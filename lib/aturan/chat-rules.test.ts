@@ -1,17 +1,3 @@
-/**
- * lib/aturan/chat-rules.test.ts
- *
- * Unit tests untuk aturan pra-pemindaian chat:
- * - 11 pola deteksi chat sesuai Requirement 13.2
- * - Permintaan OTP/PIN/password langsung waspada tinggi (Requirement 13.3)
- * - Kombinasi khusus langsung tinggi (Requirement 13.4)
- * - Ekstraksi URL ke linkDitemukan (Requirement 13.5)
- * - Deteksi modus video call / voice note (Requirement 16.4)
- * - Evaluasi chat dan pembuatan FormatDataHasil lokal (generateHasilChatLokal)
- *
- * References: Requirements 13.1, 13.2, 13.3, 13.4, 13.5, 16.4, and design.md
- */
-
 import { describe, it, expect } from 'vitest';
 import {
   ATURAN_CHAT,
@@ -58,53 +44,41 @@ describe('lib/aturan/chat-rules.ts', () => {
     it('memiliki bobot dan flag langsung_tinggi yang tepat sesuai spesifikasi', () => {
       const aturanMap = new Map(ATURAN_CHAT.map((a) => [a.id, a]));
 
-      // 1. minta_otp (langsung waspada tinggi, langsung_tinggi: true)
       expect(aturanMap.get('minta_otp')?.langsung_tinggi).toBe(true);
 
-      // 2. minta_transfer (+3)
       expect(aturanMap.get('minta_transfer')?.bobot).toBe(3);
       expect(aturanMap.get('minta_transfer')?.langsung_tinggi).toBe(false);
 
-      // 3. biaya_dimuka (+3)
       expect(aturanMap.get('biaya_dimuka')?.bobot).toBe(3);
       expect(aturanMap.get('biaya_dimuka')?.langsung_tinggi).toBe(false);
 
-      // 4. kirim_apk (+3)
       expect(aturanMap.get('kirim_apk')?.bobot).toBe(3);
       expect(aturanMap.get('kirim_apk')?.langsung_tinggi).toBe(false);
 
-      // 5. desakan_waktu (+2)
       expect(aturanMap.get('desakan_waktu')?.bobot).toBe(2);
       expect(aturanMap.get('desakan_waktu')?.langsung_tinggi).toBe(false);
 
-      // 6. keluarga_ganti_nomor (+2)
       expect(aturanMap.get('keluarga_ganti_nomor')?.bobot).toBe(2);
       expect(aturanMap.get('keluarga_ganti_nomor')?.langsung_tinggi).toBe(false);
 
-      // 7. pihak_resmi (+2)
       expect(aturanMap.get('pihak_resmi')?.bobot).toBe(2);
       expect(aturanMap.get('pihak_resmi')?.langsung_tinggi).toBe(false);
 
-      // 8. gaji_besar (+2)
       expect(aturanMap.get('gaji_besar')?.bobot).toBe(2);
       expect(aturanMap.get('gaji_besar')?.langsung_tinggi).toBe(false);
 
-      // 9. hadiah_undian (+2)
       expect(aturanMap.get('hadiah_undian')?.bobot).toBe(2);
       expect(aturanMap.get('hadiah_undian')?.langsung_tinggi).toBe(false);
 
-      // 10. pindah_aplikasi (+1)
       expect(aturanMap.get('pindah_aplikasi')?.bobot).toBe(1);
       expect(aturanMap.get('pindah_aplikasi')?.langsung_tinggi).toBe(false);
 
-      // 11. ada_link (+1)
       expect(aturanMap.get('ada_link')?.bobot).toBe(1);
       expect(aturanMap.get('ada_link')?.langsung_tinggi).toBe(false);
     });
   });
 
   describe('Pengujian Masing-Masing Pola Deteksi', () => {
-    // 1. minta_otp
     describe('1. minta_otp (Permintaan OTP/PIN/password - langsung waspada tinggi)', () => {
       it('mendeteksi permintaan OTP dan langsung menetapkan level "tinggi" (Requirements 13.2, 13.3)', () => {
         const hasil = evaluasiChat('Mohon sebutkan kode OTP 6 digit yang baru saja masuk ke SMS Anda.');
@@ -129,7 +103,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 2. minta_transfer
     describe('2. minta_transfer (Permintaan transfer, pulsa, atau voucher - bobot +3)', () => {
       it('mendeteksi permintaan transfer uang (+3)', () => {
         const hasil = evaluasiChat('Bisa tolong transfer uang Rp 200.000 ke rekening ini?');
@@ -151,7 +124,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 3. biaya_dimuka
     describe('3. biaya_dimuka (Biaya di muka / deposit - bobot +3)', () => {
       it('mendeteksi biaya admin atau biaya pendaftaran (+3)', () => {
         const hasil = evaluasiChat('Kamu perlu membayar biaya pendaftaran dan biaya admin sebesar 150 ribu.');
@@ -167,7 +139,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 4. kirim_apk
     describe('4. kirim_apk (Kirim file aplikasi / APK - bobot +3)', () => {
       it('mendeteksi file undangan.apk (+3)', () => {
         const hasil = evaluasiChat('Silakan buka file undangan.apk ini untuk melihat lokasi pesta.');
@@ -189,7 +160,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 5. desakan_waktu
     describe('5. desakan_waktu (Desakan waktu - bobot +2)', () => {
       it('mendeteksi kata "segera" dan "diblokir" (+2)', () => {
         const hasil = evaluasiChat('Akun Anda akan diblokir jika tidak diperbarui.');
@@ -204,7 +174,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 6. keluarga_ganti_nomor
     describe('6. keluarga_ganti_nomor (Mengaku keluarga ganti nomor - bobot +2)', () => {
       it('mendeteksi "ini nomor baru" dan "HP rusak" (+2)', () => {
         const hasil = evaluasiChat('Halo nak, ini nomor baru Ibu. HP rusak jadi pinjam HP teman.');
@@ -219,7 +188,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 7. pihak_resmi
     describe('7. pihak_resmi (Mengaku pihak resmi - bobot +2)', () => {
       it('mendeteksi "dari bank" (+2)', () => {
         const hasil = evaluasiChat('Halo, kami dari bank ingin melakukan verifikasi keamanan akun.');
@@ -242,7 +210,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 8. gaji_besar
     describe('8. gaji_besar (Gaji besar tanpa syarat - bobot +2)', () => {
       it('mendeteksi "gaji harian", "tanpa pengalaman", "kerja dari HP", "like dan review" (+2)', () => {
         const hasil = evaluasiChat('Tawaran kerja dari HP dengan gaji harian besar tanpa pengalaman, tugas like dan review video.');
@@ -251,7 +218,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 9. hadiah_undian
     describe('9. hadiah_undian (Hadiah atau undian - bobot +2)', () => {
       it('mendeteksi "selamat anda", "pemenang", "klaim hadiah" (+2)', () => {
         const hasil = evaluasiChat('Selamat Anda pemenang gebyar undian, klaim hadiah mobil.');
@@ -260,7 +226,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 10. pindah_aplikasi
     describe('10. pindah_aplikasi (Pindah aplikasi - bobot +1)', () => {
       it('mendeteksi "lanjut di Telegram" dan "chat WA saya" (+1)', () => {
         const hasil = evaluasiChat('Untuk proses seleksi silakan lanjut di Telegram kami.');
@@ -273,7 +238,6 @@ describe('lib/aturan/chat-rules.ts', () => {
       });
     });
 
-    // 11. ada_link
     describe('11. ada_link (Keberadaan link di pesan - bobot +1)', () => {
       it('mendeteksi link URL dalam pesan dan menyimpannya di linkDitemukan (+1) (Requirements 13.2, 13.5)', () => {
         const hasil = evaluasiChat('Silakan buka tautan https://promo-shopee.co.id/voucher untuk klaim.');
@@ -293,16 +257,14 @@ describe('lib/aturan/chat-rules.ts', () => {
 
   describe('Kombinasi Khusus Langsung Tinggi (Requirement 13.4)', () => {
     it('menetapkan tingkat kewaspadaan "tinggi" saat ada kombinasi minta transfer AND desakan waktu', () => {
-      // minta_transfer (+3) + desakan_waktu (+2) = skor 5 (seharusnya sedang jika tanpa aturan kombinasi khusus)
       const pesan = 'Tolong transfer uang Rp 500.000 sekarang segera hari ini juga sebelum terlambat!';
       const hasil = evaluasiChat(pesan);
 
       expect(hasil.skor).toBe(5);
-      expect(hasil.level).toBe('tinggi'); // Naik ke 'tinggi' karena kombinasi minta uang + desakan
+      expect(hasil.level).toBe('tinggi');
     });
 
     it('menetapkan tingkat kewaspadaan "tinggi" saat ada kombinasi biaya di muka AND desakan waktu', () => {
-      // biaya_dimuka (+3) + desakan_waktu (+2) = skor 5
       const pesan = 'Harap bayar biaya pendaftaran batas waktu 24 jam atau akun diblokir.';
       const hasil = evaluasiChat(pesan);
 
@@ -311,8 +273,6 @@ describe('lib/aturan/chat-rules.ts', () => {
     });
 
     it('menetapkan tingkat kewaspadaan "tinggi" saat ada kombinasi minta transfer AND instruksi merahasiakan', () => {
-      // minta_transfer (+3) saja tanpa pola lain = skor 3
-      // tapi ada instruksi merahasiakan -> level langsung 'tinggi'
       const pesan = 'Tolong transfer uang ke rekening ini, jangan beritahu siapa-siapa ya rahasia kita berdua.';
       const hasil = evaluasiChat(pesan);
 

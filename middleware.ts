@@ -2,13 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { checkRateLimit } from './lib/rate-limit';
 
-/**
- * Mengambil IP klien dari header request dengan prioritas:
- * 1. x-forwarded-for (IP pertama jika ada deretan proxy)
- * 2. x-real-ip
- * 3. req.ip (jika didukung environment)
- * 4. Fallback ke '127.0.0.1'
- */
 export function getClientIp(req: NextRequest): string {
   const forwardedFor = req.headers.get('x-forwarded-for');
   if (forwardedFor) {
@@ -21,21 +14,14 @@ export function getClientIp(req: NextRequest): string {
     return realIp.trim();
   }
 
-  if ((req as any).ip && typeof (req as any).ip === 'string') {
-    return (req as any).ip;
+  const ipBawaan = (req as NextRequest & { ip?: unknown }).ip;
+  if (typeof ipBawaan === 'string' && ipBawaan) {
+    return ipBawaan;
   }
 
   return '127.0.0.1';
 }
 
-/**
- * Menentukan endpointKey dari pathname request.
- * Contoh:
- * /api/cek-chat -> 'cek-chat'
- * /api/cek-link -> 'cek-link'
- * /api/cek-media -> 'cek-media'
- * /api/tanya -> 'tanya'
- */
 export function getEndpointKey(pathname: string): string {
   const match = pathname.match(/^\/api\/([^/?#]+)/);
   if (match && match[1]) {
@@ -44,15 +30,10 @@ export function getEndpointKey(pathname: string): string {
   return 'default';
 }
 
-/**
- * Edge Middleware untuk rate limiting pada endpoint /api/:path*
- * Requirements: 25.2, 25.3
- */
 export async function middleware(req: NextRequest) {
   try {
     const pathname = req.nextUrl?.pathname ?? new URL(req.url).pathname;
 
-    // Hanya terapkan pada endpoint API
     if (!pathname.startsWith('/api')) {
       return NextResponse.next();
     }
@@ -94,7 +75,6 @@ export async function middleware(req: NextRequest) {
 
     return response;
   } catch (error) {
-    // Fail-open: jika terjadi exception tak terduga, izinkan request agar pengguna tidak terblokir
     console.error('[Middleware] Unexpected error in rate limiting, failing open:', error);
     return NextResponse.next();
   }

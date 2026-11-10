@@ -5,8 +5,8 @@ export interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
-  reset: number; // timestamp dalam milidetik
-  retryAfter: number; // dalam detik
+  reset: number;
+  retryAfter: number;
 }
 
 export const RATE_LIMIT_PER_MINUTE = 10;
@@ -23,9 +23,6 @@ let redisClient: Redis | null = null;
 let customRedisClient: Redis | null | undefined = undefined;
 const upstashLimiters = new Map<string, { minuteLimiter: Ratelimit; dayLimiter: Ratelimit }>();
 
-/**
- * Memeriksa apakah kredensial Upstash Redis tersedia di environment variable
- */
 export function isUpstashConfigured(): boolean {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -38,17 +35,11 @@ export function isUpstashConfigured(): boolean {
   );
 }
 
-/**
- * Mengatur client Redis kustom (terutama untuk keperluan mocking di unit test)
- */
 export function setCustomRedisClient(client: Redis | null | undefined): void {
   customRedisClient = client;
   upstashLimiters.clear();
 }
 
-/**
- * Mereset cache rate limit in-memory dan instance limiter
- */
 export function resetRateLimits(): void {
   inMemoryStore.clear();
   upstashLimiters.clear();
@@ -56,9 +47,6 @@ export function resetRateLimits(): void {
   customRedisClient = undefined;
 }
 
-/**
- * Mendapatkan jumlah entri aktif di cache in-memory
- */
 export function getInMemoryStoreSize(): number {
   return inMemoryStore.size;
 }
@@ -107,7 +95,6 @@ function checkInMemoryRateLimit(
 ): RateLimitResult {
   const key = `${endpointKey}:${ip}`;
 
-  // Pembersihan berkala jika store terlalu besar (> 5000 entri)
   if (inMemoryStore.size > 5000) {
     const dayThreshold = now - WINDOW_DAY_MS;
     for (const [k, v] of inMemoryStore.entries()) {
@@ -129,13 +116,10 @@ function checkInMemoryRateLimit(
   const dayWindowStart = now - WINDOW_DAY_MS;
   const minuteWindowStart = now - WINDOW_MINUTE_MS;
 
-  // Hapus timestamp yang lebih tua dari 24 jam
   entry.timestamps = entry.timestamps.filter((t) => t > dayWindowStart);
 
-  // Ambil timestamp dalam jendela 1 menit terakhir
   const minuteTimestamps = entry.timestamps.filter((t) => t > minuteWindowStart);
 
-  // 1. Periksa batas 10 req/menit
   if (minuteTimestamps.length >= RATE_LIMIT_PER_MINUTE) {
     const oldestInMinute = minuteTimestamps[0];
     const reset = oldestInMinute + WINDOW_MINUTE_MS;
@@ -149,7 +133,6 @@ function checkInMemoryRateLimit(
     };
   }
 
-  // 2. Periksa batas 100 req/hari
   if (entry.timestamps.length >= RATE_LIMIT_PER_DAY) {
     const oldestInDay = entry.timestamps[0];
     const reset = oldestInDay + WINDOW_DAY_MS;
@@ -163,7 +146,6 @@ function checkInMemoryRateLimit(
     };
   }
 
-  // Permintaan diizinkan: catat waktu permintaan sekarang
   entry.timestamps.push(now);
 
   const remainingInMinute = RATE_LIMIT_PER_MINUTE - (minuteTimestamps.length + 1);
@@ -182,11 +164,6 @@ function checkInMemoryRateLimit(
   };
 }
 
-/**
- * Memeriksa rate limit untuk IP tertentu pada halaman/endpoint tertentu.
- * Menggunakan Upstash Redis jika dikonfigurasi, atau fallback in-memory jika belum.
- * Menerapkan prinsip fail-open jika terjadi error koneksi ke Redis.
- */
 export async function checkRateLimit(
   ip: string,
   endpointKey?: string,
@@ -239,7 +216,6 @@ export async function checkRateLimit(
       retryAfter: 0,
     };
   } catch (error) {
-    // Fail-open jika Redis error agar demo dan pengalaman pengguna tidak terganggu
     console.warn('[RateLimit] Upstash Redis error, failing open:', error);
     return {
       success: true,
@@ -251,9 +227,6 @@ export async function checkRateLimit(
   }
 }
 
-/**
- * Objek helper untuk kompatibilitas dengan desain middleware
- */
 export const rateLimitPerMinute = {
   limit: async (identifier: string) => {
     const res = await checkRateLimit(identifier, 'default');

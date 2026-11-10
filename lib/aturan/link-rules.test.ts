@@ -6,7 +6,6 @@ import {
   normalizeLeetspeak,
   isIpAddress,
   KATA_PEMICU_LINK,
-  PEMENDEK_LINK_DOMAINS,
   TLD_BERISIKO_SET,
 } from './link-rules';
 
@@ -196,7 +195,6 @@ describe('lib/aturan/link-rules.ts', () => {
 
     it('menggabungkan skor Punycode (+3) dan merek (+3) saat domain memuat keduanya', () => {
       const res = evaluasiLeksikalUrl('https://xn--bca-10a.com');
-      // xn-- (+3) + bca (+3) = 6 -> tinggi
       expect(res.skor).toBe(6);
       expect(res.level).toBe('tinggi');
       expect(res.temuan.some((t) => t.judul.includes('Punycode'))).toBe(true);
@@ -204,7 +202,7 @@ describe('lib/aturan/link-rules.ts', () => {
     });
 
     it('memberikan skor +3 saat hostname memuat karakter non-ASCII homograf', () => {
-      const res = evaluasiLeksikalUrl('https://bса.com'); // 'с' dan 'а' Cyrillic
+      const res = evaluasiLeksikalUrl('https://bса.com');
       expect(res.skor).toBeGreaterThanOrEqual(3);
       expect(res.temuan.some((t) => t.judul.includes('Punycode') || t.judul.includes('homograf'))).toBe(true);
     });
@@ -233,7 +231,7 @@ describe('lib/aturan/link-rules.ts', () => {
       for (const kata of KATA_PEMICU_LINK) {
         const res = evaluasiLeksikalUrl(`https://site-biasa.com/${kata}`);
         expect(res.skor).toBe(2);
-        expect(res.level).toBe('tidak_ditemukan'); // skor 2 < 3
+        expect(res.level).toBe('tidak_ditemukan');
         const finding = res.temuan.find((t) => t.judul.includes('kata pemicu'));
         expect(finding).toBeDefined();
         expect(finding?.bukti.toLowerCase()).toContain(kata);
@@ -277,8 +275,6 @@ describe('lib/aturan/link-rules.ts', () => {
 
     it('tidak memicu aturan jika nama merek ada di subdomain DAN di domain utama', () => {
       const res = evaluasiLeksikalUrl('https://bca.bca-klik.com');
-      // Subdomain BCA, domainUtama bca-klik (juga BCA).
-      // Aturan 7 tidak memicu, Aturan 2 (merek di domainUtama) memicu +3
       const findingSub = res.temuan.find((t) => t.judul.includes('subdomain'));
       expect(findingSub).toBeUndefined();
       expect(res.skor).toBe(3);
@@ -321,7 +317,6 @@ describe('lib/aturan/link-rules.ts', () => {
 
     it('mengenali domain pemendek link yang diawali www.', () => {
       const res = evaluasiLeksikalUrl('https://www.bit.ly/promo');
-      // skor: pemendek link (1) + promo (2) = 3
       expect(res.skor).toBe(3);
       expect(res.level).toBe('sedang');
     });
@@ -378,11 +373,6 @@ describe('lib/aturan/link-rules.ts', () => {
 
   describe('Skor aditif dan penentuan tingkat kewaspadaan', () => {
     it('menggabungkan skor dari beberapa aturan secara aditif (Requirement 10.1, 10.2, 10.3, 10.4)', () => {
-      // http://sh0pee-promo.xyz/login
-      // - Merek Shopee (+3)
-      // - Kata pemicu promo/login (+2)
-      // - TLD berisiko .xyz (+1)
-      // Total = 6 -> level 'tinggi'
       const res = evaluasiLeksikalUrl('http://sh0pee-promo.xyz/login');
       expect(res.skor).toBe(6);
       expect(res.level).toBe('tinggi');
@@ -390,10 +380,6 @@ describe('lib/aturan/link-rules.ts', () => {
     });
 
     it('menghasilkan level "sedang" untuk skor 3 sampai 5', () => {
-      // http://192.168.1.1/promo
-      // - IP numerik (+3)
-      // - Kata pemicu promo (+2)
-      // Total = 5 -> level 'sedang'
       const res = evaluasiLeksikalUrl('http://192.168.1.1/promo');
       expect(res.skor).toBe(5);
       expect(res.level).toBe('sedang');

@@ -10,7 +10,6 @@ import { explainLink } from '@/lib/gemini';
 import linkContohJson from '@/data/contoh/link-contoh.json';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-// Mock modul backend eksternal (Google Safe Browsing, RDAP, Gemini API)
 vi.mock('@/lib/safe-browsing', () => ({
   checkSafeBrowsing: vi.fn(),
 }));
@@ -34,7 +33,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
     vi.restoreAllMocks();
     sessionStorage.clear();
 
-    // Default mock implementasi pihak ketiga di backend
     vi.mocked(checkSafeBrowsing).mockResolvedValue({
       ditemukan: false,
       ancaman: [],
@@ -50,7 +48,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
     vi.mocked(explainLink).mockResolvedValue(null);
 
-    // Hubungkan global.fetch ke Route Handler nyata POST /api/cek-link
     global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const urlStr =
         typeof input === 'string'
@@ -85,13 +82,8 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
     sessionStorage.clear();
   });
 
-  // =========================================================================
-  // 1. Alur Lengkap: input URL -> analisis leksikal -> API -> hasil + status
-  // References: Requirements 18.1, 18.4, 20.1, 20.2, 28.2
-  // =========================================================================
   describe('1. Alur Lengkap Pemeriksaan Normal (Frontend -> Backend)', () => {
     it('mengirimkan URL mencurigakan ke API, memproses di backend, dan merender hasil serta status layanan normal', async () => {
-      // Safe Browsing mendeteksi malware, RDAP mendeteksi domain 4 hari
       vi.mocked(checkSafeBrowsing).mockResolvedValueOnce({
         ditemukan: true,
         ancaman: ['MALWARE'],
@@ -107,7 +99,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
         keterangan: 'Domain terdaftar 4 hari yang lalu',
       });
 
-      // Gemini mengembalikan penjelasan edukatif
       const mockGeminiHasil: FormatDataHasil = {
         halaman: 'link',
         level: 'tinggi',
@@ -144,53 +135,42 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       render(<CekLinkPage />);
 
-      // Pengguna menginputkan URL mencurigakan
       const inputEl = screen.getByTestId('input-link');
       fireEvent.change(inputEl, {
         target: { value: 'https://undian-bca-gratis.xyz/klaim-hadiah' },
       });
 
-      // Submit form
       const formEl = screen.getByTestId('form-input-link');
       fireEvent.submit(formEl);
 
-      // Verifikasi fetch terpanggil ke /api/cek-link
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
       });
 
-      // Verifikasi Safe Browsing dan RDAP dipanggil di backend
       expect(checkSafeBrowsing).toHaveBeenCalled();
       expect(queryDomainAge).toHaveBeenCalled();
       expect(explainLink).toHaveBeenCalled();
 
-      // Hasil pemeriksaan muncul di frontend
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // Tingkat kewaspadaan tinggi
       const statusKewaspadaan = screen.getByRole('status');
       expect(statusKewaspadaan.getAttribute('data-level')).toBe('tinggi');
       expect(statusKewaspadaan.textContent).toContain('Waspada tinggi');
       expect(screen.getByTestId('icon-tinggi')).toBeDefined();
 
-      // Ringkasan dari Gemini / hasil gabungan tampil
       expect(screen.getByText(mockGeminiHasil.ringkasan)).toBeDefined();
 
-      // Kartu temuan tampil
       const kartuTemuan = screen.getAllByTestId('kartu-temuan');
       expect(kartuTemuan.length).toBeGreaterThanOrEqual(2);
 
-      // Status sumber layanan pihak ketiga tampil (Requirement 18.4)
       const blokLayanan = screen.getByTestId('blok-batasan-layanan');
       expect(blokLayanan.textContent).toContain('Google Safe Browsing');
       expect(blokLayanan.textContent).toContain('Berjalan normal');
 
-      // Langkah yang disarankan minimal 2 langkah (Requirement 29.4)
       const langkahItems = screen.getAllByTestId(/^langkah-item-/);
       expect(langkahItems.length).toBeGreaterThanOrEqual(2);
 
-      // Panel darurat otomatis terbuka (Requirement 7.6)
       const panelDarurat = screen.getByTestId('panel-darurat-section');
       expect(panelDarurat).toBeDefined();
     });
@@ -222,13 +202,11 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       await screen.findByTestId('area-hasil-link');
 
-      // Tingkat kewaspadaan tidak ditemukan
       const statusKewaspadaan = screen.getByRole('status');
       expect(statusKewaspadaan.getAttribute('data-level')).toBe('tidak_ditemukan');
       expect(statusKewaspadaan.textContent).toContain('Tidak ditemukan tanda bahaya');
       expect(screen.getByTestId('icon-tidak_ditemukan')).toBeDefined();
 
-      // Menampilkan kalimat khusus (Requirement 30.4)
       const kalimatKhususList = screen.getAllByText(
         /Kami tidak menemukan tanda bahaya yang kami kenali\. Ini tidak berarti pasti aman\./i
       );
@@ -250,7 +228,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
         expect(checkSafeBrowsing).toHaveBeenCalled();
       });
 
-      // Periksa argumen yang diteruskan ke Safe Browsing
       const calledUrl = vi.mocked(checkSafeBrowsing).mock.calls[0][0];
       expect(calledUrl).not.toContain('korban@example.com');
       expect(calledUrl).not.toContain('secrettoken123');
@@ -264,12 +241,10 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       render(<CekLinkPage />);
 
-      // Input terisi otomatis
       const inputEl = screen.getByTestId('input-link') as HTMLInputElement;
       expect(inputEl.value).toBe(urlDariChat);
       expect(sessionStorage.getItem('url_dari_chat')).toBeNull();
 
-      // Submit langsung
       fireEvent.submit(screen.getByTestId('form-input-link'));
 
       await screen.findByTestId('area-hasil-link');
@@ -277,10 +252,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
     });
   });
 
-  // =========================================================================
-  // 2. Contoh Fiktif Tanpa Kuota API
-  // References: Requirements 9.1, 9.3, 21.1, 21.2, 21.3
-  // =========================================================================
   describe('2. Contoh Fiktif Menggunakan Respons Simulasi Tanpa Memanggil API', () => {
     it('menampilkan hasil simulasi dari TombolContoh seketika tanpa melakukan fetch API (Requirement 21.1)', async () => {
       render(<CekLinkPage />);
@@ -288,17 +259,14 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
       const tombolContoh = screen.getByTestId('tombol-coba-contoh');
       fireEvent.click(tombolContoh);
 
-      // Area hasil langsung tampil
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // fetch TIDAK dipanggil sama sekali
       expect(global.fetch).not.toHaveBeenCalled();
       expect(checkSafeBrowsing).not.toHaveBeenCalled();
       expect(queryDomainAge).not.toHaveBeenCalled();
       expect(explainLink).not.toHaveBeenCalled();
 
-      // Data yang tampil sesuai skenario contoh fiktif pertama
       const skenario0 = linkContohJson.skenario[0];
       expect(screen.getByText(skenario0.hasilSimulasi.ringkasan)).toBeDefined();
     });
@@ -306,7 +274,7 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
     it('backend API juga mendeteksi URL contoh fiktif dan mengembalikan respons simulasi tanpa kuota API (Requirement 21.1)', async () => {
       render(<CekLinkPage />);
 
-      const contohUrl = linkContohJson.skenario[1].url; // sh0pee promo
+      const contohUrl = linkContohJson.skenario[1].url;
       const inputEl = screen.getByTestId('input-link');
       fireEvent.change(inputEl, { target: { value: contohUrl } });
 
@@ -314,13 +282,11 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       await screen.findByTestId('area-hasil-link');
 
-      // fetch dipanggil ke /api/cek-link, namun backend TIDAK memanggil layanan eksternal
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(checkSafeBrowsing).not.toHaveBeenCalled();
       expect(queryDomainAge).not.toHaveBeenCalled();
       expect(explainLink).not.toHaveBeenCalled();
 
-      // Hasil sesuai contoh skenario
       expect(screen.getByText(linkContohJson.skenario[1].hasilSimulasi.ringkasan)).toBeDefined();
     });
 
@@ -340,9 +306,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
     });
   });
 
-  // =========================================================================
-  // 3. Penyederhanaan UI & Kotak Privasi
-  // =========================================================================
   describe('3. Penyederhanaan UI Hasil Pemeriksaan Link', () => {
     it('menyembunyikan KotakPrivasi dan tidak merender kotak atribusi tambahan saat hasil ditampilkan', async () => {
       render(<CekLinkPage />);
@@ -355,19 +318,13 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       await screen.findByTestId('area-hasil-link');
 
-      // Kotak privasi dan kotak atribusi lama disembunyikan sesuai desain UI baru
       expect(screen.queryByTestId('kotak-privasi')).toBeNull();
       expect(screen.queryByTestId('atribusi-google-safe-browsing')).toBeNull();
     });
   });
 
-  // =========================================================================
-  // 4. Fallback ke Aturan Lokal saat API Gagal / Offline / Timeout
-  // References: Requirements 20.3, 28.2, 29.1, 29.2, 29.3, 29.4
-  // =========================================================================
   describe('4. Ketahanan dan Fallback Aturan Lokal saat Terjadi Kegagalan Jaringan / Layanan', () => {
     it('melakukan fallback ke aturan leksikal lokal saat fetch mengalami kegagalan jaringan (offline) (Requirement 29.1)', async () => {
-      // Mock fetch gagal karena jaringan putus
       global.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch (offline)'));
 
       render(<CekLinkPage />);
@@ -379,20 +336,16 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       fireEvent.submit(screen.getByTestId('form-input-link'));
 
-      // Hasil lokal tetap tampil
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // Banner peringatan fallback server tampil
       const bannerFallback = screen.getByTestId('banner-fallback-link');
       expect(bannerFallback.textContent).toContain('Layanan pengecekan server sedang tidak tersedia');
       expect(bannerFallback.textContent).toContain('aturan leksikal lokal');
 
-      // Tombol Coba lagi tersedia di banner
       const tombolCobaLagi = screen.getByTestId('tombol-coba-lagi');
       expect(tombolCobaLagi).toBeDefined();
 
-      // Temuan leksikal tetap mendeteksi nama mirip merek (sh0pee)
       const kartuTemuan = screen.getAllByTestId('kartu-temuan');
       expect(kartuTemuan.length).toBeGreaterThanOrEqual(1);
       const hasBrandFinding = kartuTemuan.some((el) =>
@@ -405,7 +358,6 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
     });
 
     it('melakukan fallback ke aturan lokal saat API mengembalikan status 500 server error', async () => {
-      // Simulasikan endpoint /api/cek-link mengembalikan HTTP 500
       global.fetch = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ error: 'Server database crash' }), {
           status: 500,
@@ -425,19 +377,15 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // Banner fallback tampil
       expect(screen.getByTestId('banner-fallback-link')).toBeDefined();
 
-      // Status layanan Safe Browsing dan RDAP menandai status gagal
       const badgeSafeBrowsing = screen.getByTestId('status-badge-safe_browsing');
       expect(badgeSafeBrowsing.textContent).toContain('Gagal');
     });
 
     it('backend menangani kegagalan Gemini explainLink dengan fallback teks bawaan aturan lokal (Requirement 20.3, 29.2)', async () => {
-      // Gemini melempar exception di backend
       vi.mocked(explainLink).mockRejectedValueOnce(new Error('Gemini API 503 Overloaded'));
 
-      // Safe Browsing & RDAP tetap bekerja di backend
       vi.mocked(checkSafeBrowsing).mockResolvedValueOnce({
         ditemukan: false,
         ancaman: [],
@@ -455,25 +403,20 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       await screen.findByTestId('area-hasil-link');
 
-      // Respons 200 dari backend berhasil diterima tanpa fallback banner di frontend
       expect(screen.queryByTestId('banner-fallback-link')).toBeNull();
 
-      // Namun status AI di status layanan menandai gagal (Requirement 29.2)
       const badgeAi = screen.getByTestId('status-badge-ai');
       expect(badgeAi.textContent).toContain('Gagal');
 
-      // Teks penjelasan bawaan aturan lokal tetap tampil dengan jelas
       const temuan = screen.getAllByTestId('kartu-temuan');
       expect(temuan.length).toBeGreaterThanOrEqual(1);
     });
 
     it('melakukan pemanggilan ulang saat tombol "Coba lagi" pada banner fallback diklik', async () => {
-      // Panggilan pertama gagal
       global.fetch = vi
         .fn()
         .mockRejectedValueOnce(new TypeError('Offline error'))
         .mockImplementationOnce(async (input: RequestInfo | URL, init?: RequestInit) => {
-          // Panggilan kedua sukses melalui Route Handler nyata
           const req = new Request('http://localhost:3000/api/cek-link', {
             method: init?.method || 'POST',
             headers: init?.headers,
@@ -491,29 +434,21 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
 
       fireEvent.submit(screen.getByTestId('form-input-link'));
 
-      // Muncul banner fallback
       await screen.findByTestId('banner-fallback-link');
 
-      // Klik tombol "Coba lagi"
       const tombolCobaLagi = screen.getByTestId('tombol-coba-lagi');
       fireEvent.click(tombolCobaLagi);
 
-      // Verifikasi fetch dipanggil untuk kedua kalinya
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
       });
 
-      // Banner fallback kini hilang karena pemanggilan kedua berhasil
       await waitFor(() => {
         expect(screen.queryByTestId('banner-fallback-link')).toBeNull();
       });
     });
   });
 
-  // =========================================================================
-  // 5. Interaksi Lanjutan: Tombol "Cek lagi" & Navigasi Antar Halaman
-  // References: Requirements 34.4, 35.1, 35.2, 35.3
-  // =========================================================================
   describe('5. Tombol "Cek lagi" dan Tautan Antar Halaman Cek', () => {
     it('tombol "Cek lagi" mereset formulir dan menghilangkan tampilan hasil (Requirement 35.1, 35.2)', async () => {
       render(<CekLinkPage />);
@@ -521,14 +456,11 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       await screen.findByTestId('area-hasil-link');
 
-      // Klik tombol "Cek lagi"
       const tombolCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(tombolCekLagi);
 
-      // Area hasil hilang
       expect(screen.queryByTestId('area-hasil-link')).toBeNull();
 
-      // Input kembali muncul dan bernilai kosong
       const inputEl = (await screen.findByTestId('input-link')) as HTMLInputElement;
       expect(inputEl.value).toBe('');
     });
@@ -539,11 +471,9 @@ describe('Integrasi Penuh Halaman Cek Link Frontend & API POST /api/cek-link (Ta
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       await screen.findByTestId('area-hasil-link');
 
-      // Cek Chat
       const linkChat = screen.getByRole('link', { name: /Cek Chat/i });
       expect(linkChat.getAttribute('href')).toBe('/cek-chat');
 
-      // Cek Video & Suara
       const linkVideo = screen.getByRole('link', { name: /Cek Video & Suara/i });
       expect(linkVideo.getAttribute('href')).toBe('/cek-video-suara');
     });

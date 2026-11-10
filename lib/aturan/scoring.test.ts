@@ -179,7 +179,6 @@ describe('lib/aturan/scoring.ts', () => {
       const input = 'Tolong segera transfer uang untuk pembayaran hadiah.';
       const hasil = evaluasiAturan(input, [aturanTransfer, aturanDesakan]);
 
-      // bobot: transfer (3) + desakan (2) = 5 -> sedang
       expect(hasil.skor).toBe(5);
       expect(hasil.level).toBe('sedang');
       expect(hasil.temuan).toHaveLength(2);
@@ -201,9 +200,9 @@ describe('lib/aturan/scoring.ts', () => {
 
       const input = 'Segera transfer uang dan bayar biaya admin!';
       const hasil = evaluasiAturan(input, [
-        aturanTransfer, // 3
-        aturanDesakan, // 2
-        aturanBonus, // 3 -> total 8 >= 6
+        aturanTransfer,
+        aturanDesakan,
+        aturanBonus,
       ]);
 
       expect(hasil.skor).toBe(8);
@@ -214,7 +213,7 @@ describe('lib/aturan/scoring.ts', () => {
       const input = 'Masukkan kode OTP sekarang';
       const hasil = evaluasiAturan(input, [aturanOtp]);
 
-      expect(hasil.skor).toBe(0); // bobot 0 tetapi langsung_tinggi
+      expect(hasil.skor).toBe(0);
       expect(hasil.level).toBe('tinggi');
       expect(hasil.temuan).toHaveLength(1);
       expect(hasil.temuan[0].judul).toBe('Permintaan kode OTP');
@@ -250,7 +249,6 @@ describe('lib/aturan/scoring.ts', () => {
 
       const input = 'Tawaran pinjaman dana cepat tanpa jaminan.';
 
-      // Jalankan beberapa kali berturut-turut untuk memastikan regex lastIndex tidak menyebabkan kegagalan
       const hasil1 = evaluasiAturan(input, [aturanGlobal]);
       const hasil2 = evaluasiAturan(input, [aturanGlobal]);
       const hasil3 = evaluasiAturan(input, [aturanGlobal]);
@@ -309,17 +307,13 @@ describe('lib/aturan/scoring.ts', () => {
 
   describe('Property-Based Testing (PBT)', () => {
     it('Property 3: Determinisme skor → level (Validates: Requirements 10.1, 10.2, 10.3, 10.4)', () => {
-      // Verifikasi bahwa untuk bilangan non-negatif acak, level selalu deterministik
-      // dan sesuai dengan ambang batas yang ditetapkan
       fc.assert(
         fc.property(fc.nat({ max: 100 }), fc.boolean(), (skor, langsungTinggi) => {
           const level1 = hitungLevel(skor, langsungTinggi);
           const level2 = hitungLevel(skor, langsungTinggi);
 
-          // Deterministik: dipanggil dua kali dengan input sama menghasilkan output sama
           expect(level1).toBe(level2);
 
-          // Konsistensi ambang batas
           if (langsungTinggi) {
             expect(level1).toBe('tinggi');
           } else if (skor >= 6) {

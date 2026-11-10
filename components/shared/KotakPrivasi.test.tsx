@@ -25,7 +25,6 @@ describe('components/shared/KotakPrivasi.tsx (Task 4.9)', () => {
         const peringatanEl = screen.getByTestId('peringatan-sensitif');
         expect(peringatanEl).toBeDefined();
 
-        // Verifikasi kalimat peringatan utama persis seperti yang disyaratkan
         expect(peringatanEl.textContent?.toLowerCase()).toContain(
           'jangan masukkan otp, pin, password, atau nomor rekening asli'
         );
@@ -109,23 +108,21 @@ describe('components/shared/KotakPrivasi.tsx (Task 4.9)', () => {
       expect(screen.getByText(/Cek Video & Suara/i)).toBeDefined();
     });
 
-    it('menjelaskan bahwa penilaian konteks dijalankan sepenuhnya di peramban tanpa kirim ke server luar', () => {
+    it('menyebut apa saja yang dikirim ke layanan AI tanpa menyebut merek', () => {
       render(<KotakPrivasi halaman="video" />);
 
       const deskripsi = screen.getByTestId('deskripsi-layanan');
-      expect(deskripsi.textContent).toBe(
-        'Penilaian konteks situasi dijalankan sepenuhnya di peramban tanpa mengirim data ke server luar.'
-      );
+      expect(deskripsi.textContent).toContain('potongan gambar dan maksimal 60 detik suara dikirim ke layanan AI');
+      expect(deskripsi.textContent).not.toMatch(/Gemini|Reality Defender/);
+      expect(deskripsi.textContent).toContain('Video utuh tetap di perangkatmu');
     });
 
-    it('memuat catatan transparansi untuk fitur analisis media P1 (Reality Defender)', () => {
+    it('menjelaskan file tidak disimpan dan mode pertanyaan tetap lokal', () => {
       render(<KotakPrivasi halaman="video" />);
 
       const catatan = screen.getByTestId('catatan-transparansi');
-      expect(catatan).toBeDefined();
-      expect(catatan.textContent).toContain(
-        'Jika fitur analisis media (P1) diaktifkan, frame gambar atau audio dikirim ke Reality Defender tanpa menyimpan file.'
-      );
+      expect(catatan.textContent).toContain('File tidak kami simpan');
+      expect(catatan.textContent).toContain('tanpa mengirim data ke server luar');
     });
   });
 
@@ -181,7 +178,6 @@ describe('components/shared/KotakPrivasi.tsx (Task 4.9)', () => {
         const container = screen.getByTestId('kotak-privasi');
         const textContent = container.textContent || '';
 
-        // Pastikan tidak ada frase klaim keamanan palsu
         expect(textContent.toLowerCase()).not.toContain('pasti aman');
         expect(textContent.toLowerCase()).not.toContain('terbukti aman');
         expect(textContent.toLowerCase()).not.toContain('100% aman');

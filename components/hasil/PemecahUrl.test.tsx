@@ -19,11 +19,9 @@ describe('components/hasil/PemecahUrl.tsx (Task 18.2 / LN-07)', () => {
       const url = 'https://admin.shopee.co.id/promo/diskon?ref=twitter&id=123';
       render(<PemecahUrl url={url} />);
 
-      // Komponen utama harus dirender
       expect(screen.getByTestId('pemecah-url')).toBeDefined();
       expect(screen.getByTestId('bar-pemecah-url')).toBeDefined();
 
-      // Nilai-nilai komponen pada kartu
       const kartuProtokol = screen.getByTestId('kartu-bagian-protokol');
       expect(kartuProtokol.textContent).toContain('https://');
 
@@ -93,7 +91,6 @@ describe('components/hasil/PemecahUrl.tsx (Task 18.2 / LN-07)', () => {
       const penjelasanDomain = screen.getByTestId('penjelasan-domainUtama');
       expect(penjelasanDomain.textContent).toContain('Shopee');
 
-      // Pada visual bar
       const sorotanDomain = screen.getByTestId('sorotan-domainUtama');
       expect(sorotanDomain.classList.contains('bg-red-100')).toBe(true);
     });
@@ -191,7 +188,6 @@ describe('components/hasil/PemecahUrl.tsx (Task 18.2 / LN-07)', () => {
       const penjelasanParams = screen.getByTestId('penjelasan-params');
       expect(penjelasanParams.textContent).toContain('data sensitif');
 
-      // Daftar parameter spesifik harus tercantum
       expect(screen.getByTestId('param-item-token')).toBeDefined();
       expect(screen.getByTestId('param-item-otp')).toBeDefined();
     });
@@ -252,11 +248,9 @@ describe('components/hasil/PemecahUrl.tsx (Task 18.2 / LN-07)', () => {
       const url = 'https://kemdikbud.go.id/tentang-kami';
       render(<PemecahUrl url={url} />);
 
-      // Badge ringkasan harus menunjukkan struktur URL normal
       const badgeNormal = screen.getByTestId('badge-ringkasan-normal');
       expect(badgeNormal.textContent).toContain('Struktur URL Normal');
 
-      // Semua bagian harus berstatus wajar
       expect(screen.getByTestId('badge-risiko-protokol').textContent).toContain('Wajar');
       expect(screen.getByTestId('badge-risiko-domainUtama').textContent).toContain('Wajar');
       expect(screen.getByTestId('badge-risiko-tld').textContent).toContain('Wajar');
@@ -269,7 +263,6 @@ describe('components/hasil/PemecahUrl.tsx (Task 18.2 / LN-07)', () => {
       const url = 'https://malicious-phishing.xyz/steal?id=123';
       const { container } = render(<PemecahUrl url={url} />);
 
-      // Memastikan tidak ada elemen <a> di dalam komponen pemecah URL
       const linkElements = container.querySelectorAll('a');
       expect(linkElements.length).toBe(0);
     });

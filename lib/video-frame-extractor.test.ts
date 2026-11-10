@@ -114,7 +114,7 @@ describe('lib/video-frame-extractor.ts — Ekstraksi Frame Video di Browser (Req
       expect(res.tinggi).toBe(360);
     });
 
-    it('membatasi jumlah frame dalam rentang minimal 3 dan maksimal 5', async () => {
+    it('membatasi jumlah frame dalam rentang minimal 3 dan maksimal 12', async () => {
       const mockFile = new File(['dummy-video-data'], 'test-video.mp4', {
         type: 'video/mp4',
       });
@@ -131,11 +131,9 @@ describe('lib/video-frame-extractor.ts — Ekstraksi Frame Video di Browser (Req
         return originalCreateElement(tagName);
       });
 
-      // Minta 10 frame -> harus di-clamp ke 5 frame
-      const resMax = await extractFramesFromVideo(mockFile, { jumlahFrame: 10 });
-      expect(resMax.frames.length).toBe(5);
+      const resMax = await extractFramesFromVideo(mockFile, { jumlahFrame: 20 });
+      expect(resMax.frames.length).toBe(12);
 
-      // Minta 1 frame -> harus di-clamp ke 3 frame
       const resMin = await extractFramesFromVideo(mockFile, { jumlahFrame: 1 });
       expect(resMin.frames.length).toBe(3);
     });

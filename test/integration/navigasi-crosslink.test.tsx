@@ -3,7 +3,6 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react';
 
-// Pages & Components yang diuji
 import CekChatPage from '@/app/cek-chat/page';
 import CekLinkPage from '@/app/cek-link/page';
 import CekVideoSuaraPage from '@/app/cek-video-suara/page';
@@ -11,10 +10,8 @@ import Home from '@/app/page';
 import Header, { NAV_ITEMS } from '@/components/layout/Header';
 import { KomponenHasil } from '@/components/hasil/KomponenHasil';
 
-// Types
 import type { FormatDataHasil } from '@/lib/hasil';
 
-// Mock next/navigation
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
   useRouter: () => ({
@@ -27,14 +24,12 @@ vi.mock('next/navigation', () => ({
 describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & Cross-Link Antar Halaman (Task 15.4)', () => {
   const originalFetch = global.fetch;
 
-  // In-memory sessionStorage untuk pengujian isolasi
   let sessionStorageStore: Record<string, string> = {};
 
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorageStore = {};
 
-    // 1. Mock window.sessionStorage
     const mockSessionStorage = {
       getItem: vi.fn((key: string) => sessionStorageStore[key] || null),
       setItem: vi.fn((key: string, value: string) => {
@@ -54,7 +49,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       configurable: true,
     });
 
-    // 2. Mock browser Canvas & ImageBitmap untuk jsdom
     const mockJpgBuffer = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
     if (typeof HTMLCanvasElement.prototype.toBlob !== 'function') {
       HTMLCanvasElement.prototype.toBlob = vi.fn(function (callback, type) {
@@ -88,7 +82,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       });
     }
 
-    // 3. Mock global.fetch untuk simulasi endpoint API jika dipanggil
     global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const urlStr = typeof input === 'string' ? input : input.toString();
 
@@ -155,10 +148,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
     sessionStorageStore = {};
   });
 
-  // =========================================================================
-  // Bagian 1: Cek Chat -> Cek Link (Cross-link & sessionStorage)
-  // References: Requirements 34.1, 34.2
-  // =========================================================================
   describe('1. Cek Chat -> Cek Link: Tombol "Cek link ini" & Pengisian Otomatis via sessionStorage (Requirements 34.1, 34.2)', () => {
     it('menampilkan tombol "Cek link ini" saat pesan chat memuat tautan URL (Requirement 34.1)', async () => {
       render(<CekChatPage />);
@@ -170,23 +159,18 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
         },
       });
 
-      // Submit form
       fireEvent.click(screen.getByTestId('tombol-periksa'));
 
-      // Konfirmasi modal pratinjau sensor
       const btnLanjut = await screen.findByTestId('btn-lanjut-periksa');
       fireEvent.click(btnLanjut);
 
-      // Tunggu hasil tampil di KomponenHasil
       await screen.findByTestId('komponen-hasil');
 
-      // Tombol "Cek link ini" harus tampil di area cross-links (Requirement 34.1)
       const areaCrossLinks = screen.getByTestId('area-cross-links');
       expect(areaCrossLinks).toBeDefined();
 
       const tombolCekLink = within(areaCrossLinks).getByRole('link', { name: /cek link ini/i });
       expect(tombolCekLink).toBeDefined();
-      // Pastikan navigasi mengarah ke /cek-link TANPA query string (Requirement 34.2)
       expect(tombolCekLink.getAttribute('href')).toBe('/cek-link');
       expect(tombolCekLink.getAttribute('href')).not.toContain('?');
     });
@@ -211,28 +195,22 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       const areaCrossLinks = screen.getByTestId('area-cross-links');
       const tombolCekLink = within(areaCrossLinks).getByRole('link', { name: /cek link ini/i });
 
-      // Simulasikan klik pada tombol cross-link "Cek link ini"
       fireEvent.click(tombolCekLink);
 
-      // sessionStorage harus menyimpan URL dengan kunci 'url_dari_chat'
       expect(window.sessionStorage.setItem).toHaveBeenCalledWith('url_dari_chat', targetUrl);
       expect(window.sessionStorage.getItem('url_dari_chat')).toBe(targetUrl);
     });
 
     it('halaman Cek Link (/cek-link) otomatis mengisi input URL dari sessionStorage dan membersihkan kunci tersebut (Requirement 34.2)', async () => {
       const urlDariChat = 'https://promo-hadiah-resmi.xyz/klaim';
-      // Simulasikan URL sudah tersimpan di sessionStorage hasil dari klik Cek Chat
       window.sessionStorage.setItem('url_dari_chat', urlDariChat);
 
-      // Mount halaman Cek Link
       render(<CekLinkPage />);
 
-      // Kolom input harus terisi otomatis dengan URL tersebut
       const inputLink = screen.getByTestId('input-link') as HTMLInputElement;
       expect(inputLink).toBeDefined();
       expect(inputLink.value).toBe(urlDariChat);
 
-      // sessionStorage harus dibersihkan setelah dibaca (removeItem dipanggil)
       expect(window.sessionStorage.removeItem).toHaveBeenCalledWith('url_dari_chat');
       expect(window.sessionStorage.getItem('url_dari_chat')).toBeNull();
     });
@@ -243,19 +221,15 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
 
       render(<CekLinkPage />);
 
-      // Kolom input sudah terisi otomatis
       const inputLink = screen.getByTestId('input-link') as HTMLInputElement;
       expect(inputLink.value).toBe(urlDariChat);
 
-      // Tombol periksa aktif dan dapat langsung disubmit
       const formInputLink = screen.getByTestId('form-input-link');
       fireEvent.submit(formInputLink);
 
-      // Tunggu hasil tampil di Cek Link
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // Hasil mencerminkan pemeriksaan URL yang dioper
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/cek-link',
         expect.objectContaining({
@@ -288,7 +262,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       const tombolCekLink = within(areaCrossLinks).getByRole('link', { name: /cek link ini/i });
       fireEvent.click(tombolCekLink);
 
-      // URL pertama yang harus tersimpan
       expect(window.sessionStorage.setItem).toHaveBeenCalledWith('url_dari_chat', url1);
       expect(window.sessionStorage.getItem('url_dari_chat')).toBe(url1);
     });
@@ -309,7 +282,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
 
       await screen.findByTestId('komponen-hasil');
 
-      // Tidak ada tombol "Cek link ini" di area cross-links maupun halaman
       const areaCrossLinks = screen.queryByTestId('area-cross-links');
       if (areaCrossLinks) {
         expect(within(areaCrossLinks).queryByRole('link', { name: /cek link ini/i })).toBeNull();
@@ -317,10 +289,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
     });
   });
 
-  // =========================================================================
-  // Bagian 2: Cek Chat -> Cek Video & Suara (Cross-link saat modus video terdeteksi)
-  // References: Requirement 34.3
-  // =========================================================================
   describe('2. Cek Chat -> Cek Video & Suara: Tautan saat Modus Video Terdeteksi (Requirement 34.3)', () => {
     it('menampilkan tautan ke /cek-video-suara saat chat mendeteksi kata "video call" (Requirement 34.3)', async () => {
       render(<CekChatPage />);
@@ -383,7 +351,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       await screen.findByTestId('komponen-hasil');
 
       const areaCrossLinks = screen.getByTestId('area-cross-links');
-      // Kedua tombol cross-links harus hadir di area Tindakan Lanjutan
       const tombolCekLink = within(areaCrossLinks).getByRole('link', { name: /cek link ini/i });
       const tombolCekVideo = within(areaCrossLinks).getByRole('link', { name: /cek video & suara/i });
 
@@ -409,7 +376,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
 
       await screen.findByTestId('komponen-hasil');
 
-      // Area cross-links tidak boleh memuat tautan "Cek Video & Suara" sebagai tindakan lanjutan
       const areaCrossLinks = screen.queryByTestId('area-cross-links');
       if (areaCrossLinks) {
         expect(within(areaCrossLinks).queryByRole('link', { name: /cek video & suara/i })).toBeNull();
@@ -417,15 +383,10 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
     });
   });
 
-  // =========================================================================
-  // Bagian 3: Semua Halaman Cek Menampilkan Tautan ke Dua Halaman Cek Lainnya
-  // References: Requirement 34.4
-  // =========================================================================
   describe('3. Semua Halaman Cek: KomponenHasil Menampilkan Tautan ke Dua Halaman Cek Lainnya di Bagian Penutup (Requirement 34.4)', () => {
     it('Cek Chat (/cek-chat): menampilkan tautan ke Cek Link (/cek-link) dan Cek Video & Suara (/cek-video-suara) di bagian bawah hasil', async () => {
       render(<CekChatPage />);
 
-      // Gunakan tombol contoh untuk memuat hasil seketika
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
 
       await screen.findByTestId('komponen-hasil');
@@ -441,7 +402,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(hrefs).toContain('/cek-video-suara');
       expect(hrefs).not.toContain('/cek-chat');
 
-      // Periksa label
       const labels = links.map((l) => l.textContent || '');
       expect(labels.some((t) => t.includes('Cek Link'))).toBe(true);
       expect(labels.some((t) => t.includes('Cek Video & Suara'))).toBe(true);
@@ -450,7 +410,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
     it('Cek Link (/cek-link): menampilkan tautan ke Cek Chat (/cek-chat) dan Cek Video & Suara (/cek-video-suara) di bagian bawah hasil', async () => {
       render(<CekLinkPage />);
 
-      // Gunakan tombol contoh untuk memuat hasil simulasi
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
 
       await screen.findByTestId('area-hasil-link');
@@ -466,7 +425,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(hrefs).toContain('/cek-video-suara');
       expect(hrefs).not.toContain('/cek-link');
 
-      // Periksa label
       const labels = links.map((l) => l.textContent || '');
       expect(labels.some((t) => t.includes('Cek Chat'))).toBe(true);
       expect(labels.some((t) => t.includes('Cek Video & Suara'))).toBe(true);
@@ -475,7 +433,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
     it('Cek Video & Suara (/cek-video-suara): menampilkan tautan ke Cek Chat (/cek-chat) dan Cek Link (/cek-link) di bagian bawah hasil', async () => {
       render(<CekVideoSuaraPage />);
 
-      // Gunakan tombol contoh untuk memuat hasil simulasi video
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
 
       await screen.findByTestId('komponen-hasil');
@@ -491,7 +448,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(hrefs).toContain('/cek-link');
       expect(hrefs).not.toContain('/cek-video-suara');
 
-      // Periksa label
       const labels = links.map((l) => l.textContent || '');
       expect(labels.some((t) => t.includes('Cek Chat'))).toBe(true);
       expect(labels.some((t) => t.includes('Cek Link'))).toBe(true);
@@ -517,16 +473,11 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       const links = within(areaHalamanLain).getAllByRole('link');
 
       links.forEach((link) => {
-        // Harus memiliki class min-h-[44px] untuk target sentuh mobile WCAG
         expect(link.className).toContain('min-h-[44px]');
       });
     });
   });
 
-  // =========================================================================
-  // Bagian 4: Header Navigasi Bersama
-  // References: Requirements 1.1, 1.2
-  // =========================================================================
   describe('4. Header: Navigasi ke Semua Halaman Cek (/cek-chat, /cek-link, /cek-video-suara) dan Beranda (Requirements 1.1, 1.2)', () => {
     it('menampilkan logo aplikasi yang menautkan kembali ke Beranda (/) (Requirement 1.1)', () => {
       render(<Header />);
@@ -554,14 +505,12 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(cekLinkLink.getAttribute('href')).toBe('/cek-link');
       expect(cekVideoLink.getAttribute('href')).toBe('/cek-video-suara');
 
-      // Semua tautan memenuhi target sentuh minimal 44px
       [cekChatLink, cekLinkLink, cekVideoLink].forEach((link) => {
         expect(link.className).toContain('min-h-[44px]');
       });
     });
 
     it('menandai halaman aktif dengan aria-current="page" saat pengguna berada di halaman tertentu (Requirement 1.2)', () => {
-      // 1. Saat di Cek Chat
       const { unmount: unmount1 } = render(<Header currentPath="/cek-chat" />);
       let navDesktop = screen.getByRole('navigation', { name: 'Navigasi Utama' });
       expect(within(navDesktop).getByRole('link', { name: 'Cek Chat' }).getAttribute('aria-current')).toBe('page');
@@ -569,7 +518,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(within(navDesktop).getByRole('link', { name: 'Cek Video & Suara' }).getAttribute('aria-current')).toBeNull();
       unmount1();
 
-      // 2. Saat di Cek Link
       const { unmount: unmount2 } = render(<Header currentPath="/cek-link" />);
       navDesktop = screen.getByRole('navigation', { name: 'Navigasi Utama' });
       expect(within(navDesktop).getByRole('link', { name: 'Cek Chat' }).getAttribute('aria-current')).toBeNull();
@@ -577,7 +525,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(within(navDesktop).getByRole('link', { name: 'Cek Video & Suara' }).getAttribute('aria-current')).toBeNull();
       unmount2();
 
-      // 3. Saat di Cek Video & Suara
       const { unmount: unmount3 } = render(<Header currentPath="/cek-video-suara" />);
       navDesktop = screen.getByRole('navigation', { name: 'Navigasi Utama' });
       expect(within(navDesktop).getByRole('link', { name: 'Cek Chat' }).getAttribute('aria-current')).toBeNull();
@@ -585,7 +532,6 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(within(navDesktop).getByRole('link', { name: 'Cek Video & Suara' }).getAttribute('aria-current')).toBe('page');
       unmount3();
 
-      // 4. Saat di Beranda (/) tidak ada menu cek yang bertanda aria-current
       render(<Header currentPath="/" />);
       navDesktop = screen.getByRole('navigation', { name: 'Navigasi Utama' });
       within(navDesktop).getAllByRole('link').forEach((link) => {
@@ -599,11 +545,9 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       const hamburgerBtn = screen.getByRole('button', { name: /buka menu navigasi/i });
       expect(hamburgerBtn.getAttribute('aria-expanded')).toBe('false');
 
-      // Buka menu mobile
       fireEvent.click(hamburgerBtn);
       expect(hamburgerBtn.getAttribute('aria-expanded')).toBe('true');
 
-      // Navigasi mobile muncul
       const navMobile = screen.getByRole('navigation', { name: 'Navigasi Menu Mobile' });
       expect(navMobile).toBeDefined();
 
@@ -614,20 +558,14 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       expect(within(navMobile).getByRole('link', { name: 'Cek Link' }).getAttribute('href')).toBe('/cek-link');
       expect(within(navMobile).getByRole('link', { name: 'Cek Video & Suara' }).getAttribute('href')).toBe('/cek-video-suara');
 
-      // Halaman aktif ditandai di menu mobile
       expect(within(navMobile).getByRole('link', { name: 'Cek Chat' }).getAttribute('aria-current')).toBe('page');
 
-      // Tutup menu mobile dengan klik tombol hamburger lagi
       fireEvent.click(hamburgerBtn);
       expect(hamburgerBtn.getAttribute('aria-expanded')).toBe('false');
       expect(screen.queryByRole('navigation', { name: 'Navigasi Menu Mobile' })).toBeNull();
     });
   });
 
-  // =========================================================================
-  // Bagian 5: Beranda (Tiga Kartu Menu Pengecekan)
-  // References: Requirements 3.1, 3.2, 3.3, 3.4, 3.5
-  // =========================================================================
   describe('5. Beranda: 3 Kartu Menu Mengarah ke Masing-Masing Halaman Cek (Requirements 3.1, 3.2, 3.3, 3.4, 3.5)', () => {
     it('merender tepat tiga kartu menu bertumpuk vertikal dengan nomor urut 1, 2, 3 (Requirements 3.1, 3.2)', () => {
       render(<Home />);
@@ -635,11 +573,9 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
       const container = screen.getByTestId('menu-kartu-container');
       expect(container).toBeDefined();
 
-      // Temukan 3 kartu menu di dalam container
       const kartuList = within(container).getAllByTestId('kartu-menu');
       expect(kartuList).toHaveLength(3);
 
-      // Verifikasi nomor pada penanda kartu
       const nomorList = within(container).getAllByTestId('kartu-menu-nomor');
       expect(nomorList).toHaveLength(3);
       expect(nomorList[0].textContent).toBe('1');
@@ -687,13 +623,8 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
     });
   });
 
-  // =========================================================================
-  // Bagian 6: Alur Siklus Penuh: Beranda -> Cek Chat -> Cek Link -> Cek Lagi
-  // References: Requirements 1.1, 34.1, 34.2, 35.1
-  // =========================================================================
   describe('6. Alur Terintegrasi Antar Komponen Halaman', () => {
     it('mensimulasikan alur komprehensif: deteksi URL di chat -> klik simpan ke sessionStorage -> buka Cek Link -> reset via Cek Lagi', async () => {
-      // 1. Pengguna membuka Cek Chat dan memeriksa pesan dengan URL
       const { unmount: unmountChat } = render(<CekChatPage />);
 
       const targetUrl = 'https://undian-kejutan-berhadiah.xyz/ambil';
@@ -708,33 +639,25 @@ describe('test/integration/navigasi-crosslink.test.tsx — Integrasi Navigasi & 
 
       await screen.findByTestId('komponen-hasil');
 
-      // 2. Klik tombol "Cek link ini"
       const areaCrossLinks = screen.getByTestId('area-cross-links');
       const tombolCekLink = within(areaCrossLinks).getByRole('link', { name: /cek link ini/i });
       fireEvent.click(tombolCekLink);
 
-      // sessionStorage mencatat URL
       expect(window.sessionStorage.getItem('url_dari_chat')).toBe(targetUrl);
 
-      // Unmount chat page (mensimulasikan berpindah halaman)
       unmountChat();
 
-      // 3. Pengguna tiba di halaman Cek Link
       const { unmount: unmountLink } = render(<CekLinkPage />);
 
-      // URL terisi otomatis
       const inputLink = screen.getByTestId('input-link') as HTMLInputElement;
       expect(inputLink.value).toBe(targetUrl);
 
-      // Submit URL di Cek Link
       fireEvent.submit(screen.getByTestId('form-input-link'));
       await screen.findByTestId('area-hasil-link');
 
-      // 4. Tombol "Cek lagi" di Cek Link mengembalikan kondisi awal
       const tombolCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(tombolCekLagi);
 
-      // Formulir kembali ke keadaan kosong dan siap menerima input baru
       await screen.findByTestId('area-input-link');
       expect((screen.getByTestId('input-link') as HTMLInputElement).value).toBe('');
 

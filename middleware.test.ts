@@ -130,7 +130,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
     it('menolak request ke-11 dengan HTTP 429 Too Many Requests dan Retry-After header', async () => {
       const ip = '192.168.1.12';
 
-      // 10 request pertama berhasil
       for (let i = 0; i < 10; i++) {
         const req = new NextRequest('http://localhost:3000/api/cek-chat', {
           headers: { 'x-forwarded-for': ip },
@@ -139,7 +138,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
         expect(res.status).toBe(200);
       }
 
-      // Request ke-11 ditolak dengan 429
       const blockedReq = new NextRequest('http://localhost:3000/api/cek-chat', {
         headers: { 'x-forwarded-for': ip },
       });
@@ -158,7 +156,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
       expect(typeof body.pesan).toBe('string');
       expect(body.retryAfter).toBeGreaterThan(0);
 
-      // Pastikan pesan tidak mengandung kata terlarang
       const kataTerlarang = ['pasti', 'terbukti', '100%'];
       for (const kata of kataTerlarang) {
         expect(body.pesan.toLowerCase()).not.toContain(kata);
@@ -166,7 +163,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
     });
 
     it('menolak dengan pesan batas harian saat limit 100 req/hari terlampaui', async () => {
-      // Mock checkRateLimit untuk mensimulasikan batas harian terlampaui
       vi.spyOn(rateLimitModule, 'checkRateLimit').mockResolvedValueOnce({
         success: false,
         limit: 100,
@@ -194,7 +190,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
     it('mengisolasi rate limit antar endpoint berbeda untuk IP yang sama', async () => {
       const ip = '192.168.1.14';
 
-      // Habiskan kuota cek-chat
       for (let i = 0; i < 10; i++) {
         const req = new NextRequest('http://localhost:3000/api/cek-chat', {
           headers: { 'x-forwarded-for': ip },
@@ -202,14 +197,12 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
         await middleware(req);
       }
 
-      // cek-chat sekarang diblokir
       const chatReq = new NextRequest('http://localhost:3000/api/cek-chat', {
         headers: { 'x-forwarded-for': ip },
       });
       const chatRes = await middleware(chatReq);
       expect(chatRes.status).toBe(429);
 
-      // Tapi cek-link untuk IP yang sama tetap diizinkan
       const linkReq = new NextRequest('http://localhost:3000/api/cek-link', {
         headers: { 'x-forwarded-for': ip },
       });
@@ -222,7 +215,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
       const ip1 = '192.168.1.15';
       const ip2 = '192.168.1.16';
 
-      // Habiskan kuota ip1
       for (let i = 0; i < 10; i++) {
         const req = new NextRequest('http://localhost:3000/api/cek-chat', {
           headers: { 'x-forwarded-for': ip1 },
@@ -237,7 +229,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
       );
       expect(blockedRes.status).toBe(429);
 
-      // ip2 tetap memiliki kuota penuh
       const allowedRes = await middleware(
         new NextRequest('http://localhost:3000/api/cek-chat', {
           headers: { 'x-forwarded-for': ip2 },
@@ -251,14 +242,12 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
       const req = new NextRequest('http://localhost:3000/cek-chat');
       const res = await middleware(req);
       expect(res.status).toBe(200);
-      // Header rate limit tidak ditambahkan untuk halaman non-api
       expect(res.headers.get('X-RateLimit-Limit')).toBeNull();
     });
 
     it('menerapkan fail-open jika terjadi exception tak terduga', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      // Mock checkRateLimit melempar error tak terduga
       vi.spyOn(rateLimitModule, 'checkRateLimit').mockRejectedValueOnce(
         new Error('Unexpected network catastrophe')
       );
@@ -267,7 +256,6 @@ describe('middleware.ts — Edge Middleware Rate Limiting (Requirements 25.2, 25
         headers: { 'x-forwarded-for': '192.168.1.99' },
       });
 
-      // Fail-open: harus tetap menghasilkan respons 200 (melanjutkan request)
       const res = await middleware(req);
       expect(res.status).toBe(200);
 

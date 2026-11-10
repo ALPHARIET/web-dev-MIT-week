@@ -21,18 +21,12 @@ import {
 } from '@/lib/hasil';
 import linkContohJson from '@/data/contoh/link-contoh.json';
 
-/** Interface request body POST /api/cek-link */
 export interface CekLinkRequestBody {
   url?: string;
   levelMinimum?: TingkatLevel;
   temuanAturan?: Temuan[];
 }
 
-/**
- * Mencocokkan URL yang dimasukkan dengan skenario contoh fiktif di data/contoh/link-contoh.json.
- * Requirement 21.1: Jika cocok, langsung kembalikan respons simulasi tanpa memanggil
- * Google Safe Browsing, RDAP, atau Gemini API.
- */
 function cariContohFiktif(inputUrl: string): FormatDataHasil | null {
   if (!inputUrl) return null;
 
@@ -51,27 +45,6 @@ function cariContohFiktif(inputUrl: string): FormatDataHasil | null {
   return null;
 }
 
-/**
- * Route Handler POST /api/cek-link
- *
- * Menerima URL untuk diperiksa terhadap ancaman phishing, malware, dan pola penipuan.
- *
- * Alur pemeriksaan:
- * 1. Validasi request body (URL wajib ada, panjang <= 2.000 karakter, kembalikan 400 jika tidak valid).
- * 2. Sanitasi URL: buang parameter sensitif (email, token, password, otp, dll.).
- * 3. Cek skenario contoh fiktif: jika cocok, kembalikan respons simulasi langsung tanpa API eksternal.
- * 4. Jalankan 3 pemeriksaan paralel dengan Promise.allSettled dan timeout 5 detik:
- *    - Google Safe Browsing Lookup
- *    - RDAP query umur domain
- *    - Analisis leksikal server
- * 5. Hitung skor gabungan dan gabung level (ambil level tertinggi dari aturan dan data API).
- * 6. Kirim paket diagnostik (tanpa data sensitif) ke Gemini explainLink dengan timeout 10 detik.
- * 7. Jika Gemini gagal/timeout, gunakan teks penjelasan bawaan aturan lokal.
- * 8. Format respons sebagai FormatDataHasil lengkap dan kembalikan 200 OK.
- * 9. Logging aman: hanya mencatat status, durasi, dan jenis error (tanpa isi URL).
- *
- * References: Requirements 17.3, 17.4, 17.5, 18.1, 18.2, 18.3, 18.4, 20.1, 20.2, 20.3, 21.1, 28.2, 28.4, 32.2
- */
 export async function POST(req: Request): Promise<Response> {
   const startTime = Date.now();
 
@@ -93,7 +66,6 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // 1. Validasi request body (Requirement 17.1)
   if (
     !body ||
     typeof body.url !== 'string' ||
@@ -116,12 +88,10 @@ export async function POST(req: Request): Promise<Response> {
 
   const rawUrl = body.url.trim();
 
-  // 2. Sanitasi URL: buang parameter sensitif (Requirement 17.3, 17.4)
   const parsed = parseUrl(rawUrl);
   const sanitasi = sanitasiParams(parsed);
   const urlBersih = sanitasi.urlBersih || rawUrl;
 
-  // 3. Cek contoh fiktif di data/contoh/link-contoh.json (Requirement 21.1)
   const contohHasil = cariContohFiktif(rawUrl) || cariContohFiktif(urlBersih);
   if (contohHasil) {
     console.log(
@@ -136,7 +106,6 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    // 4. Jalankan 4 pemeriksaan paralel dengan Promise.allSettled & timeout 5 detik (Requirement 18.1, 18.2, 18.3, LN-08)
     const [sbSettled, rdapSettled, , vtSettled] = await Promise.allSettled([
       checkSafeBrowsing(urlBersih, { timeoutMs: 5000 }),
       queryDomainAge(urlBersih, { timeoutMs: 5000 }),
@@ -144,7 +113,6 @@ export async function POST(req: Request): Promise<Response> {
       checkVirusTotal(urlBersih, { timeoutMs: 5000 }),
     ]);
 
-    // Ekstrak hasil Safe Browsing
     let isSafeBrowsingThreat = false;
     let statusSafeBrowsing: StatusLayanan = 'gagal';
     if (sbSettled.status === 'fulfilled') {
@@ -153,7 +121,6 @@ export async function POST(req: Request): Promise<Response> {
       isSafeBrowsingThreat = sb.ditemukan === true;
     }
 
-    // Ekstrak hasil RDAP
     let rdapAgeDays: number | undefined = undefined;
     let statusRdap: StatusLayanan = 'gagal';
     if (rdapSettled.status === 'fulfilled') {
@@ -164,7 +131,6 @@ export async function POST(req: Request): Promise<Response> {
       }
     }
 
-    // Ekstrak hasil VirusTotal (Requirement LN-08: P1)
     let isVirusTotalThreat = false;
     let statusVirusTotal: StatusLayanan = 'tidak_tersedia';
     let vtJumlahVendorBerbahaya = 0;
@@ -174,13 +140,11 @@ export async function POST(req: Request): Promise<Response> {
       statusVirusTotal = vt.status;
       vtJumlahVendorBerbahaya = vt.jumlahVendorBerbahaya;
       vtTotalVendor = vt.totalVendor;
-      // Jika ditandai berbahaya (jumlahVendorBerbahaya >= 2): tambahkan temuan sumber 'virustotal' dengan bobot +3
       isVirusTotalThreat = vt.ditemukan && vt.jumlahVendorBerbahaya >= 2;
     } else {
       statusVirusTotal = 'gagal';
     }
 
-    // 5. Analisis leksikal server dengan hasil data Safe Browsing, RDAP, dan VirusTotal (Requirement 19.1 - 19.11, LN-08)
     const serverHasil = evaluasiLeksikalUrl(urlBersih, {
       isSafeBrowsingThreat,
       rdapAgeDays,
@@ -193,13 +157,11 @@ export async function POST(req: Request): Promise<Response> {
         : undefined,
     });
 
-    // Gabung level: ambil level tertinggi dari aturan lokal dan API (Requirement 10.5, 20.2)
     let levelTerhitung = serverHasil.level;
     if (body.levelMinimum) {
       levelTerhitung = gabungLevel(body.levelMinimum, levelTerhitung);
     }
 
-    // Gabungkan temuan dari server dengan temuanAturan yang dikirim client (jika ada)
     const daftarTemuan: Temuan[] = [...serverHasil.temuan];
     if (Array.isArray(body.temuanAturan)) {
       for (const t of body.temuanAturan) {
@@ -213,7 +175,6 @@ export async function POST(req: Request): Promise<Response> {
       }
     }
 
-    // Siapkan hasil lokal sebagai fallback penjelasan jika Gemini gagal
     const fallbackHasil = generateHasilLinkLokal(urlBersih, {
       isSafeBrowsingThreat,
       rdapAgeDays,
@@ -226,9 +187,8 @@ export async function POST(req: Request): Promise<Response> {
         : undefined,
     });
 
-    // 6. Kirim paket diagnostik teknis ke Gemini explainLink dengan timeout 10 detik (Requirement 20.1, 28.2)
     const paketDiagnostik: PaketDiagnostikLink = {
-      url: urlBersih, // URL aman tanpa parameter sensitif
+      url: urlBersih,
       levelMinimum: levelTerhitung,
       temuanAturan: daftarTemuan,
       safeBrowsingDitemukan: isSafeBrowsingThreat,
@@ -242,11 +202,9 @@ export async function POST(req: Request): Promise<Response> {
       hasilGemini = null;
     }
 
-    // 7. Bentuk FormatDataHasil lengkap (Requirement 20.2, 20.3, 32.2)
     let responFinal: FormatDataHasil;
 
     if (hasilGemini) {
-      // Gemini berhasil: gabungkan level dan update status layanan
       const levelAkhir = gabungLevel(levelTerhitung, hasilGemini.level);
 
       const pihakKetiga = new Set<string>(hasilGemini.pihak_ketiga || []);
@@ -261,7 +219,6 @@ export async function POST(req: Request): Promise<Response> {
         pihakKetiga.add('VirusTotal');
       }
 
-      // Pastikan temuan VirusTotal tetap ada jika ditandai berbahaya
       const temuanFinal = [...hasilGemini.temuan];
       if (
         isVirusTotalThreat &&
@@ -275,7 +232,6 @@ export async function POST(req: Request): Promise<Response> {
         }
       }
 
-      // Pastikan minimal 2 langkah tindakan
       let langkah = hasilGemini.langkah;
       if (!Array.isArray(langkah) || langkah.length < 2) {
         langkah = fallbackHasil.langkah;
@@ -297,7 +253,6 @@ export async function POST(req: Request): Promise<Response> {
         },
       });
     } else {
-      // Gemini gagal atau API key kosong: gunakan teks penjelasan bawaan aturan lokal (Requirement 20.3, 29.2)
       const pihakKetigaFallback = new Set<string>();
       if (statusSafeBrowsing === 'ok' || isSafeBrowsingThreat) {
         pihakKetigaFallback.add('Google Safe Browsing');
@@ -309,7 +264,6 @@ export async function POST(req: Request): Promise<Response> {
         pihakKetigaFallback.add('VirusTotal');
       }
 
-      // Gabungkan temuan client yang belum ada di fallback
       const temuanFinal = [...fallbackHasil.temuan];
       if (Array.isArray(body.temuanAturan)) {
         for (const t of body.temuanAturan) {
@@ -338,7 +292,6 @@ export async function POST(req: Request): Promise<Response> {
       });
     }
 
-    // 8. Logging aman: tanpa mencatat isi URL pengguna (Requirement 31.1, 31.4)
     console.log(
       JSON.stringify({
         endpoint: 'POST /api/cek-link',
@@ -354,7 +307,6 @@ export async function POST(req: Request): Promise<Response> {
 
     return NextResponse.json(responFinal);
   } catch (err: unknown) {
-    // 9. Selalu kembalikan 200 OK dengan hasil parsial jika terjadi kesalahan tak terduga (Requirement 29.1)
     console.error(
       JSON.stringify({
         endpoint: 'POST /api/cek-link',

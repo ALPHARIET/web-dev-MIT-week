@@ -15,21 +15,6 @@ export interface AkordeonProps {
   className?: string;
 }
 
-/**
- * Komponen Akordeon reusable untuk menampilkan konten ekspandibel.
- * Digunakan pada halaman Beranda untuk bagian "Cara kerja dan batasan",
- * serta bagian informasi lain yang memerlukan pengelompokan konten bertahap.
- *
- * Fitur & Aksesibilitas:
- * - Buka/tutup dengan klik judul atau tombol Enter / Spasi
- * - Ikon panah (chevron) yang berputar saat terbuka (rotate-180)
- * - Accessible: atribut ARIA (`aria-expanded`, `aria-controls`, `role="region"`, `aria-labelledby`)
- * - Target sentuh tombol minimal 44px (Requirement 27.2: min-h-[44px])
- * - Dukungan `allowMultiple` untuk membuka lebih dari satu item sekaligus
- * - Dukungan `defaultOpenIds` untuk menentukan item yang terbuka secara bawaan
- *
- * References: Requirements 4.5, 27.2
- */
 export function Akordeon({
   items,
   allowMultiple = false,

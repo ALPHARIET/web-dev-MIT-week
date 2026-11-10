@@ -10,7 +10,6 @@ import {
 import { tanyaGemini } from '@/lib/gemini';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-// Mock lib/gemini
 vi.mock('@/lib/gemini', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/gemini')>();
   return {
@@ -153,7 +152,6 @@ describe('POST /api/tanya Route Handler (Task 17.1)', () => {
     });
 
     it('mengabaikan pesan asisten saat menghitung jumlah pertanyaan pengguna', async () => {
-      // 9 pertanyaan pengguna + 9 jawaban asisten = 18 pesan total, tetapi pengguna baru 9
       const riwayatCampuran: TanyaRequestBody['riwayat'] = [];
       for (let i = 0; i < 9; i++) {
         riwayatCampuran.push({ peran: 'pengguna', isi: `Tanya ${i + 1}` });

@@ -52,7 +52,6 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       const toggleBtn = screen.getByTestId('panel-darurat-toggle');
       expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
 
-      // Konten panel tidak ter-render saat tertutup
       expect(screen.queryByTestId('panel-darurat-content')).toBeNull();
     });
 
@@ -61,12 +60,10 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
 
       const toggleBtn = screen.getByTestId('panel-darurat-toggle');
 
-      // Klik 1: Buka panel
       fireEvent.click(toggleBtn);
       expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
       expect(screen.getByTestId('panel-darurat-content')).toBeDefined();
 
-      // Klik 2: Tutup kembali
       fireEvent.click(toggleBtn);
       expect(toggleBtn.getAttribute('aria-expanded')).toBe('false');
       expect(screen.queryByTestId('panel-darurat-content')).toBeNull();
@@ -89,20 +86,16 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
     it('otomatis terbuka dan memilih situasi "transfer" saat situasiAktif=["transfer"]', () => {
       render(<PanelDarurat situasiAktif={['transfer']} />);
 
-      // Panel harus otomatis terbuka
       const toggleBtn = screen.getByTestId('panel-darurat-toggle');
       expect(toggleBtn.getAttribute('aria-expanded')).toBe('true');
 
-      // Banner peringatan tindakan terdeteksi tampil
       const banner = screen.getByTestId('banner-situasi-terdeteksi');
       expect(banner).toBeDefined();
       expect(banner.textContent).toContain('Sudah transfer');
 
-      // Tab transfer terpilih sebagai tab aktif
       const tabTransfer = screen.getByTestId('tab-situasi-transfer');
       expect(tabTransfer.getAttribute('aria-selected')).toBe('true');
 
-      // Checklist untuk "transfer" langsung tampil di posisi teratas
       const panelTransfer = screen.getByTestId('panel-langkah-transfer');
       expect(panelTransfer).toBeDefined();
       expect(panelTransfer.textContent).toContain('Hubungi bank pengirim sekarang juga');
@@ -132,10 +125,8 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
     it('menampilkan penanda "!" pada tab situasi terdeteksi lain jika ada lebih dari satu situasiAktif', () => {
       render(<PanelDarurat situasiAktif={['transfer', 'kirim_otp']} />);
 
-      // transfer aktif
       expect(screen.getByTestId('tab-situasi-transfer').getAttribute('aria-selected')).toBe('true');
 
-      // kirim_otp terdeteksi tapi belum dipilih, sehingga memiliki badge indicator
       const badgeOtp = screen.getByTestId('badge-terdeteksi-kirim_otp');
       expect(badgeOtp).toBeDefined();
     });
@@ -146,13 +137,11 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       const handleSelect = vi.fn();
       render(<PanelDarurat autoOpen={true} onSelectSituasi={handleSelect} />);
 
-      // Awalnya default ke 'klik_link'
       const tabKlikLink = screen.getByTestId('tab-situasi-klik_link');
       expect(tabKlikLink.getAttribute('aria-selected')).toBe('true');
       expect(screen.getByTestId('panel-langkah-klik_link')).toBeDefined();
       expect(screen.getByText('Tutup halaman web tersebut segera.')).toBeDefined();
 
-      // Klik tab 'isi_data'
       const tabIsiData = screen.getByTestId('tab-situasi-isi_data');
       fireEvent.click(tabIsiData);
 
@@ -160,7 +149,6 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       expect(tabIsiData.getAttribute('aria-selected')).toBe('true');
       expect(tabKlikLink.getAttribute('aria-selected')).toBe('false');
 
-      // Checklist berubah menjadi langkah untuk 'isi_data'
       expect(screen.getByTestId('panel-langkah-isi_data')).toBeDefined();
       expect(screen.getByText(/Ganti password lewat aplikasi/)).toBeDefined();
       expect(screen.getByText(/Aktifkan verifikasi dua langkah/)).toBeDefined();
@@ -169,23 +157,18 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
     it('menampilkan langkah yang sesuai untuk setiap situasi dari 5 situasi', () => {
       render(<PanelDarurat autoOpen={true} />);
 
-      // 1. klik_link
       fireEvent.click(screen.getByTestId('tab-situasi-klik_link'));
       expect(screen.getByText('Tutup halaman web tersebut segera.')).toBeDefined();
 
-      // 2. isi_data
       fireEvent.click(screen.getByTestId('tab-situasi-isi_data'));
       expect(screen.getByText(/Ganti password lewat aplikasi/)).toBeDefined();
 
-      // 3. kirim_otp
       fireEvent.click(screen.getByTestId('tab-situasi-kirim_otp'));
       expect(screen.getByText(/Hubungi call center bank atau penyedia layanan/)).toBeDefined();
 
-      // 4. transfer
       fireEvent.click(screen.getByTestId('tab-situasi-transfer'));
       expect(screen.getByText(/Lapor ke Indonesia Anti-Scam Centre \(IASC\)/)).toBeDefined();
 
-      // 5. akun_diambil
       fireEvent.click(screen.getByTestId('tab-situasi-akun_diambil'));
       expect(screen.getByText(/Pulihkan akun lewat fitur pemulihan resmi/)).toBeDefined();
     });
@@ -202,16 +185,13 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
 
       expect(checkbox0.checked).toBe(false);
 
-      // Centang langkah 1
       fireEvent.click(checkbox0);
       expect(checkbox0.checked).toBe(true);
       expect(handleToggleStep).toHaveBeenCalledWith('klik_link', 0, true);
 
-      // Label teks mendapatkan efek visual line-through
       const stepItem = screen.getByTestId('darurat-step-klik_link-0');
       expect(within(stepItem).getByText('Sudah dilakukan')).toBeDefined();
 
-      // Uncentang
       fireEvent.click(checkbox0);
       expect(checkbox0.checked).toBe(false);
       expect(handleToggleStep).toHaveBeenCalledWith('klik_link', 0, false);
@@ -226,7 +206,6 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       const seksiKanal = screen.getByTestId('seksi-kanal-lapor');
       expect(seksiKanal).toBeDefined();
 
-      // 1. Indonesia Anti-Scam Centre (IASC)
       expect(screen.getByText('Indonesia Anti-Scam Centre (IASC)')).toBeDefined();
       const iascLink = screen.getByRole('link', {
         name: /Buka situs resmi Indonesia Anti-Scam Centre \(IASC\) di tab baru/i,
@@ -234,7 +213,6 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       expect(iascLink.getAttribute('href')).toBe('https://iasc.ojk.go.id');
       expect(iascLink.getAttribute('target')).toBe('_blank');
 
-      // 2. Kontak OJK 157
       expect(screen.getByText('Kontak OJK 157')).toBeDefined();
       expect(screen.getByText(/Layanan informasi dan pengaduan konsumen/)).toBeDefined();
       const ojkPhoneLink = screen.getByRole('link', { name: 'Telepon 157' });
@@ -242,11 +220,9 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       const ojkWaLink = screen.getByRole('link', { name: 'WhatsApp OJK' });
       expect(ojkWaLink.getAttribute('href')).toBe('https://wa.me/6281157157157');
 
-      // 3. Call Center Bank / Dompet Digital
       expect(screen.getByText('Call Center Bank / Dompet Digital')).toBeDefined();
       expect(screen.getByText(/Nomor resmi di kartu ATM atau aplikasi resmi/)).toBeDefined();
 
-      // 4. Fitur Laporkan di Platform Pesan
       expect(screen.getByText('Fitur Laporkan di Platform Pesan')).toBeDefined();
       expect(screen.getByText(/Fitur Laporkan & Blokir di aplikasi/)).toBeDefined();
     });
@@ -278,7 +254,6 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
       render(<PanelDarurat autoOpen={true} />);
       DAFTAR_SITUASI_ID.forEach((id) => {
         const tab = screen.getByTestId(`tab-situasi-${id}`);
-        // min-h-[48px] memenuhi syarat >= 44px
         expect(tab.className).toMatch(/min-h-\[(44|48)px\]/);
       });
     });
@@ -334,28 +309,21 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
         />
       );
 
-      // Tab berlabel "Unduh / Pasang APK" alih-alih hanya "Klik link"
       const tabApk = screen.getByTestId('tab-situasi-klik_link');
       expect(tabApk.textContent).toContain('Unduh / Pasang APK');
 
-      // Banner peringatan menyebut "Unduh / Pasang APK"
       const banner = screen.getByTestId('banner-situasi-terdeteksi');
       expect(banner.textContent).toContain('Unduh / Pasang APK');
 
-      // Judul langkah penyelamatan menyebut File APK
       const panel = screen.getByTestId('panel-langkah-klik_link');
       expect(panel.textContent).toContain('Terlanjur Unduh atau Pasang File APK');
 
-      // Langkah 1 berfokus pada Mode Pesawat (matikan koneksi internet)
       expect(panel.textContent).toContain('Segera aktifkan Mode Pesawat');
 
-      // Langkah 2 berfokus pada Copot Pemasangan (Uninstall)
       expect(panel.textContent).toContain('Copot Pemasangan (Uninstall)');
 
-      // Langkah 3 berfokus pada hapus file .apk dari folder Download
       expect(panel.textContent).toContain('hapus permanen berkas file berekstensi .apk');
 
-      // Langkah 4 berfokus pada izin Aksesibilitas dan SMS
       expect(panel.textContent).toContain('Aksesibilitas dan Akses SMS');
     });
 
@@ -387,39 +355,31 @@ describe('components/hasil/PanelDarurat.tsx (Task 4.7)', () => {
         />
       );
 
-      // 1. Tab 1: Unduh / Pasang APK
       const tab1 = screen.getByTestId('tab-situasi-klik_link');
       expect(tab1.textContent).toContain('Unduh / Pasang APK');
 
-      // 2. Tab 2: Beri Izin / Akses HP
       const tab2 = screen.getByTestId('tab-situasi-isi_data');
       expect(tab2.textContent).toContain('Beri Izin / Akses HP');
 
-      // 3. Tab 3: SMS / OTP Disadap
       const tab3 = screen.getByTestId('tab-situasi-kirim_otp');
       expect(tab3.textContent).toContain('SMS / OTP Disadap');
 
-      // 4. Tab 4: Sudah Transfer
       const tab4 = screen.getByTestId('tab-situasi-transfer');
       expect(tab4.textContent).toContain('Sudah Transfer');
 
-      // 5. Tab 5: HP / Akun Dibobol
       const tab5 = screen.getByTestId('tab-situasi-akun_diambil');
       expect(tab5.textContent).toContain('HP / Akun Dibobol');
 
-      // Klik tab 2 (Beri Izin / Akses HP)
       fireEvent.click(tab2);
       const panel2 = screen.getByTestId('panel-langkah-isi_data');
       expect(panel2.textContent).toContain('Terlanjur Memberi Izin Aksesibilitas atau SMS');
       expect(panel2.textContent).toContain('Safe Mode');
 
-      // Klik tab 3 (SMS / OTP Disadap)
       fireEvent.click(tab3);
       const panel3 = screen.getByTestId('panel-langkah-kirim_otp');
       expect(panel3.textContent).toContain('SMS atau Kode OTP Terbaca / Disadap Malware APK');
       expect(panel3.textContent).toContain('Blokir M-Banking');
 
-      // Klik tab 5 (HP / Akun Dibobol)
       fireEvent.click(tab5);
       const panel5 = screen.getByTestId('panel-langkah-akun_diambil');
       expect(panel5.textContent).toContain('Perangkat HP Dikuasai Jarak Jauh atau Akun Dibobol');

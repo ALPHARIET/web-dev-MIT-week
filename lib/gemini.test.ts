@@ -25,7 +25,6 @@ describe('lib/gemini.ts', () => {
     process.env = originalEnv;
   });
 
-  // Mock valid FormatDataHasil object
   const createSampleHasil = (overrides?: Partial<FormatDataHasil>): FormatDataHasil => ({
     halaman: 'chat',
     level: 'sedang',
@@ -50,7 +49,6 @@ describe('lib/gemini.ts', () => {
     ...overrides,
   });
 
-  // Helper to create Gemini API response JSON
   const createGeminiApiResponse = (hasilObj: unknown) => ({
     candidates: [
       {
@@ -127,7 +125,6 @@ describe('lib/gemini.ts', () => {
     });
 
     it('mempertahankan penggunaan dalam konteks negasi/peringatan (Requirement 30.1 & 30.4)', () => {
-      // Requirement 30.4: "Ini tidak berarti pasti aman."
       const klausa304 =
         'Kami tidak menemukan tanda bahaya yang kami kenali. Ini tidak berarti pasti aman.';
       expect(filterKataTerlarang(klausa304)).toBe(klausa304);
@@ -170,7 +167,7 @@ describe('lib/gemini.ts', () => {
           {
             judul: 'Tawaran pasti untung',
             penjelasan: 'Investasi ini terbukti aman 100%.',
-            bukti: 'Dijamin 100% untung pasti cair!', // Bukti harus tetap utuh!
+            bukti: 'Dijamin 100% untung pasti cair!',
             sumber: 'ai',
           },
         ],
@@ -181,20 +178,16 @@ describe('lib/gemini.ts', () => {
 
       const filtered = filterFormatDataHasil(raw);
 
-      // Ringkasan dibersihkan
       expect(filtered.ringkasan).not.toContain('aman');
       expect(filtered.ringkasan).not.toContain('pasti');
 
-      // Temuan dibersihkan
       expect(filtered.temuan[0].penjelasan).not.toContain('terbukti');
       expect(filtered.temuan[0].penjelasan).not.toContain('100%');
 
-      // Bukti kutipan asli tidak diubah
       expect(filtered.temuan[0].bukti).toBe('Dijamin 100% untung pasti cair!');
 
-      // Hal wajar, langkah, dan batasan
       expect(filtered.hal_wajar[0]).not.toContain('terbukti');
-      expect(filtered.batasan).toContain('belum terbukti'); // Negasi dipertahankan
+      expect(filtered.batasan).toContain('belum terbukti');
     });
   });
 
@@ -376,7 +369,6 @@ describe('lib/gemini.ts', () => {
       expect(hasil?.pihak_ketiga).toContain('Google Gemini');
       expect(hasil?.status_layanan.ai).toBe('ok');
 
-      // Verifikasi request dikirim dengan method POST dan payload yang benar
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, requestInit] = mockFetch.mock.calls[0];
       expect(url).toContain('https://generativelanguage.googleapis.com/v1beta/models/');
@@ -420,18 +412,15 @@ describe('lib/gemini.ts', () => {
       const body = JSON.parse(requestInit.body);
       const parts = body.contents[0].parts;
 
-      // Harus ada inlineData untuk gambar
       expect(parts[0].inlineData).toEqual({
         mimeType: 'image/png',
         data: 'iVBORw0KGgoAAAANSUhEUgAA',
       });
-      // Dan ada instruksi teks
       expect(parts[1].text).toContain('tangkapan layar');
       expect(parts[1].text).toContain('Catatan tambahan pengirim mengaku admin bank');
     });
 
     it('Requirement 14.4: Menjamin level minimum dari aturan lokal tidak diturunkan oleh AI', async () => {
-      // AI mengembalikan 'tidak_ditemukan', tetapi aturan lokal menemukan 'tinggi'
       const mockHasil = createSampleHasil({
         level: 'tidak_ditemukan',
         temuan: [],
@@ -455,7 +444,6 @@ describe('lib/gemini.ts', () => {
       );
 
       expect(hasil).not.toBeNull();
-      // Level akhir harus tinggi (gabungLevel('tinggi', 'tidak_ditemukan') => 'tinggi')
       expect(hasil?.level).toBe('tinggi');
     });
 
@@ -509,7 +497,7 @@ describe('lib/gemini.ts', () => {
         { mode: 'teks', teks: 'Halo' },
         {
           apiKey: validApiKey,
-          timeoutMs: 50, // Timeout sangat pendek untuk testing
+          timeoutMs: 50,
           fetchFn: mockFetch as any,
         }
       );
@@ -614,7 +602,6 @@ describe('lib/gemini.ts', () => {
       expect(hasil?.pihak_ketiga).toContain('RDAP');
       expect(hasil?.status_layanan.ai).toBe('ok');
 
-      // Periksa isi prompt user
       const requestInit = mockFetch.mock.calls[0][1];
       const body = JSON.parse(requestInit.body);
       const userText = body.contents[0].parts[0].text;
@@ -641,7 +628,6 @@ describe('lib/gemini.ts', () => {
       });
 
       expect(hasil).not.toBeNull();
-      // Level minimum adalah 'tinggi', jadi hasil harus 'tinggi'
       expect(hasil?.level).toBe('tinggi');
     });
 
@@ -735,7 +721,6 @@ describe('lib/gemini.ts', () => {
       expect(hasil).toBe('Jangan klik link tersebut karena berindikasi phishing.');
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      // Verifikasi format body
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.contents.length).toBe(3);
       expect(body.contents[0].role).toBe('user');
@@ -791,5 +776,155 @@ describe('lib/gemini.ts', () => {
 
       expect(hasil).toBeNull();
     });
+  });
+});
+
+describe('bangunGeminiRequest (GEMINI_BASE_URL)', () => {
+  it('memakai alamat resmi Google jika base URL kosong', async () => {
+    const { bangunGeminiRequest } = await import('./gemini');
+    const r = bangunGeminiRequest('gemini-2.5-flash', 'k1', '');
+    expect(r.url).toBe(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=k1'
+    );
+    expect(r.headers['x-goog-api-key']).toBe('k1');
+  });
+
+  it('menambahkan /v1beta ke alamat proxy tanpa segmen versi', async () => {
+    const { bangunGeminiRequest } = await import('./gemini');
+    const r = bangunGeminiRequest('gemini-2.5-flash', 'k2', 'http://10.0.0.5:20128/');
+    expect(r.url).toBe('http://10.0.0.5:20128/v1beta/models/gemini-2.5-flash:generateContent?key=k2');
+  });
+
+  it('tidak menggandakan segmen versi yang sudah ada', async () => {
+    const { bangunGeminiRequest } = await import('./gemini');
+    expect(bangunGeminiRequest('m', 'k', 'http://proxy/v1beta').url).toBe(
+      'http://proxy/v1beta/models/m:generateContent?key=k'
+    );
+    expect(bangunGeminiRequest('m', 'k', 'http://proxy/v1').url).toBe(
+      'http://proxy/v1/models/m:generateContent?key=k'
+    );
+  });
+
+  it('membaca GEMINI_BASE_URL dari environment', async () => {
+    const { bangunGeminiRequest } = await import('./gemini');
+    const lama = process.env.GEMINI_BASE_URL;
+    process.env.GEMINI_BASE_URL = 'http://proxy.test:9000';
+    try {
+      expect(bangunGeminiRequest('m', 'k').url).toBe('http://proxy.test:9000/v1beta/models/m:generateContent?key=k');
+    } finally {
+      if (lama === undefined) delete process.env.GEMINI_BASE_URL;
+      else process.env.GEMINI_BASE_URL = lama;
+    }
+  });
+});
+
+describe('model & header saat memakai proxy', () => {
+  it('nama model proxy dipakai apa adanya dan garis miring tidak di-encode', async () => {
+    const { bangunGeminiRequest, resolveGeminiModel } = await import('./gemini');
+    const lamaBase = process.env.GEMINI_BASE_URL;
+    const lamaModel = process.env.GEMINI_MODEL;
+    process.env.GEMINI_BASE_URL = 'http://proxy.test:20128';
+    process.env.GEMINI_MODEL = ' ag/gemini-3.8-flash';
+    try {
+      const model = resolveGeminiModel();
+      expect(model).toBe('ag/gemini-3.8-flash');
+      const r = bangunGeminiRequest(model, ' sk-abc');
+      expect(r.url).toBe('http://proxy.test:20128/v1beta/models/ag/gemini-3.8-flash:generateContent?key=sk-abc');
+      expect(r.headers.Authorization).toBe('Bearer sk-abc');
+    } finally {
+      if (lamaBase === undefined) delete process.env.GEMINI_BASE_URL; else process.env.GEMINI_BASE_URL = lamaBase;
+      if (lamaModel === undefined) delete process.env.GEMINI_MODEL; else process.env.GEMINI_MODEL = lamaModel;
+    }
+  });
+
+  it('tanpa proxy, nama model dipakai apa adanya dan tanpa header Bearer', async () => {
+    const { bangunGeminiRequest, resolveGeminiModel } = await import('./gemini');
+    const lamaBase = process.env.GEMINI_BASE_URL;
+    delete process.env.GEMINI_BASE_URL;
+    try {
+      expect(resolveGeminiModel('gemini-3.8-flash')).toBe('gemini-3.8-flash');
+      const { DEFAULT_GEMINI_MODEL } = await import('./gemini');
+      expect(resolveGeminiModel('gemini-1.5-flash')).toBe(DEFAULT_GEMINI_MODEL);
+      expect(bangunGeminiRequest('gemini-3.8-flash', 'k').headers.Authorization).toBeUndefined();
+    } finally {
+      if (lamaBase !== undefined) process.env.GEMINI_BASE_URL = lamaBase;
+    }
+  });
+});
+
+describe('model cadangan & batas waktu per model', () => {
+  it('alamat resmi Google tidak dianggap proxy (tanpa header Bearer)', async () => {
+    const { memakaiProxyGemini, bangunGeminiRequest } = await import('./gemini');
+    expect(memakaiProxyGemini('https://generativelanguage.googleapis.com')).toBe(false);
+    expect(memakaiProxyGemini('http://100.1.2.3:20128')).toBe(true);
+    expect(memakaiProxyGemini('')).toBe(false);
+    expect(
+      bangunGeminiRequest('gemini-3.8-flash', 'k', 'https://generativelanguage.googleapis.com').headers.Authorization
+    ).toBeUndefined();
+  });
+
+  it('urutan model: utama lalu cadangan, tanpa gemini-2.5', async () => {
+    const { daftarModelGemini } = await import('./gemini');
+    const daftar = daftarModelGemini('gemini-3.8-flash');
+    expect(daftar[0]).toBe('gemini-3.8-flash');
+    expect(daftar).toContain('gemini-3.5-flash');
+    expect(daftar.some((m) => m.startsWith('gemini-2.5'))).toBe(false);
+  });
+
+  it('fetchModelGemini melempar GeminiModelTimeout jika model menggantung', async () => {
+    const { fetchModelGemini, GeminiModelTimeout } = await import('./gemini');
+    const gantung = vi.fn(
+      (_u: unknown, init: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        })
+    );
+    await expect(
+      fetchModelGemini(gantung as unknown as typeof fetch, 'http://x', {}, 'gemini-3.8-flash', 20)
+    ).rejects.toBeInstanceOf(GeminiModelTimeout);
+  });
+
+  it('model yang membalas 503 dilewati pada pemeriksaan media berikutnya', async () => {
+    const { daftarModelGemini, tandaiDariError, resetModelSibuk } = await import('./gemini');
+    resetModelSibuk();
+    expect(tandaiDariError('gemini-3.8-flash', 503, 'high demand')).toBe(true);
+    expect(daftarModelGemini('gemini-3.8-flash')[0]).toBe('gemini-3.5-flash');
+    resetModelSibuk();
+    expect(daftarModelGemini('gemini-3.8-flash')[0]).toBe('gemini-3.8-flash');
+  });
+
+  it('model sibuk kembali dicoba setelah jeda habis', async () => {
+    const { daftarModelGemini, tandaiModelSibuk, resetModelSibuk, JEDA_MODEL_SIBUK_MS } = await import('./gemini');
+    resetModelSibuk();
+    tandaiModelSibuk('gemini-3.8-flash', 1_000);
+    expect(daftarModelGemini('gemini-3.8-flash', 1_000)).not.toContain('gemini-3.8-flash');
+    expect(daftarModelGemini('gemini-3.8-flash', 1_000 + JEDA_MODEL_SIBUK_MS + 1)[0]).toBe('gemini-3.8-flash');
+    resetModelSibuk();
+  });
+});
+
+describe('kuota harian habis (HTTP 429)', () => {
+  const errKuota = JSON.stringify({
+    error: {
+      code: 429,
+      message: 'You exceeded your current quota',
+      details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '68517s' }],
+    },
+  });
+
+  it('membaca retryDelay dari isi error', async () => {
+    const { bacaJedaUlangGemini } = await import('./gemini');
+    expect(bacaJedaUlangGemini(errKuota)).toBe(68_517_000);
+    expect(bacaJedaUlangGemini('{"error":{}}')).toBeUndefined();
+  });
+
+  it('model yang kuotanya habis dilewati lama dan tidak dicoba ulang', async () => {
+    const { tandaiDariError, daftarModelGemini, resetModelSibuk, JEDA_MODEL_SIBUK_MS } = await import('./gemini');
+    resetModelSibuk();
+    expect(tandaiDariError('gemini-3.8-flash', 429, errKuota)).toBe(false);
+    const nanti = Date.now() + JEDA_MODEL_SIBUK_MS + 60_000;
+    expect(daftarModelGemini('gemini-3.8-flash', nanti)).not.toContain('gemini-3.8-flash');
+    expect(tandaiDariError('gemini-3.5-flash', 503, 'high demand')).toBe(true);
+    resetModelSibuk();
   });
 });

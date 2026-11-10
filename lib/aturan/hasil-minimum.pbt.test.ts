@@ -1,26 +1,3 @@
-/**
- * lib/aturan/hasil-minimum.pbt.test.ts
- *
- * Property-based tests untuk aturan lokal:
- * - Property 9: Kata terlarang tidak pernah muncul sebagai kesimpulan
- *   Verifikasi bahwa untuk setiap objek FormatDataHasil yang dihasilkan oleh aturan lokal
- *   (generateHasilChatLokal, generateHasilLinkLokal, generateHasilVideoLokal), field ringkasan,
- *   semua temuan[].penjelasan, dan semua langkah[] tidak mengandung kata "aman", "pasti",
- *   "terbukti", "100%" sebagai kesimpulan atau pernyataan kepastian.
- *   Validates: Requirements 2.4, 6.7, 30.1, 30.3
- *
- * - Property 10: Hasil aturan lokal selalu memenuhi struktur minimum
- *   Verifikasi bahwa untuk setiap input valid (teks chat, URL, atau jawaban wizard):
- *   - field level memiliki nilai valid ('tinggi', 'sedang', 'tidak_ditemukan')
- *   - field temuan memuat minimal 1 temuan jika level > 'tidak_ditemukan', dan setiap temuan
- *     memiliki judul, penjelasan, bukti, dan sumber yang valid
- *   - field langkah memuat minimal 2 langkah tindakan
- *   - field halaman sesuai dengan halaman pemindaian ('chat', 'link', 'video')
- *   Validates: Requirements 5.2, 5.3, 5.4, 6.6, 29.4
- *
- * References: Requirements 2.4, 5.2, 5.3, 5.4, 6.6, 6.7, 29.4, 30.1, 30.3, and design.md
- */
-
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { generateHasilChatLokal } from './chat-rules';
@@ -47,9 +24,7 @@ import {
   KALIMAT_CHAT_NETRAL,
 } from '../../test/arbitraries';
 
-// ============================================================================
-// Konstanta & Set Nilai Valid
-// ============================================================================
+// ===== KONSTANTA & SET NILAI VALID =====
 
 const SUMBER_VALID: Set<SumberTemuan> = new Set([
   'aturan',
@@ -66,17 +41,8 @@ const LEVEL_VALID: Set<TingkatLevel> = new Set([
   'tidak_ditemukan',
 ]);
 
-// ============================================================================
-// Arbitrary Generators untuk Input Aturan Lokal
-// ============================================================================
+// ===== ARBITRARY GENERATORS UNTUK INPUT ATURAN LOKAL =====
 
-/**
- * Generator teks chat yang mencakup:
- * - Teks percakapan dengan pola penipuan terstruktur (0 sampai 11 pola)
- * - Teks percakapan netral
- * - Teks chat dengan data sensitif
- * - String acak / string kosong
- */
 function arbitraryChatInput(): fc.Arbitrary<string> {
   return fc.oneof(
     arbitraryChatText(),
@@ -88,15 +54,6 @@ function arbitraryChatInput(): fc.Arbitrary<string> {
   );
 }
 
-/**
- * Generator URL dan nama domain yang mencakup:
- * - URL aman / normal
- * - URL dengan berbagai sinyal bahaya (merek tiruan, TLD berisiko, IP numerik,
- *   punycode, kata pemicu, subdomain bertingkat, pemendek link, @, URL panjang)
- * - URL dengan parameter sensitif
- * - Web URL acak
- * - String kosong / teks pendek
- */
 function arbitraryUrlInput(): fc.Arbitrary<string> {
   const protocol = fc.constantFrom('https://', 'http://', '');
 
@@ -201,9 +158,6 @@ function arbitraryUrlInput(): fc.Arbitrary<string> {
   );
 }
 
-/**
- * Generator opsi tambahan evaluasi link (Safe Browsing & RDAP).
- */
 function arbitraryLinkOptions(): fc.Arbitrary<EvaluasiLinkOptions> {
   return fc.record(
     {
@@ -214,12 +168,6 @@ function arbitraryLinkOptions(): fc.Arbitrary<EvaluasiLinkOptions> {
   );
 }
 
-/**
- * Generator jawaban wizard Video & Suara yang mencakup:
- * - Jawaban acak beragam kombinasi situasi, pertanyaan, checklist, dan metadata
- * - Jawaban non-triggering (skor 0)
- * - Objek jawaban kosong {}
- */
 function arbitraryVideoInput(): fc.Arbitrary<JawabanWizardVideo> {
   return fc.oneof(
     arbitraryWizardAnswers(),
@@ -228,33 +176,20 @@ function arbitraryVideoInput(): fc.Arbitrary<JawabanWizardVideo> {
   );
 }
 
-// ============================================================================
-// Helper Validasi Property 9 & Property 10
-// ============================================================================
+// ===== HELPER VALIDASI PROPERTY 9 & PROPERTY 10 =====
 
-/**
- * Memeriksa apakah teks memuat kata terlarang ('aman', 'pasti', 'terbukti', '100%')
- * sebagai kesimpulan atau pernyataan kepastian.
- * Sesuai Requirement 30.1, 30.4, dan design.md:
- * - Penggunaan kata dalam konteks negasi seperti "Ini tidak berarti pasti aman" diperbolehkan.
- * - Penggunaan kata sebagai kesimpulan/pernyataan kepastian (misal: "pasti asli", "chat ini aman",
- *   "terbukti penipuan", "100% aman") dilarang keras.
- */
 function cekKataTerlarangSebagaiKesimpulan(teks: string): {
   melanggar: boolean;
   alasan?: string;
 } {
-  // 1. "100%" dilarang sama sekali sebagai kesimpulan/klaim kepastian
   if (/100%/i.test(teks)) {
     return { melanggar: true, alasan: `Mengandung "100%": "${teks}"` };
   }
 
-  // 2. "terbukti" dilarang sama sekali sebagai kesimpulan/klaim kepastian
   if (/\bterbukti\b/i.test(teks)) {
     return { melanggar: true, alasan: `Mengandung kata "terbukti": "${teks}"` };
   }
 
-  // 3. "pasti" dilarang kecuali jika dalam konteks negasi terstandar
   const pastiMatches = teks.match(/\bpasti\b/gi);
   if (pastiMatches) {
     const negatedPastiMatches =
@@ -267,7 +202,6 @@ function cekKataTerlarangSebagaiKesimpulan(teks: string): {
     }
   }
 
-  // 4. "aman" dilarang kecuali jika dalam konteks negasi terstandar
   const amanMatches = teks.match(/\baman\b/gi);
   if (amanMatches) {
     const negatedAmanMatches =
@@ -285,20 +219,13 @@ function cekKataTerlarangSebagaiKesimpulan(teks: string): {
   return { melanggar: false };
 }
 
-/**
- * Memverifikasi invarian Property 9:
- * field ringkasan, semua temuan[].penjelasan, dan semua langkah[]
- * tidak mengandung kata "aman", "pasti", "terbukti", "100%" sebagai kesimpulan atau pernyataan kepastian.
- */
 function verifikasiBebasKataTerlarang(hasil: FormatDataHasil): void {
-  // 1. Cek field ringkasan
   const resRingkasan = cekKataTerlarangSebagaiKesimpulan(hasil.ringkasan);
   expect(
     resRingkasan.melanggar,
     `Ringkasan memuat kata terlarang sebagai kesimpulan: ${resRingkasan.alasan}`
   ).toBe(false);
 
-  // 2. Cek semua temuan[].penjelasan
   for (const t of hasil.temuan) {
     const resPenjelasan = cekKataTerlarangSebagaiKesimpulan(t.penjelasan);
     expect(
@@ -306,11 +233,9 @@ function verifikasiBebasKataTerlarang(hasil: FormatDataHasil): void {
       `Penjelasan temuan "${t.judul}" memuat kata terlarang: ${resPenjelasan.alasan}`
     ).toBe(false);
 
-    // Penjelasan temuan pada aturan lokal tidak pernah mengandung kata-kata ini sama sekali
     expect(t.penjelasan).not.toMatch(/\b(pasti|terbukti|100%|aman)\b/i);
   }
 
-  // 3. Cek semua langkah[]
   for (const l of hasil.langkah) {
     const resLangkah = cekKataTerlarangSebagaiKesimpulan(l);
     expect(
@@ -318,30 +243,18 @@ function verifikasiBebasKataTerlarang(hasil: FormatDataHasil): void {
       `Langkah tindakan memuat kata terlarang: ${resLangkah.alasan}`
     ).toBe(false);
 
-    // Langkah tindakan pada aturan lokal tidak pernah mengandung kata-kata ini sama sekali
     expect(l).not.toMatch(/\b(pasti|terbukti|100%|aman)\b/i);
   }
 }
 
-/**
- * Memverifikasi invarian Property 10:
- * - field level memiliki nilai valid ('tinggi', 'sedang', 'tidak_ditemukan')
- * - field temuan memuat minimal 1 temuan jika level > 'tidak_ditemukan',
- *   dan setiap temuan memiliki judul, penjelasan, bukti, dan sumber yang valid
- * - field langkah memuat minimal 2 langkah tindakan
- * - field halaman sesuai dengan halaman pemindaian ('chat', 'link', 'video')
- */
 function verifikasiStrukturMinimum(
   hasil: FormatDataHasil,
   expectedHalaman: HalamanCek
 ): void {
-  // 1. field halaman sesuai dengan halaman pemindaian
   expect(hasil.halaman).toBe(expectedHalaman);
 
-  // 2. field level memiliki nilai valid ('tinggi', 'sedang', 'tidak_ditemukan')
   expect(LEVEL_VALID.has(hasil.level)).toBe(true);
 
-  // 3. field temuan memuat minimal 1 temuan jika level > 'tidak_ditemukan'
   if (hasil.level === 'tinggi' || hasil.level === 'sedang') {
     expect(
       hasil.temuan.length,
@@ -349,7 +262,6 @@ function verifikasiStrukturMinimum(
     ).toBeGreaterThanOrEqual(1);
   }
 
-  // Setiap temuan harus memiliki judul, penjelasan, bukti, dan sumber yang valid
   for (const t of hasil.temuan) {
     expect(typeof t.judul).toBe('string');
     expect(t.judul.trim().length).toBeGreaterThan(0);
@@ -366,7 +278,6 @@ function verifikasiStrukturMinimum(
     ).toBe(true);
   }
 
-  // 4. field langkah memuat minimal 2 langkah tindakan
   expect(Array.isArray(hasil.langkah)).toBe(true);
   expect(
     hasil.langkah.length,
@@ -378,7 +289,6 @@ function verifikasiStrukturMinimum(
     expect(l.trim().length).toBeGreaterThan(0);
   }
 
-  // Validasi atribut pelengkap format data hasil
   expect(typeof hasil.ringkasan).toBe('string');
   expect(hasil.ringkasan.trim().length).toBeGreaterThan(0);
 
@@ -393,24 +303,11 @@ function verifikasiStrukturMinimum(
   expect(hasil.status_layanan).not.toBeNull();
 }
 
-// ============================================================================
-// Test Suite: lib/aturan/hasil-minimum.pbt.test.ts
-// ============================================================================
+// ===== TEST SUITE: LIB/ATURAN/HASIL-MINIMUM.PBT.TEST.TS =====
 
 describe('lib/aturan/hasil-minimum.pbt.test.ts', () => {
   describe('Property 9: Kata terlarang tidak pernah muncul sebagai kesimpulan', () => {
-    /**
-     * Feature: cek-penipuan-web, Property 9: Kata terlarang tidak pernah muncul sebagai kesimpulan
-     * **Validates: Requirements 2.4, 6.7, 30.1, 30.3**
-     *
-     * Invariant: Untuk setiap objek FormatDataHasil yang dihasilkan oleh aturan lokal
-     * (generateHasilChatLokal, generateHasilLinkLokal, generateHasilVideoLokal),
-     * field ringkasan, semua temuan[].penjelasan, dan semua langkah[]
-     * tidak mengandung kata "aman", "pasti", "terbukti", "100%" sebagai kesimpulan
-     * atau pernyataan kepastian.
-     */
     it('Feature: cek-penipuan-web, Property 9: Kata terlarang tidak pernah muncul sebagai kesimpulan (**Validates: Requirements 2.4, 6.7, 30.1, 30.3**)', () => {
-      // 1. Verifikasi aturan lokal Chat
       fc.assert(
         fc.property(arbitraryChatInput(), (chatInput) => {
           const hasil = generateHasilChatLokal(chatInput);
@@ -419,7 +316,6 @@ describe('lib/aturan/hasil-minimum.pbt.test.ts', () => {
         { numRuns: 100 }
       );
 
-      // 2. Verifikasi aturan lokal Link
       fc.assert(
         fc.property(
           arbitraryUrlInput(),
@@ -432,7 +328,6 @@ describe('lib/aturan/hasil-minimum.pbt.test.ts', () => {
         { numRuns: 100 }
       );
 
-      // 3. Verifikasi aturan lokal Video & Suara
       fc.assert(
         fc.property(arbitraryVideoInput(), (videoInput) => {
           const hasil = generateHasilVideoLokal(videoInput);
@@ -478,19 +373,7 @@ describe('lib/aturan/hasil-minimum.pbt.test.ts', () => {
   });
 
   describe('Property 10: Hasil aturan lokal selalu memenuhi struktur minimum', () => {
-    /**
-     * Feature: cek-penipuan-web, Property 10: Hasil aturan lokal selalu memenuhi struktur minimum
-     * **Validates: Requirements 5.2, 5.3, 5.4, 6.6, 29.4**
-     *
-     * Invariant: Untuk setiap input valid (teks chat, URL, atau jawaban wizard):
-     * - field level memiliki nilai valid ('tinggi', 'sedang', 'tidak_ditemukan')
-     * - field temuan memuat minimal 1 temuan jika level > 'tidak_ditemukan',
-     *   dan setiap temuan memiliki judul, penjelasan, bukti, dan sumber yang valid
-     * - field langkah memuat minimal 2 langkah tindakan
-     * - field halaman sesuai dengan halaman pemindaian ('chat', 'link', 'video')
-     */
     it('Feature: cek-penipuan-web, Property 10: Hasil aturan lokal selalu memenuhi struktur minimum (**Validates: Requirements 5.2, 5.3, 5.4, 6.6, 29.4**)', () => {
-      // 1. Verifikasi aturan lokal Chat
       fc.assert(
         fc.property(arbitraryChatInput(), (chatInput) => {
           const hasil = generateHasilChatLokal(chatInput);
@@ -499,7 +382,6 @@ describe('lib/aturan/hasil-minimum.pbt.test.ts', () => {
         { numRuns: 100 }
       );
 
-      // 2. Verifikasi aturan lokal Link
       fc.assert(
         fc.property(
           arbitraryUrlInput(),
@@ -512,7 +394,6 @@ describe('lib/aturan/hasil-minimum.pbt.test.ts', () => {
         { numRuns: 100 }
       );
 
-      // 3. Verifikasi aturan lokal Video & Suara
       fc.assert(
         fc.property(arbitraryVideoInput(), (videoInput) => {
           const hasil = generateHasilVideoLokal(videoInput);

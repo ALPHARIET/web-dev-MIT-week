@@ -46,21 +46,12 @@ export interface SkenarioVideo {
 export type SkenarioContoh = SkenarioChat | SkenarioLink | SkenarioVideo;
 
 export interface TombolContohProps {
-  /** Halaman cek saat ini: 'chat' | 'link' | 'video' */
   halaman: HalamanContoh;
-  /** Callback saat suatu skenario contoh dipilih */
   onPilihContoh?: (contoh: SkenarioContoh) => void;
-  /** Alias callback alternatif untuk kompatibilitas */
   onContohDipilih?: (contoh: SkenarioContoh) => void;
-  /** Kelas CSS tambahan untuk styling kustom */
   className?: string;
 }
 
-/**
- * Mengambil daftar 3 skenario contoh berdasarkan halaman cek.
- * Menggunakan data dari data/contoh/chat-contoh.json, link-contoh.json, dan video-contoh.json.
- * References: Requirements 9.1, 9.2, 9.3, 9.4, 9.5
- */
 export function getDaftarContoh(halaman: HalamanContoh): SkenarioContoh[] {
   switch (halaman) {
     case 'chat':
@@ -74,18 +65,6 @@ export function getDaftarContoh(halaman: HalamanContoh): SkenarioContoh[] {
   }
 }
 
-/**
- * Komponen TombolContoh untuk memuat dan mengisi skenario fiktif pengujian.
- *
- * Fitur & Interaksi:
- * 1. Tombol utama "Coba contoh" yang bergilir secara sekuensial (0 -> 1 -> 2 -> 0) setiap kali ditekan.
- * 2. Tombol dropdown yang membuka daftar 3 pilihan skenario untuk dipilih secara langsung.
- * 3. Menampilkan judul skenario yang sedang aktif/dipilih.
- * 4. Target sentuh minimal 44px pada semua elemen interaktif (Requirement 27.2).
- * 5. Aksesibilitas keyboard (Escape untuk menutup menu, focus ring jelas, ARIA expanded & popup).
- *
- * References: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 27.2
- */
 export function TombolContoh({
   halaman,
   onPilihContoh,
@@ -97,7 +76,6 @@ export function TombolContoh({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Menutup dropdown saat klik di luar area komponen
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -116,7 +94,6 @@ export function TombolContoh({
     };
   }, [isOpen]);
 
-  // Menutup dropdown dengan tombol Escape
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -129,7 +106,6 @@ export function TombolContoh({
     };
   }, [isOpen]);
 
-  // Reset indeks pilihan jika jenis halaman berubah
   useEffect(() => {
     setCurrentIndex(null);
     setIsOpen(false);
@@ -173,7 +149,7 @@ export function TombolContoh({
       className={`relative inline-flex flex-col gap-2 ${className}`.trim()}
     >
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        {/* Tombol Utama: Coba Contoh (Bergilir secara sekuensial) */}
+        {/* ===== TOMBOL UTAMA: COBA CONTOH ===== */}
         <button
           type="button"
           onClick={handleCycleNext}
@@ -198,7 +174,6 @@ export function TombolContoh({
           <span>Coba contoh</span>
         </button>
 
-        {/* Tombol Dropdown Toggle: Membuka daftar pilihan skenario */}
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
@@ -224,7 +199,6 @@ export function TombolContoh({
         </button>
       </div>
 
-      {/* Indikator Judul Skenario yang Sedang Dipilih/Dijalankan */}
       {currentScenario && (
         <div
           data-testid="skenario-aktif"
@@ -264,7 +238,7 @@ export function TombolContoh({
         </div>
       )}
 
-      {/* Menu Dropdown Pilihan Skenario */}
+      {/* ===== MENU DROPDOWN PILIHAN SKENARIO ===== */}
       {isOpen && (
         <div
           data-testid="menu-skenario"
@@ -280,7 +254,6 @@ export function TombolContoh({
             {skenarioList.map((item, index) => {
               const isSelected = currentIndex === index;
 
-              // Ambil ringkasan / petunjuk kecil per jenis skenario
               let subtext = '';
               if ('konteks' in item && item.konteks) {
                 subtext = item.konteks;

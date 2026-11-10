@@ -134,14 +134,12 @@ describe('System Prompt Gemini (Task 1.7)', () => {
     });
 
     it('memuat konten kanal lapor konsisten dari langkah-darurat.json', () => {
-      // IASC
+      // ===== IASC =====
       expect(CHAT_SYSTEM_PROMPT).toContain('iasc.ojk.go.id');
-      // OJK 157
+      // ===== OJK 157 =====
       expect(CHAT_SYSTEM_PROMPT).toContain('157');
       expect(CHAT_SYSTEM_PROMPT).toContain('081-157-157-157');
-      // Bank resmi
       expect(CHAT_SYSTEM_PROMPT.toLowerCase()).toContain('call center bank');
-      // Peringatan pihak mengaku IASC
       expect(CHAT_SYSTEM_PROMPT.toLowerCase()).toContain('mengaku');
       expect(CHAT_SYSTEM_PROMPT.toLowerCase()).toContain('iasc');
     });

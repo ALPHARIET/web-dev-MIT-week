@@ -13,18 +13,13 @@ import { ekstrakUrl, deteksiModusVideo } from '@/lib/aturan/scoring';
 import { kompresGambar } from '@/lib/image-utils';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-/**
- * Mengonversi Blob gambar menjadi string Base64 Data URL secara aman di browser dan Node/JSDOM.
- */
 async function blobToBase64(blob: Blob): Promise<string> {
-  // Gunakan arrayBuffer jika tersedia (sangat cepat dan andal di browser modern serta jsdom)
   if (typeof (blob as unknown as { arrayBuffer?: () => Promise<ArrayBuffer> }).arrayBuffer === 'function') {
     try {
       const buffer = await (blob as unknown as { arrayBuffer: () => Promise<ArrayBuffer> }).arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
       return `data:${blob.type || 'image/jpeg'};base64,${base64}`;
     } catch {
-      // Lanjut ke fallback FileReader jika arrayBuffer gagal
     }
   }
 
@@ -42,52 +37,27 @@ async function blobToBase64(blob: Blob): Promise<string> {
   return '';
 }
 
-/**
- * Halaman Cek Chat (/cek-chat)
- *
- * Alur pemeriksaan percakapan mencurigakan:
- * 1. Input teks percakapan atau unggahan screenshot.
- * 2. Untuk input teks: jalankan `sensorTeks` di peramban, buka dialog `PratinjauSensor`.
- * 3. Setelah konfirmasi di dialog (atau untuk screenshot langsung):
- *    - Jalankan pra-pemindaian lokal `generateHasilChatLokal` di peramban.
- *    - Kirim request `fetch('/api/cek-chat')` dengan batas waktu timeout 20 detik.
- *    - Jika API berhasil (200), gunakan FormatDataHasil dari respons.
- *    - Jika API gagal / offline / timeout: fallback ke hasil aturan lokal + status "analisis AI sedang tidak tersedia".
- * 4. Render `KomponenHasil` dengan cross-links ("Cek link ini", "Cek Video & Suara") dan tombol "Cek lagi".
- * 5. Dukungan tombol "Coba contoh": memuat skenario fiktif tanpa memanggil API pihak ketiga.
- *
- * References: Requirements 8.4, 8.6, 12.2, 12.3, 13.1, 13.5, 15.1, 15.2, 15.3, 16.1, 16.2, 16.3, 16.4, 34.1, 34.2, 34.3, 35.1, 35.2, 35.3
- */
 export default function CekChatPage(): React.JSX.Element {
-  // State data hasil analisis
   const [hasil, setHasil] = useState<FormatDataHasil | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isFallback, setIsFallback] = useState<boolean>(false);
   const [pesanFallback, setPesanFallback] = useState<string | null>(null);
 
-  // State sinkronisasi nilai input (misal saat memilih contoh atau reset)
   const [initialTeks, setInitialTeks] = useState<string>('');
   const [initialKonteks, setInitialKonteks] = useState<string>('');
   const [formKey, setFormKey] = useState<number>(0);
 
-  // State penyimpanan input terakhir untuk coba lagi (Requirement 15.2)
   const [preservedInput, setPreservedInput] = useState<ChatInputData | null>(null);
 
-  // State modal dialog PratinjauSensor (Requirement 12.2)
   const [isPratinjauOpen, setIsPratinjauOpen] = useState<boolean>(false);
   const [teksAsliPratinjau, setTeksAsliPratinjau] = useState<string>('');
   const [teksTersensorPratinjau, setTeksTersensorPratinjau] = useState<string>('');
   const [jumlahDigantiPratinjau, setJumlahDigantiPratinjau] = useState<number>(0);
   const [pendingInput, setPendingInput] = useState<ChatInputData | null>(null);
 
-  // State untuk pelacakan konten yang dievaluasi (untuk deteksi cross-links)
   const [evaluatedTeks, setEvaluatedTeks] = useState<string>('');
   const [evaluatedKonteks, setEvaluatedKonteks] = useState<string>('');
 
-  /**
-   * Eksekusi pengiriman dan pemeriksaan ke API /api/cek-chat dengan timeout 20 detik
-   * serta fallback ke hasil aturan lokal jika terjadi kesalahan jaringan atau timeout.
-   */
   const jalankanPemeriksaan = async (
     data: ChatInputData,
     teksSudahDisensor?: string
@@ -98,15 +68,12 @@ export default function CekChatPage(): React.JSX.Element {
     const teksBersih = data.mode === 'teks' ? (teksSudahDisensor ?? data.teks ?? '') : '';
     const konteks = data.konteks?.trim();
 
-    // Catat teks yang dievaluasi untuk ekstraksi cross-link
     setEvaluatedTeks(data.mode === 'teks' ? (data.teks ?? '') : '');
     setEvaluatedKonteks(konteks ?? '');
 
-    // 1. Jalankan pra-pemindaian aturan lokal di browser (Requirement 13.1)
     const teksEvaluasiLokal = [teksBersih, konteks].filter(Boolean).join('\n');
     let hasilLokal = generateHasilChatLokal(teksEvaluasiLokal);
 
-    // Keterangan khusus jika teks terlalu pendek (Requirement 16.3)
     if (data.mode === 'teks' && (data.teks ?? '').trim().length < 20) {
       hasilLokal = {
         ...hasilLokal,
@@ -114,7 +81,6 @@ export default function CekChatPage(): React.JSX.Element {
       };
     }
 
-    // 2. Siapkan payload request
     const payload: {
       mode: 'teks' | 'screenshot';
       teks?: string;
@@ -133,7 +99,6 @@ export default function CekChatPage(): React.JSX.Element {
       payload.teks = teksBersih;
     } else if (data.mode === 'screenshot' && data.gambar && data.gambar.length > 0) {
       try {
-        // Kompresi setiap file gambar sebelum dikirim (Requirement 11.4)
         const compressedBlobs = await Promise.all(
           data.gambar.map((file) => kompresGambar(file))
         );
@@ -146,7 +111,6 @@ export default function CekChatPage(): React.JSX.Element {
       }
     }
 
-    // 3. Panggil API dengan timeout 20 detik (Requirement 15.1, 28.3)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
@@ -183,7 +147,6 @@ export default function CekChatPage(): React.JSX.Element {
     } catch {
       clearTimeout(timeoutId);
 
-      // 4. Fallback ke hasil aturan lokal jika API gagal atau timeout (Requirement 15.1, 15.3, 29.1, 29.2)
       const fallbackHasil: FormatDataHasil = {
         ...hasilLokal,
         transkrip: data.mode === 'teks' ? data.teks : hasilLokal.transkrip,
@@ -203,14 +166,10 @@ export default function CekChatPage(): React.JSX.Element {
     }
   };
 
-  /**
-   * Menangani submit dari komponen InputChat.
-   */
   const handleSubmitInput = (data: ChatInputData) => {
     setPreservedInput(data);
 
     if (data.mode === 'teks') {
-      // Jalankan sensor otomatis di browser (Requirement 12.1, 12.4)
       const teksInput = data.teks || '';
       const { hasil: teksTersensor, jumlahDiganti } = sensorTeks(teksInput);
 
@@ -219,18 +178,13 @@ export default function CekChatPage(): React.JSX.Element {
       setJumlahDigantiPratinjau(jumlahDiganti);
       setPendingInput(data);
 
-      // Buka dialog PratinjauSensor sebelum mengirim ke backend (Requirement 12.2)
       setIsPratinjauOpen(true);
     } else {
-      // Untuk screenshot langsung eksekusi pemeriksaan
       setPendingInput(null);
       void jalankanPemeriksaan(data);
     }
   };
 
-  /**
-   * Konfirmasi dari modal dialog PratinjauSensor: lanjutkan pengiriman.
-   */
   const handleKonfirmasiPratinjau = () => {
     setIsPratinjauOpen(false);
     if (pendingInput) {
@@ -238,17 +192,10 @@ export default function CekChatPage(): React.JSX.Element {
     }
   };
 
-  /**
-   * Batal dari modal dialog PratinjauSensor: tutup dialog dan biarkan pengguna mengedit.
-   */
   const handleBatalPratinjau = () => {
     setIsPratinjauOpen(false);
   };
 
-  /**
-   * Menangani pemilihan skenario dari TombolContoh (Requirement 9.2, 9.5).
-   * Langsung mengisi input dan menampilkan hasil simulasi tanpa memanggil API.
-   */
   const handlePilihContoh = (contoh: SkenarioContoh) => {
     if ('teks' in contoh && 'hasilSimulasi' in contoh) {
       const skenarioChat = contoh as SkenarioChat;
@@ -262,7 +209,6 @@ export default function CekChatPage(): React.JSX.Element {
       setEvaluatedTeks(skenarioChat.teks);
       setEvaluatedKonteks(skenarioChat.konteks || '');
 
-      // Tampilkan hasil simulasi langsung tanpa panggil API
       setHasil({
         ...skenarioChat.hasilSimulasi,
         transkrip: skenarioChat.hasilSimulasi.transkrip || skenarioChat.teks,
@@ -272,10 +218,6 @@ export default function CekChatPage(): React.JSX.Element {
     }
   };
 
-  /**
-   * Menangani tombol "Cek lagi" (Requirement 35.1, 35.2, 35.3).
-   * Mengosongkan area input, hasil pemeriksaan, dan mengembalikan halaman ke kondisi awal.
-   */
   const handleCekLagi = () => {
     setHasil(null);
     setIsFallback(false);
@@ -289,9 +231,6 @@ export default function CekChatPage(): React.JSX.Element {
     setFormKey((prev) => prev + 1);
   };
 
-  /**
-   * Menangani tombol "Coba lagi" saat terjadi fallback API error (Requirement 15.2).
-   */
   const handleCobaLagi = () => {
     if (preservedInput) {
       if (preservedInput.mode === 'teks') {
@@ -303,18 +242,12 @@ export default function CekChatPage(): React.JSX.Element {
     }
   };
 
-  /**
-   * Menyiapkan daftar CrossLinks untuk KomponenHasil:
-   * 1. Jika tautan/link ditemukan di teks chat: tombol "Cek link ini" (Requirement 13.5, 34.1, 34.2)
-   * 2. Jika modus video call / voice note terdeteksi: tautan ke Cek Video & Suara (Requirement 16.4, 34.3)
-   */
   const crossLinks = useMemo<CrossLink[]>(() => {
     if (!hasil) return [];
 
     const list: CrossLink[] = [];
     const teksGabungan = [evaluatedTeks, evaluatedKonteks].filter(Boolean).join('\n');
 
-    // 1. Deteksi URL / Link
     const urls = ekstrakUrl(teksGabungan);
     if (urls.length > 0) {
       const urlPertama = urls[0];
@@ -327,14 +260,12 @@ export default function CekChatPage(): React.JSX.Element {
             try {
               window.sessionStorage.setItem('url_dari_chat', urlPertama);
             } catch {
-              // Abaikan jika sessionStorage terblokir
             }
           }
         },
       });
     }
 
-    // 2. Deteksi Modus Video Call / Voice Note
     const adaModusVideo =
       deteksiModusVideo(teksGabungan) ||
       Boolean(
@@ -356,7 +287,7 @@ export default function CekChatPage(): React.JSX.Element {
 
   return (
     <div className="w-full max-w-4xl lg:max-w-none mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4">
-      {/* Judul & Deskripsi Halaman Cek Chat */}
+      {/* ===== JUDUL & DESKRIPSI HALAMAN CEK CHAT ===== */}
       <section data-testid="header-cek-chat" className="space-y-2">
         <h1 className="text-gray-900">
           Cek Chat Mencurigakan
@@ -367,18 +298,16 @@ export default function CekChatPage(): React.JSX.Element {
         </p>
       </section>
 
-      {/* Render KotakPrivasi sebelum area input (Requirement 8.1, 8.4, 8.6) */}
       <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
       {!hasil && <KotakPrivasi halaman="chat" className={TATA_CEK.samping} />}
 
-      {/* Tampilan Kondisional: Area Input vs Komponen Hasil */}
       {!hasil ? (
         <section data-testid="area-input-chat" className={`${KARTU_FORMULIR} ${TATA_CEK.utama} space-y-5`}>
           <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-gray-100">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">
               Masukkan Pesan untuk Diperiksa
             </h2>
-            {/* Tombol Contoh Skenario Fiktif (Requirement 9.1, 9.2, 9.5) */}
+            {/* ===== TOMBOL CONTOH SKENARIO FIKTIF ===== */}
             <TombolContoh
               halaman="chat"
               onPilihContoh={handlePilihContoh}
@@ -386,7 +315,7 @@ export default function CekChatPage(): React.JSX.Element {
             />
           </div>
 
-          {/* Form Input Chat (Tab Teks & Screenshot) */}
+          {/* ===== FORM INPUT CHAT ===== */}
           <InputChat
             key={formKey}
             onSubmit={handleSubmitInput}
@@ -397,7 +326,6 @@ export default function CekChatPage(): React.JSX.Element {
         </section>
       ) : (
         <section data-testid="area-hasil-chat" className="space-y-6">
-          {/* Banner Peringatan Fallback saat API gagal / timeout (Requirement 15.1, 15.2) */}
           {isFallback && (
             <div
               role="alert"
@@ -429,7 +357,6 @@ export default function CekChatPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {/* Tombol Coba Lagi saat API gagal (Requirement 15.2) */}
               <button
                 type="button"
                 data-testid="tombol-coba-lagi"
@@ -455,7 +382,6 @@ export default function CekChatPage(): React.JSX.Element {
             </div>
           )}
 
-          {/* Render KomponenHasil dengan seluruh susunan blok terstandar (Requirement 6.1) */}
           <KomponenHasil
             hasil={hasil}
             onCekLagi={handleCekLagi}
@@ -470,7 +396,7 @@ export default function CekChatPage(): React.JSX.Element {
       )}
       </div>
 
-      {/* Modal Dialog Pratinjau Sensor Teks Otomatis (Requirement 12.2) */}
+      {/* ===== MODAL DIALOG PRATINJAU SENSOR TEKS OTOMATIS ===== */}
       <PratinjauSensor
         isOpen={isPratinjauOpen}
         teksAsli={teksAsliPratinjau}

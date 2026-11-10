@@ -70,7 +70,7 @@ describe('lib/rdap.ts', () => {
   describe('calculateDomainAge()', () => {
     it('menghitung umur hari dengan tepat berdasarkan tanggal acuan', () => {
       const regDate = '2025-02-15T08:00:00Z';
-      const now = new Date('2025-02-20T08:00:00Z'); // Tepat 5 hari
+      const now = new Date('2025-02-20T08:00:00Z');
 
       const result = calculateDomainAge(regDate, now);
       expect(result).not.toBeNull();
@@ -80,7 +80,7 @@ describe('lib/rdap.ts', () => {
 
     it('menghitung umur hari = 0 untuk pendaftaran hari ini', () => {
       const regDate = '2025-02-20T02:00:00Z';
-      const now = new Date('2025-02-20T10:00:00Z'); // 8 jam yang lalu
+      const now = new Date('2025-02-20T10:00:00Z');
 
       const result = calculateDomainAge(regDate, now);
       expect(result?.umurHari).toBe(0);
@@ -97,7 +97,7 @@ describe('lib/rdap.ts', () => {
 
     it('tidak mengembalikan angka negatif jika tanggal registrasi sedikit di masa depan (clock skew)', () => {
       const regDate = '2025-02-20T12:00:00Z';
-      const now = new Date('2025-02-20T11:59:00Z'); // 1 menit sebelum
+      const now = new Date('2025-02-20T11:59:00Z');
 
       const result = calculateDomainAge(regDate, now);
       expect(result?.umurHari).toBe(0);
@@ -138,7 +138,7 @@ describe('lib/rdap.ts', () => {
           },
           {
             eventAction: 'registration',
-            eventDate: '2025-02-15T08:00:00Z', // 5 hari sebelum fixedNow
+            eventDate: '2025-02-15T08:00:00Z',
           },
           {
             eventAction: 'last changed',
@@ -176,7 +176,7 @@ describe('lib/rdap.ts', () => {
         events: [
           {
             eventAction: 'Registration',
-            eventDate: '2025-02-18T10:00:00Z', // 2 hari sebelum fixedNow
+            eventDate: '2025-02-18T10:00:00Z',
           },
         ],
       };

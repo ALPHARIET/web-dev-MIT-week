@@ -1,19 +1,7 @@
-/**
- * lib/aturan/index.test.ts
- *
- * Test suite untuk memastikan kelengkapan ekspor lib/aturan/index.ts
- * dan memverifikasi bahwa semua tipe, konstanta, dan fungsi dari
- * scoring, chat-rules, link-rules, dan video-rules dapat di-import
- * dan dieksekusi dengan bersih (isomorphic).
- *
- * References: Requirement 33.1, and design.md
- */
-
 import { describe, it, expect } from 'vitest';
 import * as AturanModul from './index';
 
 import {
-  // 1. Scoring & Utilitas Umum
   AMBANG_TINGGI,
   AMBANG_SEDANG,
   hitungLevel,
@@ -27,13 +15,11 @@ import {
   type HasilAturan,
   type EvaluasiOpsi,
 
-  // 2. Chat Rules
   ATURAN_CHAT,
   evaluasiChat,
   evaluasiAturanChat,
   generateHasilChatLokal,
 
-  // 3. Link Rules
   KATA_PEMICU_LINK,
   PEMENDEK_LINK_DOMAINS,
   TLD_BERISIKO_SET,
@@ -45,7 +31,6 @@ import {
   type EvaluasiLinkOptions,
   type HasilDeteksiMerek,
 
-  // 4. Video & Suara Rules
   BOBOT_VIDEO,
   evaluasiVideo,
   evaluasiAturanVideo,
@@ -311,7 +296,6 @@ describe('lib/aturan/index.ts — Ekspor Lengkap dan Bersih (Requirement 33.1)',
       expect(typeof window).toBe('undefined');
       expect(typeof document).toBe('undefined');
 
-      // Evaluasi chat, link, dan video berfungsi penuh dalam environment murni ini
       const chatRes = evaluasiChat('Halo');
       const linkRes = evaluasiLeksikalUrl('https://google.com');
       const videoRes = evaluasiVideo({ situasi: 'video_call' });

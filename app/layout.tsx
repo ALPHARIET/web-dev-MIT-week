@@ -68,7 +68,6 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${display.variable} font-sans antialiased min-h-screen flex flex-col bg-pumice text-obsidian overflow-x-hidden`}
       >
-        {/* Skip to main content link untuk aksesibilitas keyboard */}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md focus:shadow-md focus:outline-none min-h-[44px] flex items-center"
@@ -76,10 +75,10 @@ export default function RootLayout({
           Menuju ke konten utama
         </a>
 
-        {/* Header Navigasi Bersama */}
+        {/* ===== HEADER NAVIGASI BERSAMA ===== */}
         <Header />
 
-        {/* Konten Halaman Utama */}
+        {/* ===== KONTEN HALAMAN UTAMA ===== */}
         <main
           id="main-content"
           className="flex-1 w-full max-w-5xl lg:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6 sm:py-8 focus:outline-none"
@@ -88,7 +87,7 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* Footer Bersama */}
+        {/* ===== FOOTER BERSAMA ===== */}
         <Footer />
       </body>
     </html>

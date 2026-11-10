@@ -7,7 +7,6 @@ import { POST } from '@/app/api/cek-chat/route';
 import { analyzeChat } from '@/lib/gemini';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-// Mock lib/gemini agar Route Handler POST /api/cek-chat dapat diuji secara terkontrol
 vi.mock('@/lib/gemini', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/gemini')>();
   return {
@@ -16,9 +15,6 @@ vi.mock('@/lib/gemini', async (importOriginal) => {
   };
 });
 
-/**
- * Helper untuk membuat mock File gambar dengan magic bytes valid
- */
 function createMockImageFile(name: string, type: string, magicBytes: number[], size = 64): File {
   const buffer = new Uint8Array(size);
   magicBytes.forEach((byte, index) => {
@@ -30,7 +26,6 @@ function createMockImageFile(name: string, type: string, magicBytes: number[], s
 describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 15.1)', () => {
   const validJpgFile = createMockImageFile('bukti-chat.jpg', 'image/jpeg', [0xff, 0xd8, 0xff, 0xe0]);
 
-  // Simulasi respons sukses dari Gemini AI
   const mockGeminiSukses: FormatDataHasil = {
     halaman: 'chat',
     level: 'sedang',
@@ -59,7 +54,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // 1. Setup mock canvas & ImageBitmap untuk kompresi gambar di JSDOM
     const validJpgBuffer = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
     if (typeof HTMLCanvasElement.prototype.toBlob !== 'function') {
       HTMLCanvasElement.prototype.toBlob = vi.fn(function (callback, type) {
@@ -99,7 +93,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       } as unknown as ImageBitmap);
     }
 
-    // 2. Setup mock sessionStorage
     const sessionStorageStore: Record<string, string> = {};
     const sessionStorageMock = {
       getItem: vi.fn((key: string) => sessionStorageStore[key] || null),
@@ -120,7 +113,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       writable: true,
     });
 
-    // 3. Setup mock URL.createObjectURL & revokeObjectURL
     if (typeof window.URL.createObjectURL !== 'function') {
       window.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
     } else {
@@ -132,7 +124,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
     }
 
-    // 4. Default: Hubungkan fetch langsung ke handler POST /api/cek-chat asli
     global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : input.toString();
       if (url === '/api/cek-chat' || url.endsWith('/api/cek-chat')) {
@@ -153,12 +144,10 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
   describe('1. Alur Lengkap Mode Teks: Input -> Sensor -> Pratinjau -> Pra-pemindaian -> API -> Hasil (Requirements 12.1, 12.2, 13.1, 14.1, 14.4)', () => {
     it('menjalankan alur lengkap dari input teks hingga menampilkan hasil dari API gabungan', async () => {
-      // Setup mock Gemini untuk mengembalikan hasil saat dipanggil oleh backend
       vi.mocked(analyzeChat).mockResolvedValue(mockGeminiSukses);
 
       render(<CekChatPage />);
 
-      // A. Input percakapan dengan nomor HP dan rekening yang sensitif
       const textarea = screen.getByRole('textbox', { name: /teks percakapan chat/i });
       fireEvent.change(textarea, {
         target: {
@@ -167,30 +156,24 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
         },
       });
 
-      // B. Klik tombol Periksa
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(tombolPeriksa);
 
-      // C. Modal PratinjauSensor harus terbuka sebelum data dikirim ke API (Requirement 12.2)
       await waitFor(() => {
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
 
-      // Pastikan data sensitif disensor dalam teks pratinjau (Requirement 12.1)
       const badgesDisensor = screen.getAllByTestId('badge-disensor');
       expect(badgesDisensor.length).toBeGreaterThanOrEqual(2);
       expect(screen.getByText(/Pratinjau Sensor Data Sensitif/i)).toBeDefined();
 
-      // D. Konfirmasi pengiriman di dialog sensor
       const btnLanjut = screen.getByTestId('btn-lanjut-periksa');
       fireEvent.click(btnLanjut);
 
-      // E. Verifikasi fetch dipanggil dan Route Handler POST /api/cek-chat memproses request
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
       });
 
-      // Verifikasi analyzeChat di backend dipanggil dengan teks tersensor (bukan nomor asli)
       expect(analyzeChat).toHaveBeenCalledWith(
         expect.objectContaining({
           mode: 'teks',
@@ -201,24 +184,19 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       expect(callArgs.teks).not.toContain('081234567890');
       expect(callArgs.teks).not.toContain('123456789012');
 
-      // F. Verifikasi KomponenHasil ditampilkan dengan data gabungan (TingkatKewaspadaan, KartuTemuan, LangkahDisarankan)
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Level kewaspadaan: aturan lokal transfer + deposit = tinggi; gabungLevel(tinggi, sedang) = tinggi (Requirement 14.4)
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
 
-      // Temuan aturan lokal dan AI tampil di KomponenHasil
       const blokTemuan = screen.getByTestId('blok-temuan');
       expect(blokTemuan).toBeDefined();
 
-      // Langkah disarankan minimal 2 (Requirement 5.4)
       const blokLangkah = screen.getByTestId('blok-langkah-disarankan');
       expect(blokLangkah).toBeDefined();
 
-      // Pihak ketiga menyebutkan Google Gemini
-      expect(screen.getAllByText(/Google Gemini/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Analisis AI/i).length).toBeGreaterThanOrEqual(1);
     });
 
     it('membatalkan pemeriksaan dari modal pratinjau dan mempertahankan teks di form', async () => {
@@ -237,26 +215,21 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
 
-      // Klik tombol Batal
       fireEvent.click(screen.getByTestId('btn-batal'));
 
-      // Modal tertutup
       await waitFor(() => {
         expect(screen.queryByTestId('modal-pratinjau-dialog')).toBeNull();
       });
 
-      // Input teks tetap utuh
       expect((screen.getByRole('textbox', { name: /teks percakapan chat/i }) as HTMLTextAreaElement).value).toBe(
         'Pesan rahasia 081299998888 jangan kirim dulu.'
       );
-      // Fetch tidak pernah dipanggil
       expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 
   describe('2. Alur Lengkap Mode Screenshot: Gambar -> Kompresi -> API -> Evaluasi Transkrip Server (Requirements 11.3, 11.4, 12.3, 14.3)', () => {
     it('mengunggah screenshot, memanggil endpoint /api/cek-chat, dan mengevaluasi transkrip di server', async () => {
-      // Mock Gemini mengembalikan hasil screenshot dengan transkrip percakapan
       vi.mocked(analyzeChat).mockResolvedValue({
         halaman: 'chat',
         level: 'sedang',
@@ -283,14 +256,11 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
       render(<CekChatPage />);
 
-      // Pindah ke tab Unggah screenshot
       const tabScreenshot = screen.getByRole('tab', { name: /unggah screenshot/i });
       fireEvent.click(tabScreenshot);
 
-      // Peringatan privasi screenshot tampil (Requirement 12.3)
       expect(screen.getByTestId('peringatan-privasi-screenshot')).toBeDefined();
 
-      // Pilih file gambar
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(input, {
         target: { files: [validJpgFile] },
@@ -300,30 +270,24 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
         expect(screen.getByText('bukti-chat.jpg')).toBeDefined();
       });
 
-      // Klik tombol Periksa
       fireEvent.click(screen.getByTestId('tombol-periksa'));
 
-      // Modal pratinjau teks dilewati untuk screenshot (Requirement 12.3)
       expect(screen.queryByTestId('modal-pratinjau-dialog')).toBeNull();
 
-      // Verifikasi fetch dipanggil dan backend mengeksekusi POST /api/cek-chat
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
       });
 
-      // Hasil evaluasi gabungan ditampilkan
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Karena transkrip memuat "kode OTP 6 digit" (langsung tinggi), level harus naik ke 'tinggi' (Requirement 14.3, 14.4)
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
     });
   });
 
   describe('3. Fallback ke Aturan Lokal saat API Gagal / 500 / Timeout (Requirements 15.1, 15.3, 28.3, 29.1, 29.2, 29.4)', () => {
     it('fallback ke aturan lokal ketika backend Route Handler mengembalikan status 500', async () => {
-      // Mock fetch mengembalikan status 500
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -346,30 +310,24 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
       fireEvent.click(screen.getByTestId('btn-lanjut-periksa'));
 
-      // Banner peringatan fallback harus muncul (Requirement 15.1)
       await waitFor(() => {
         expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       });
 
-      // Memeriksa keterangan "analisis AI sedang tidak tersedia" (Requirement 15.1, 29.2)
       expect(screen.getAllByText(/analisis AI sedang tidak tersedia/i).length).toBeGreaterThanOrEqual(1);
 
-      // KomponenHasil tetap tampil dengan aturan lokal (Requirement 15.3, 29.1)
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
 
-      // Minimal 1 alasan dan 2 langkah (Requirement 29.4)
       const kartuTemuan = screen.getAllByTestId('kartu-temuan');
       expect(kartuTemuan.length).toBeGreaterThanOrEqual(1);
       const langkahItems = screen.getAllByTestId(/^langkah-item-/);
       expect(langkahItems.length).toBeGreaterThanOrEqual(2);
 
-      // Tombol Coba lagi tersedia (Requirement 15.2)
       expect(screen.getByTestId('tombol-coba-lagi')).toBeDefined();
     });
 
     it('fallback ketika Gemini di backend gagal/timeout (analyzeChat return null -> Route Handler return status_layanan.ai: gagal)', async () => {
-      // analyzeChat return null menandakan Gemini API gagal/timeout di backend
       vi.mocked(analyzeChat).mockResolvedValue(null);
 
       render(<CekChatPage />);
@@ -389,7 +347,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
       fireEvent.click(screen.getByTestId('btn-lanjut-periksa'));
 
-      // Banner fallback harus tampil karena status_layanan.ai bernilai 'gagal'
       await waitFor(() => {
         expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       });
@@ -397,7 +354,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       expect(screen.getAllByText(/analisis AI sedang tidak tersedia/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByTestId('tombol-coba-lagi')).toBeDefined();
 
-      // KomponenHasil tetap memuat aturan lokal (hadiah undian + transfer)
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
     });
@@ -422,7 +378,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
       fireEvent.click(screen.getByTestId('btn-lanjut-periksa'));
 
-      // Banner fallback muncul
       await waitFor(() => {
         expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       });
@@ -438,18 +393,14 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       const tombolContoh = screen.getByTestId('tombol-coba-contoh');
       expect(tombolContoh).toBeDefined();
 
-      // Klik tombol coba contoh
       fireEvent.click(tombolContoh);
 
-      // Hasil langsung muncul
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Verifikasi fetch API SAMA SEKALI TIDAK dipanggil (Requirement 9.5)
       expect(global.fetch).not.toHaveBeenCalled();
 
-      // Verifikasi komponen hasil memuat data simulasi contoh
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
       expect(screen.getByTestId('blok-temuan')).toBeDefined();
       expect(screen.getByTestId('blok-langkah-disarankan')).toBeDefined();
@@ -462,10 +413,8 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
       global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         callCount++;
         if (callCount === 1) {
-          // Panggilan pertama: simulasi error 500
           return new Response(JSON.stringify({ error: 'Server Error' }), { status: 500 });
         }
-        // Panggilan kedua: jalankan Route Handler POST asli dengan mock Gemini sukses
         vi.mocked(analyzeChat).mockResolvedValue(mockGeminiSukses);
         const req = new Request('http://localhost:3000/api/cek-chat', {
           method: init?.method || 'POST',
@@ -491,22 +440,18 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
       fireEvent.click(screen.getByTestId('btn-lanjut-periksa'));
 
-      // Panggilan 1 gagal -> fallback muncul
       await waitFor(() => {
         expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       });
       expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      // Klik tombol "Coba lagi" (Requirement 15.2)
       const tombolCobaLagi = screen.getByTestId('tombol-coba-lagi');
       fireEvent.click(tombolCobaLagi);
 
-      // Verifikasi panggilan ulang ke API
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
       });
 
-      // Banner fallback hilang dan hasil AI berhasil ditampilkan
       await waitFor(() => {
         expect(screen.queryByTestId('banner-fallback-ai')).toBeNull();
       });
@@ -518,18 +463,15 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
     it('mengosongkan input dan hasil saat tombol "Cek lagi" ditekan', async () => {
       render(<CekChatPage />);
 
-      // Pilih contoh skenario
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
 
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Klik tombol "Cek lagi"
       const tombolCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(tombolCekLagi);
 
-      // Halaman kembali ke form input awal
       await waitFor(() => {
         expect(screen.queryByTestId('komponen-hasil')).toBeNull();
         expect(screen.getByTestId('area-input-chat')).toBeDefined();
@@ -568,14 +510,11 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Tombol "Cek link ini" harus muncul
       const btnCekLink = screen.getByText('Cek link ini');
       expect(btnCekLink).toBeDefined();
 
-      // Klik tombol "Cek link ini"
       fireEvent.click(btnCekLink);
 
-      // URL disimpan di sessionStorage (Requirement 34.2)
       expect(window.sessionStorage.setItem).toHaveBeenCalledWith(
         'url_dari_chat',
         'https://shopee-promo-gratis.xyz/klaim'
@@ -609,7 +548,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Cross-link ke Cek Video & Suara tampil (Requirement 16.4, 34.3)
       const areaCrossLinks = screen.getByTestId('area-cross-links');
       const linkVideo = within(areaCrossLinks).getByText('Cek Video & Suara');
       expect(linkVideo).toBeDefined();
@@ -619,7 +557,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
 
   describe('8. Larangan Kata Terlarang dalam Kesimpulan (Requirements 30.1, 30.4)', () => {
     it('memastikan kesimpulan tidak memuat kata terlarang seperti "aman", "pasti", "terbukti", "100%"', async () => {
-      // Gemini mengembalikan kata terlarang dalam kesimpulannya
       vi.mocked(analyzeChat).mockResolvedValue({
         halaman: 'chat',
         level: 'sedang',
@@ -662,7 +599,6 @@ describe('Integrasi Penuh Halaman Cek Chat dengan Endpoint /api/cek-chat (Task 1
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Filter kata terlarang di Route Handler harus menyaring kata terlarang
       const ringkasanEl = screen.getByTestId('ringkasan-teks');
       expect(ringkasanEl.textContent).not.toMatch(/\bpasti penipuan\b/i);
       expect(ringkasanEl.textContent).not.toMatch(/\b100%\b/i);

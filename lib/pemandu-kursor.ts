@@ -1,10 +1,3 @@
-/**
- * lib/pemandu-kursor.ts
- *
- * Isi pemandu di header: saran untuk elemen yang sedang ditunjuk kursor.
- * Murni aturan di browser, tanpa AI dan tanpa mengirim data.
- */
-
 export interface PesanPemandu {
   judul: string;
   pesan: string;
@@ -13,17 +6,14 @@ export interface PesanPemandu {
 const uji = (id: string) => `[data-testid="${id}"]`;
 const awalan = (id: string) => `[data-testid^="${id}"]`;
 
-/** [selector CSS, judul singkat, saran] */
 const ATURAN: ReadonlyArray<readonly [string, string, string]> = [
-  // Navigasi
   ['a[href="/cek-chat"]', 'Cek Chat', 'Dapat tawaran kerja, minta OTP, atau ngaku dari bank? Mulai dari sini, tempel isi chatnya.'],
   ['a[href="/cek-link"]', 'Cek Link', 'Dapat link hadiah atau verifikasi akun? Jangan dibuka dulu, periksa alamatnya di sini.'],
-  ['a[href="/cek-video-suara"]', 'Cek Video & Suara', 'Video call atau voice note minta uang? Jawab beberapa pertanyaan soal situasinya di sini.'],
+  ['a[href="/cek-video-suara"]', 'Cek Video & Suara', 'Video call atau voice note minta uang? Unggah rekamannya biar dicek AI, atau jawab beberapa pertanyaan.'],
   ['a[href="/"]', 'Beranda', 'Balik ke halaman awal untuk memilih pemeriksaan lain.'],
   ['a[href="/#cara-kerja"]', 'Cara kerja', 'Lihat cara penilaiannya, batas kemampuannya, dan data apa yang dikirim ke mana.'],
   ['button[aria-controls="mobile-navigation"]', 'Menu', 'Buka daftar halaman cek.'],
 
-  // Beranda
   [uji('hero-judul'), 'Mulai dari sini', 'Pilih salah satu kartu di bawah sesuai yang bikin kamu ragu. Tidak perlu daftar akun.'],
   [uji('hero-tujuan'), 'Hasilnya apa?', 'Kamu dapat tingkat kewaspadaan, alasannya, dan langkah yang perlu diambil.'],
   [awalan('hero-langkah-'), 'Cara pakai', 'Empat langkah ini sama di semua halaman cek, jadi cukup hafal sekali.'],
@@ -34,7 +24,6 @@ const ATURAN: ReadonlyArray<readonly [string, string, string]> = [
   [uji('demo-tanda'), 'Tanda bahaya', 'Tunjuk tiap tanda untuk melihat alasannya di teks.'],
   [uji('demo-pemeriksaan'), 'Contoh fiktif', 'Begini kira-kira alurnya: isi dibaca, tanda bahaya ditandai, lalu keluar hasil dan sarannya.'],
 
-  // Masukan
   [`${uji('input-chat-container')} textarea`, 'Isi chat', 'Tempel percakapannya apa adanya. Nomor HP dan rekening disensor otomatis sebelum dikirim.'],
   [`${uji('input-chat-container')} input[type="file"]`, 'Screenshot', 'Tutup dulu nama dan nomor HP di gambarnya kalau bisa.'],
   [uji('input-link'), 'Kolom link', 'Tempel alamat lengkapnya. Link tidak akan dibuka, cuma alamatnya yang diperiksa.'],
@@ -47,7 +36,6 @@ const ATURAN: ReadonlyArray<readonly [string, string, string]> = [
   [uji('input-tanya-lanjut'), 'Tanya lanjut', 'Tanya soal hasil ini. Jangan tulis data pribadi di sini.'],
   [awalan('btn-pertanyaan-cepat-'), 'Pertanyaan cepat', 'Klik kalau bingung mau tanya apa.'],
 
-  // Wizard video & suara
   [awalan('kartu-situasi-'), 'Situasi', 'Pilih yang paling mirip dengan kejadian yang kamu alami.'],
   [uji('pertanyaan-siapa-tampil'), 'Siapa yang tampil', 'Wajah dan suara bisa ditiru AI. Kenal sosoknya belum berarti orangnya asli.'],
   [uji('pertanyaan-apa-diminta'), 'Apa yang diminta', 'Permintaan uang, OTP, atau data akun adalah tanda paling penting di sini.'],
@@ -58,11 +46,14 @@ const ATURAN: ReadonlyArray<readonly [string, string, string]> = [
   [uji('pertanyaan-bisa-telepon-balik'), 'Telepon balik', 'Tutup, lalu telepon balik ke nomor yang sudah kamu simpan. Penipu biasanya menolak.'],
   [uji('pertanyaan-masih-tersambung'), 'Masih tersambung', 'Kalau masih tersambung, jangan sebut data apa pun sampai selesai memeriksa.'],
   [awalan('item-checklist-'), 'Pengamatan', 'Centang kalau kamu melihatnya. Tidak melihat tanda ini belum berarti videonya asli.'],
-  [uji('area-analisis-file-ai'), 'Analisis file', 'Opsional. File dikirim ke layanan luar dan hasilnya cuma sinyal tambahan.'],
+  [uji('dropzone-media'), 'Unggah file', 'Pilih video, voice note, atau screenshot video call. Video utuh tidak dikirim, cuma beberapa gambar dan maksimal 60 detik suara.'],
+  [uji('konteks-opsional'), 'Konteks', 'Opsional, tapi bikin hasil lebih tepat. Permintaan uang dan desakan waktu adalah tanda paling kuat.'],
+  [uji('tombol-periksa-media'), 'Periksa', 'AI mengecek wajah, suara, dan omongannya. Hasilnya perkiraan, bukan vonis.'],
+  [uji('tab-mode-kuis'), 'Tanpa rekaman', 'Video call-nya tidak terekam? Jawab pertanyaan soal situasinya saja.'],
+  [uji('panel-analisis-media'), 'Hasil AI', 'Makin panjang garisnya, makin besar kemungkinan wajah atau suaranya dibuat AI. AI tetap bisa salah.'],
   [uji('tombol-lanjut'), 'Lanjut', 'Jawabanmu diproses di browser dan tidak dikirim ke mana pun.'],
   [uji('tombol-kembali'), 'Kembali', 'Ubah jawaban di langkah sebelumnya.'],
 
-  // Hasil
   ['[data-level="tinggi"]', 'Waspada tinggi', 'Ada tanda kuat. Stop dulu, jangan kirim apa pun sebelum memverifikasi lewat jalur lain.'],
   ['[data-level="sedang"]', 'Perlu hati-hati', 'Ada tanda yang perlu dicek. Baca alasannya sebelum lanjut.'],
   ['[data-level="tidak_ditemukan"]', 'Belum ada tanda', 'Belum ketemu pola yang kami kenali, tapi modus baru bisa saja lolos. Tetap verifikasi.'],
@@ -85,11 +76,9 @@ const ATURAN: ReadonlyArray<readonly [string, string, string]> = [
   [awalan('btn-cross-link-'), 'Periksa juga', 'Chat ini memuat hal yang bisa diperiksa di halaman lain.'],
   [awalan('link-halaman-lain-'), 'Halaman lain', 'Pindah ke jenis pemeriksaan lain.'],
 
-  // Umum
   ['footer', 'Info', 'Aplikasi ini untuk pengguna 18 tahun ke atas dan tidak menyimpan yang kamu periksa.'],
 ];
 
-/** Mencari saran dari elemen yang ditunjuk, mulai dari elemen itu lalu ke induknya. */
 export function cariPesan(awal: Element | null): PesanPemandu | null {
   for (let el = awal; el && el !== document.body; el = el.parentElement) {
     for (const [selector, judul, pesan] of ATURAN) {
@@ -127,12 +116,11 @@ const PETUNJUK_HALAMAN: Record<string, { judul: string; sebelum: string; sesudah
   },
   '/cek-video-suara': {
     judul: 'Cek Video & Suara',
-    sebelum: 'Pilih situasi yang kamu alami, lalu jawab sesuai yang terjadi.',
+    sebelum: 'Unggah video atau voice note-nya, lalu tekan Periksa. Tidak punya rekaman? Pilih tab Jawab pertanyaan.',
     sesudah: 'Hasilnya sudah keluar. Verifikasi lewat nomor yang sudah kamu simpan.',
   },
 };
 
-/** Pesan saat kursor tidak sedang menunjuk elemen yang punya saran. */
 export function pesanBawaan(k: KonteksPemandu): PesanPemandu {
   const halaman = PETUNJUK_HALAMAN[k.pathname];
   if (halaman) {

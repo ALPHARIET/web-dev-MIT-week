@@ -1,14 +1,5 @@
 import type { Config } from "tailwindcss";
 
-/**
- * Tema Caldera dipasang di level palet: keluarga warna bawaan Tailwind
- * dipetakan ulang supaya semua komponen ikut berubah tanpa mengganti className.
- * Paletnya sengaja sempit: ember, sulfur, dan netral. Tidak ada warna pucat lain.
- *   gray, emerald           -> netral hangat
- *   blue, indigo, sky, purple -> ember
- *   red, rose               -> permukaan ember, teks obsidian (Waspada tinggi)
- *   orange, amber           -> permukaan sulfur, teks obsidian (Perlu hati-hati)
- */
 const netral = {
   50: "#efeeea",
   100: "#e8e7e3",
@@ -23,8 +14,6 @@ const netral = {
   950: "#070607",
 };
 
-// Angka besar dipakai sebagai warna teks, garis, dan ring, jadi semuanya obsidian.
-// Latar bg-blue-600 dikembalikan ke ember di globals.css.
 const ember = {
   50: "#efeeea",
   100: "#f5f28e",
@@ -125,28 +114,24 @@ const config: Config = {
         orange: sulfur,
         red: merah,
         rose: merah,
-        // Tema warna untuk tiga tingkat kewaspadaan
         kewaspadaan: {
-          // 1. Waspada tinggi (Merah)
           tinggi: {
-            DEFAULT: "#dc2626", // red-600
-            light: "#fef2f2",   // red-50
-            border: "#fca5a5",  // red-300
-            dark: "#991b1b",    // red-800
+            DEFAULT: "#dc2626",
+            light: "#fef2f2",
+            border: "#fca5a5",
+            dark: "#991b1b",
           },
-          // 2. Perlu hati-hati (Oranye)
           sedang: {
-            DEFAULT: "#ea580c", // orange-600
-            light: "#fff7ed",   // orange-50
-            border: "#fdba74",  // orange-300
-            dark: "#9a3412",    // orange-800
+            DEFAULT: "#ea580c",
+            light: "#fff7ed",
+            border: "#fdba74",
+            dark: "#9a3412",
           },
-          // 3. Tidak ditemukan tanda bahaya (Abu-abu, bukan hijau)
           tidak_ditemukan: {
-            DEFAULT: "#4b5563", // gray-600
-            light: "#f9fafb",   // gray-50
-            border: "#d1d5db",  // gray-300
-            dark: "#1f2937",    // gray-800
+            DEFAULT: "#4b5563",
+            light: "#f9fafb",
+            border: "#d1d5db",
+            dark: "#1f2937",
           },
         },
         waspada: {

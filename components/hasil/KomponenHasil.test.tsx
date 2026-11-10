@@ -108,7 +108,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       const blok6 = screen.getByTestId('blok-batasan-layanan');
       const blok7 = screen.getByTestId('blok-aksi-penutup');
 
-      // Pastikan urutan DOM: blok1 sebelum blok2 sebelum blok3 ...
       expect(
         blok1.compareDocumentPosition(blok2) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
@@ -128,7 +127,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
         blok6.compareDocumentPosition(blok7) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
 
-      // Blok Tanya Lanjut (P1 - Requirement 31.5) berada di bawah batasan dan sebelum aksi penutup
       const blokTanya = screen.getByTestId('blok-tanya-lanjut');
       expect(
         blok6.compareDocumentPosition(blokTanya) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -222,7 +220,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       const kartuList = screen.getAllByTestId('kartu-temuan');
       expect(kartuList).toHaveLength(2);
 
-      // Kartu 1: Meminta kode OTP
       expect(screen.getByText('Meminta kode OTP')).toBeDefined();
       expect(
         screen.getByText(/Pelaku meminta kode OTP untuk mengambil alih akun/)
@@ -231,7 +228,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
         screen.getByText('Kirimkan kode 6 digit yang masuk ke SMS kamu')
       ).toBeDefined();
 
-      // Kartu 2: Pola lowongan kerja
       expect(screen.getByText('Pola lowongan kerja like & follow')).toBeDefined();
       expect(
         screen.getByText(
@@ -244,7 +240,7 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       render(<KomponenHasil hasil={dummyHasilTinggi} />);
 
       const badges = screen.getAllByTestId('badge-sumber');
-      expect(badges[0].textContent).toBe('Aturan Lokal');
+      expect(badges[0].textContent).toBe('Pola penipuan');
       expect(badges[1].textContent).toBe('Analisis AI');
     });
 
@@ -265,7 +261,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       const sorotan = screen.getByTestId('sorotan-transkrip');
       expect(sorotan).toBeDefined();
       expect(screen.getByTestId('konten-transkrip')).toBeDefined();
-      // Tag mark sorotan pemicu harus ada
       const markElements = screen.getAllByTestId('sorotan-pemicu');
       expect(markElements.length).toBeGreaterThan(0);
     });
@@ -370,12 +365,10 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       const panelSection = screen.getByTestId('panel-darurat-section');
       expect(panelSection).toBeDefined();
 
-      // Karena situasi_darurat: ['kirim_otp'], panel harus autoOpen (terbuka)
       const toggle = screen.getByTestId('panel-darurat-toggle');
       expect(toggle.getAttribute('aria-expanded')).toBe('true');
       expect(screen.getByTestId('panel-darurat-content')).toBeDefined();
 
-      // Banner terdeteksi harus tampil
       expect(screen.getByTestId('badge-darurat-terdeteksi')).toBeDefined();
     });
 
@@ -392,18 +385,15 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
     it('menampilkan teks batasan pemeriksaan dan daftar layanan pihak ketiga beserta statusnya', () => {
       render(<KomponenHasil hasil={dummyHasilSedang} />);
 
-      // Teks batasan
       const teksBatasan = screen.getByTestId('teks-batasan');
       expect(teksBatasan.textContent).toBe(dummyHasilSedang.batasan);
 
-      // Layanan Safe Browsing (status: ok)
       const itemSb = screen.getByTestId('layanan-item-safe_browsing');
       expect(within(itemSb).getByText('Google Safe Browsing')).toBeDefined();
       expect(screen.getByTestId('status-badge-safe_browsing').textContent).toBe(
         'Berjalan normal'
       );
 
-      // Layanan RDAP (status: gagal -> fallback lokal)
       const itemRdap = screen.getByTestId('layanan-item-rdap');
       expect(within(itemRdap).getByText('Data Domain (RDAP)')).toBeDefined();
       expect(screen.getByTestId('status-badge-rdap').textContent).toContain(
@@ -439,7 +429,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
     });
 
     it('merender tautan default ke dua halaman cek lainnya berdasarkan hasil.halaman (Requirement 34.4)', () => {
-      // Halaman asal: 'chat' -> halaman lain: 'Cek Link' dan 'Cek Video & Suara'
       render(<KomponenHasil hasil={dummyHasilTinggi} />);
 
       const areaHalamanLain = screen.getByTestId('area-halaman-lain');
@@ -530,7 +519,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       expect(btnPeringatan.textContent).toContain('Kirim peringatan');
       expect(btnPeringatan.classList.contains('min-h-[44px]')).toBe(true);
 
-      // Pastikan dialog modal dapat dibuka dari tombol ini
       fireEvent.click(btnPeringatan);
       expect(screen.getByTestId('dialog-templat-peringatan')).toBeDefined();
     });
@@ -552,7 +540,6 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
       render(<KomponenHasil hasil={dummyHasilTinggi} />);
 
       const text = screen.getByTestId('komponen-hasil').textContent || '';
-      // Kesimpulan tidak boleh menyatakan 'pasti aman', 'terbukti aman', '100% aman', dsb.
       const forbiddenPhrases = [
         'pasti aman',
         'terbukti aman',
@@ -598,7 +585,7 @@ describe('components/hasil/KomponenHasil.tsx (Task 4.8)', () => {
     });
 
     it('memiliki label yang mudah dibaca untuk layanan pihak ketiga', () => {
-      expect(NAMA_LAYANAN_LABEL.gemini).toContain('Google Gemini');
+      expect(NAMA_LAYANAN_LABEL.gemini).toBe('Analisis AI');
       expect(NAMA_LAYANAN_LABEL.safe_browsing).toContain('Safe Browsing');
       expect(NAMA_LAYANAN_LABEL.rdap).toContain('RDAP');
     });

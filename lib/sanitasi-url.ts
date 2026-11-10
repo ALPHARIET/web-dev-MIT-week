@@ -1,16 +1,3 @@
-/**
- * lib/sanitasi-url.ts
- *
- * Parsing dan sanitasi URL untuk Aplikasi Web Cek Penipuan.
- * Mengurai URL atau domain menjadi komponen-komponennya dan membuang
- * parameter sensitif (email, phone, token, session, id, password, otp).
- *
- * References: Requirements 17.3, 17.4, dan design.md
- */
-
-/**
- * Interface komponen URL yang telah diurai sesuai spesifikasi design.md
- */
 export interface UrlParsed {
   protokol: string;
   subdomain: string;
@@ -19,13 +6,9 @@ export interface UrlParsed {
   path: string;
   params: Record<string, string>;
   urlAsli: string;
-  urlBersih: string; // URL tanpa parameter sensitif
+  urlBersih: string;
 }
 
-/**
- * Daftar parameter yang dianggap sensitif dan harus dibuang.
- * Perbandingan dilakukan secara case-insensitive.
- */
 export const PARAMETER_SENSITIF = [
   'email',
   'phone',
@@ -42,20 +25,11 @@ const SENSITIVE_PARAM_SET = new Set<string>(
   PARAMETER_SENSITIF.map((p) => p.toLowerCase())
 );
 
-/**
- * Memeriksa apakah suatu nama parameter termasuk parameter sensitif
- * (case-insensitive comparison).
- */
 export function isSensitiveParam(key: string): boolean {
   return SENSITIVE_PARAM_SET.has(key.trim().toLowerCase());
 }
 
-/**
- * Daftar dua-bagian (multi-part) TLD yang umum, terutama domain Indonesia (.id)
- * dan domain internasional umum.
- */
 const MULTI_PART_TLDS = new Set<string>([
-  // ccSLD Indonesia (.id)
   'co.id',
   'web.id',
   'ac.id',
@@ -67,7 +41,6 @@ const MULTI_PART_TLDS = new Set<string>([
   'my.id',
   'net.id',
 
-  // ccSLD internasional umum
   'co.uk',
   'org.uk',
   'gov.uk',
@@ -156,9 +129,6 @@ const MULTI_PART_TLDS = new Set<string>([
   'gov.za',
 ]);
 
-/**
- * Prefiks SLD umum untuk ccTLD 2 huruf (misal: co.ke, com.ng, dsb.)
- */
 const COMMON_SLD_PREFIXES = new Set<string>([
   'co',
   'com',
@@ -177,9 +147,6 @@ const COMMON_SLD_PREFIXES = new Set<string>([
 const IPV4_REGEX =
   /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
-/**
- * Memecah hostname menjadi subdomain, domainUtama, dan tld.
- */
 function extractDomainParts(rawHost: string): {
   subdomain: string;
   domainUtama: string;
@@ -190,7 +157,6 @@ function extractDomainParts(rawHost: string): {
     return { subdomain: '', domainUtama: '', tld: '' };
   }
 
-  // 1. Periksa IPv4
   if (IPV4_REGEX.test(host)) {
     return {
       subdomain: '',
@@ -199,7 +165,6 @@ function extractDomainParts(rawHost: string): {
     };
   }
 
-  // 2. Periksa IPv6 (format [::1] atau alamat heksadesimal dengan titik dua)
   if (host.startsWith('[') || (host.includes(':') && !host.includes('.'))) {
     const cleanIpv6 = host.replace(/^\[|\]$/g, '');
     return {
@@ -216,7 +181,6 @@ function extractDomainParts(rawHost: string): {
   }
 
   if (parts.length === 1) {
-    // e.g. "localhost"
     return {
       subdomain: '',
       domainUtama: parts[0],
@@ -224,7 +188,6 @@ function extractDomainParts(rawHost: string): {
     };
   }
 
-  // 3. Periksa multi-part TLD (misal: shopee.co.id, bbc.co.uk)
   if (parts.length >= 3) {
     const lastPart = parts[parts.length - 1];
     const secondLastPart = parts[parts.length - 2];
@@ -242,7 +205,6 @@ function extractDomainParts(rawHost: string): {
     }
   }
 
-  // 4. Jika hanya 2 bagian dan merupakan multi-part TLD (misal input berupa "co.id")
   if (parts.length === 2) {
     const candidateTld = `${parts[0]}.${parts[1]}`;
     if (MULTI_PART_TLDS.has(candidateTld)) {
@@ -254,7 +216,6 @@ function extractDomainParts(rawHost: string): {
     }
   }
 
-  // 5. Single-part TLD standar (misal: example.com, bca.id, s.id-update-akun.invalid)
   const tld = parts[parts.length - 1];
   const domainUtama = parts[parts.length - 2];
   const subdomain = parts.slice(0, parts.length - 2).join('.');
@@ -262,13 +223,6 @@ function extractDomainParts(rawHost: string): {
   return { subdomain, domainUtama, tld };
 }
 
-/**
- * Mengurai URL atau nama domain menjadi komponen-komponennya.
- * Mendukung input dengan atau tanpa protokol (misal: "example.com", "https://sh0pee.co.id/promo?id=123").
- *
- * @param input String URL atau domain yang dimasukkan pengguna
- * @returns Objek UrlParsed dengan seluruh komponen URL
- */
 export function parseUrl(input: string): UrlParsed {
   const trimmed = (input || '').trim();
 
@@ -285,7 +239,6 @@ export function parseUrl(input: string): UrlParsed {
     };
   }
 
-  // 1. Ekstrak protokol jika ada
   let protokol = '';
   let rest = trimmed;
 
@@ -298,7 +251,6 @@ export function parseUrl(input: string): UrlParsed {
     rest = trimmed.slice(2);
   }
 
-  // 2. Pisahkan authority (host + port + userinfo) dari sisa URL (path, query, hash)
   let firstDelim = -1;
   for (let i = 0; i < rest.length; i++) {
     const c = rest[i];
@@ -318,13 +270,11 @@ export function parseUrl(input: string): UrlParsed {
     pathAndAfter = rest.slice(firstDelim);
   }
 
-  // 3. Ekstrak hostname dari authority (buang user:pass@ dan :port)
   const atIndex = authority.lastIndexOf('@');
   const hostAndPort = atIndex >= 0 ? authority.slice(atIndex + 1) : authority;
 
   let host = hostAndPort;
   if (host.startsWith('[')) {
-    // Format IPv6: [::1]:8080
     const closeBracket = host.indexOf(']');
     if (closeBracket >= 0) {
       host = host.slice(0, closeBracket + 1);
@@ -338,7 +288,6 @@ export function parseUrl(input: string): UrlParsed {
 
   const domainParts = extractDomainParts(host);
 
-  // 4. Ekstrak path, query, dan hash
   let path = '';
   let queryAndHash = '';
 
@@ -373,7 +322,6 @@ export function parseUrl(input: string): UrlParsed {
     }
   }
 
-  // 5. Parsing query parameter ke bentuk Record<string, string>
   const params: Record<string, string> = {};
   if (queryString) {
     const searchParams = new URLSearchParams(queryString);
@@ -394,18 +342,7 @@ export function parseUrl(input: string): UrlParsed {
   };
 }
 
-/**
- * Membuang parameter sensitif dari objek UrlParsed:
- * `email`, `phone`, `token`, `session`, `id`, `password`, `otp` (case-insensitive).
- *
- * Parameter non-sensitif tetap utuh. Field `urlBersih` diperbarui dengan URL yang telah
- * disanitasi tanpa parameter sensitif.
- *
- * @param parsed Objek UrlParsed hasil dari parseUrl
- * @returns Objek UrlParsed baru dengan parameter dan urlBersih yang telah disanitasi
- */
 export function sanitasiParams(parsed: UrlParsed): UrlParsed {
-  // 1. Filter dictionary params
   const cleanParams: Record<string, string> = {};
   for (const [key, value] of Object.entries(parsed.params)) {
     if (!isSensitiveParam(key)) {
@@ -413,7 +350,6 @@ export function sanitasiParams(parsed: UrlParsed): UrlParsed {
     }
   }
 
-  // 2. Buat urlBersih tanpa parameter sensitif
   const raw = parsed.urlAsli || parsed.urlBersih;
   let urlBersih = raw;
 
@@ -443,7 +379,6 @@ export function sanitasiParams(parsed: UrlParsed): UrlParsed {
       urlBersih = newQuery ? `${base}?${newQuery}${hashString}` : `${base}${hashString}`;
     }
   } else {
-    // Fallback rekonstruksi jika raw string kosong
     let rebuilt = '';
     if (parsed.protokol) rebuilt += `${parsed.protokol}://`;
     const hostParts = [parsed.subdomain, parsed.domainUtama, parsed.tld]
