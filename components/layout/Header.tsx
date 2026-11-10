@@ -43,8 +43,9 @@ export function Header({ currentPath }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 py-3">
-      <div className="max-w-5xl mx-auto bg-limestone px-3 sm:px-4 rounded-[32px]">
+    <header className="sticky top-0 z-40 w-full py-3">
+      <div className="max-w-5xl lg:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+      <div className="bg-limestone px-3 sm:px-4 rounded-[32px]">
         <div className="flex items-center justify-between h-14">
           {/* Logo / Nama Aplikasi */}
           <div className="flex items-center">
@@ -173,6 +174,7 @@ export function Header({ currentPath }: HeaderProps) {
         )}
 
         <PemanduKursor pathname={activePath} />
+      </div>
       </div>
     </header>
   );

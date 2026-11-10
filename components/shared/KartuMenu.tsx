@@ -42,8 +42,8 @@ export function KartuMenu({
       aria-label={`Menu ${nomor}: ${judul}`}
       className={`group block w-full rounded-2xl border border-transparent bg-limestone p-4 pl-5 sm:p-6 lg:p-8 transition-colors duration-200 hover:bg-ember hover:border-blue-400 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 min-h-[44px] ${className}`.trim()}
     >
-      <div className="flex items-start sm:items-center justify-between gap-3.5 sm:gap-5">
-        <div className="flex items-start sm:items-center gap-3.5 sm:gap-5 flex-1 min-w-0">
+      <div className="flex items-start sm:items-center lg:items-start justify-between gap-3.5 sm:gap-5">
+        <div className="flex items-start sm:items-center lg:flex-col lg:items-start gap-3.5 sm:gap-5 flex-1 min-w-0">
           {/* Penanda Nomor & Ikon Kartu */}
           <div
             data-testid="kartu-menu-penanda"
@@ -78,7 +78,7 @@ export function KartuMenu({
           {/* Konten Teks: Judul, Badge, dan Deskripsi */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display text-4xl sm:text-5xl text-gray-900 leading-none">
+              <h3 className="text-2xl text-gray-900">
                 {judul}
               </h3>
               {badge && (
@@ -99,7 +99,7 @@ export function KartuMenu({
         {/* Tombol aksi / panah navigasi */}
         <div
           data-testid="kartu-menu-panah"
-          className="flex-shrink-0 self-center text-obsidian group-hover:translate-x-1 transition-transform duration-200 min-w-[24px]"
+          className="flex-shrink-0 self-center lg:self-start text-obsidian group-hover:translate-x-1 transition-transform duration-200 min-w-[24px]"
           aria-hidden="true"
         >
           <svg

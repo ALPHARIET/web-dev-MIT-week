@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { KartuMenu } from '@/components/shared/KartuMenu';
 import { Akordeon, type ItemAkordeon } from '@/components/shared/Akordeon';
+import { DemoPemeriksaan } from '@/components/beranda/DemoPemeriksaan';
 
 export const metadata: Metadata = {
   title: 'Cek Penipuan - Periksa Chat, Link, & Video Mencurigakan',
@@ -153,7 +154,7 @@ const CARA_KERJA_ITEMS: ItemAkordeon[] = [
 
 export default function Home(): React.JSX.Element {
   return (
-    <div className="beranda-anton w-full space-y-8 sm:space-y-12">
+    <div className="w-full space-y-8 sm:space-y-12">
       {/* =========================================================================
           Bagian 1: Panel Panduan (Hero)
           - Ditampilkan langsung tanpa klik
@@ -163,13 +164,13 @@ export default function Home(): React.JSX.Element {
       <section
         data-testid="hero-panduan"
         aria-labelledby="hero-judul"
-        className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-6 lg:gap-8 items-stretch"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch"
       >
-        <div className="py-2 lg:py-6">
+        <div className="py-2 lg:py-6 flex flex-col justify-center">
           <h1
             id="hero-judul"
             data-testid="hero-judul"
-            className="text-5xl sm:text-6xl lg:text-[76px] leading-[1.02] text-obsidian"
+            className="text-obsidian"
           >
             Ragu sama chat, link, atau video call yang kamu terima? Cek dulu di sini.
           </h1>
@@ -182,7 +183,7 @@ export default function Home(): React.JSX.Element {
           </p>
         </div>
 
-        <div className="halftone rounded-2xl min-h-[160px] lg:min-h-full" aria-hidden="true" />
+        <DemoPemeriksaan />
       </section>
 
       {/* =========================================================================
@@ -195,7 +196,7 @@ export default function Home(): React.JSX.Element {
       <section
         data-testid="menu-kartu-container"
         aria-labelledby="menu-heading"
-        className="space-y-4"
+        className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4"
       >
         <h2 id="menu-heading" className="sr-only">
           Pilihan Menu Pengecekan
@@ -277,7 +278,7 @@ export default function Home(): React.JSX.Element {
       <section aria-label="Cara pakai dan privasi" className="rounded-2xl bg-limestone p-6 sm:p-10">
         {/* 4 Langkah Cara Pakai */}
         <div>
-          <h2 className="text-4xl sm:text-5xl leading-none text-obsidian">
+          <h2 className="text-obsidian">
             Cara pakai
           </h2>
           <div
@@ -297,10 +298,10 @@ export default function Home(): React.JSX.Element {
                   {langkah.nomor}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-900 leading-snug">
+                  <h3 className="text-base font-semibold text-gray-900 leading-snug">
                     {langkah.judul}
                   </h3>
-                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                     {langkah.deskripsi}
                   </p>
                 </div>
@@ -354,17 +355,17 @@ export default function Home(): React.JSX.Element {
         id="cara-kerja"
         data-testid="section-cara-kerja"
         aria-labelledby="cara-kerja-heading"
-        className="scroll-mt-40"
+        className="scroll-mt-40 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start"
       >
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-4 sm:mb-6 lg:mb-0">
           <h2
             id="cara-kerja-heading"
             data-testid="cara-kerja-judul"
-            className="text-4xl sm:text-5xl leading-none text-obsidian"
+            className="text-obsidian"
           >
             Cara kerja dan batasan
           </h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-2 text-base text-gray-600 leading-relaxed max-w-[60ch]">
             Pelajari transparansi metode penilaian kami, batas kemampuan deteksi, serta bagaimana privasi data kamu dilindungi.
           </p>
         </div>

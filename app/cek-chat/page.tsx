@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { KotakPrivasi } from '@/components/shared/KotakPrivasi';
+import { KARTU_FORMULIR, TATA_CEK } from '@/components/shared/tata-letak-cek';
 import { TombolContoh, type SkenarioContoh, type SkenarioChat } from '@/components/input/TombolContoh';
 import { InputChat, type ChatInputData } from '@/components/input/InputChat';
 import { PratinjauSensor } from '@/components/PratinjauSensor';
@@ -354,26 +355,27 @@ export default function CekChatPage(): React.JSX.Element {
   }, [hasil, evaluatedTeks, evaluatedKonteks]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4">
+    <div className="w-full max-w-4xl lg:max-w-none mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4">
       {/* Judul & Deskripsi Halaman Cek Chat */}
       <section data-testid="header-cek-chat" className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">
+        <h1 className="text-gray-900">
           Cek Chat Mencurigakan
         </h1>
-        <p className="text-sm sm:text-base text-gray-600 leading-relaxed max-w-3xl">
+        <p className="text-base text-gray-600 leading-relaxed max-w-[70ch]">
           Periksa teks percakapan atau screenshot chat yang mencurigakan (WhatsApp, Telegram, SMS,
           atau media sosial) untuk mengenali indikasi penipuan digital sedini mungkin.
         </p>
       </section>
 
       {/* Render KotakPrivasi sebelum area input (Requirement 8.1, 8.4, 8.6) */}
-      <KotakPrivasi halaman="chat" />
+      <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
+      <KotakPrivasi halaman="chat" className={hasil ? '' : TATA_CEK.samping} />
 
       {/* Tampilan Kondisional: Area Input vs Komponen Hasil */}
       {!hasil ? (
-        <section data-testid="area-input-chat" className="space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-sm sm:text-base font-bold text-gray-800">
+        <section data-testid="area-input-chat" className={`${KARTU_FORMULIR} ${TATA_CEK.utama} space-y-5`}>
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-gray-100">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">
               Masukkan Pesan untuk Diperiksa
             </h2>
             {/* Tombol Contoh Skenario Fiktif (Requirement 9.1, 9.2, 9.5) */}
@@ -466,6 +468,7 @@ export default function CekChatPage(): React.JSX.Element {
           />
         </section>
       )}
+      </div>
 
       {/* Modal Dialog Pratinjau Sensor Teks Otomatis (Requirement 12.2) */}
       <PratinjauSensor

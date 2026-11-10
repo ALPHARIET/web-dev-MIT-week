@@ -173,6 +173,8 @@ export function KomponenHasil({
         </section>
       )}
 
+      {/* Layar lebar: temuan di kiri, saran dan langkah di kanan. Urutan baca tetap sama. */}
+      <div className="space-y-6 sm:space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
       {/* 2. Yang perlu diwaspadai (daftar KartuTemuan) (Requirement 6.1, 6.6) */}
       <section
         data-testid="blok-temuan"
@@ -227,6 +229,7 @@ export function KomponenHasil({
         )}
       </section>
 
+      <div className="space-y-6 sm:space-y-8">
       {/* 3. Yang tampak wajar jika ada (Requirement 6.1) */}
       {hasil.hal_wajar && hasil.hal_wajar.length > 0 && (
         <section
@@ -400,6 +403,9 @@ export function KomponenHasil({
           />
         </section>
       )}
+
+      </div>
+      </div>
 
       {/* 7. Aksi penutup: Tombol "Cek lagi", tautan halaman cek lainnya, dan cross-links (Requirements 6.1, 34.1, 34.3, 34.4, 35.2) */}
       <section

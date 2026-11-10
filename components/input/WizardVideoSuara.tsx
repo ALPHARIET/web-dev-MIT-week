@@ -455,7 +455,7 @@ export function WizardVideoSuara({
   return (
     <div
       data-testid="wizard-video-suara"
-      className={`w-full max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden p-4 sm:p-6 md:p-8 ${className}`.trim()}
+      className={`w-full max-w-3xl lg:max-w-none mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden p-5 sm:p-6 lg:p-8 ${className}`.trim()}
     >
       {/* Header Wizard & Indikator Langkah */}
       <div className="mb-6 sm:mb-8 border-b border-gray-100 pb-5">
@@ -470,7 +470,7 @@ export function WizardVideoSuara({
           </div>
           <div
             data-testid="indikator-langkah"
-            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 self-start sm:self-auto"
+            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 self-start sm:self-auto whitespace-nowrap shrink-0"
           >
             Langkah {langkah} dari 4
           </div>
@@ -535,7 +535,7 @@ export function WizardVideoSuara({
           <div
             role="radiogroup"
             aria-label="Pilihan situasi video atau suara"
-            className="grid grid-cols-1 gap-3.5 sm:gap-4"
+            className="grid grid-cols-1 xl:grid-cols-3 gap-3.5 sm:gap-4"
           >
             {DAFTAR_SITUASI_VIDEO.map((item) => {
               const isSelected = situasi === item.id;

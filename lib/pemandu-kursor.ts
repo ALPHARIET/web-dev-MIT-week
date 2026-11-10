@@ -30,6 +30,10 @@ const ATURAN: ReadonlyArray<readonly [string, string, string]> = [
   [uji('hero-catatan-privasi'), 'Privasi', 'Yang kamu periksa tidak disimpan. Tetap jangan masukkan OTP, PIN, atau password asli.'],
   [uji('section-cara-kerja'), 'Cara kerja', 'Buka tiap pertanyaan untuk tahu cara penilaian dan batasan alat ini.'],
 
+  [uji('demo-tab'), 'Contoh lain', 'Pilih jenis contoh yang mau kamu lihat.'],
+  [uji('demo-tanda'), 'Tanda bahaya', 'Tunjuk tiap tanda untuk melihat alasannya di teks.'],
+  [uji('demo-pemeriksaan'), 'Contoh fiktif', 'Begini kira-kira alurnya: isi dibaca, tanda bahaya ditandai, lalu keluar hasil dan sarannya.'],
+
   // Masukan
   [`${uji('input-chat-container')} textarea`, 'Isi chat', 'Tempel percakapannya apa adanya. Nomor HP dan rekening disensor otomatis sebelum dikirim.'],
   [`${uji('input-chat-container')} input[type="file"]`, 'Screenshot', 'Tutup dulu nama dan nomor HP di gambarnya kalau bisa.'],

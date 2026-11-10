@@ -5,6 +5,10 @@
 :root {
   --background: #e2e2df;
   --foreground: #070607;
+  /* Satu skala judul untuk semua halaman. */
+  --judul-1: clamp(2.5rem, 1.8rem + 2.6vw, 4.25rem);
+  --judul-2: clamp(1.625rem, 1.3rem + 1.1vw, 2.5rem);
+  --judul-3: clamp(1.375rem, 1.2rem + 0.4vw, 1.75rem);
 }
 
 body {
@@ -14,35 +18,34 @@ body {
 
 /* ---------- Tipografi ---------- */
 
-/* Judul memakai font display. Judul yang sangat kecil tetap DM Sans agar terbaca. */
+/* Semua judul memakai satu font. Judul yang sangat kecil tetap DM Sans agar terbaca. */
 h1,
 h2:not(.text-xs):not(.text-sm),
 h3[class*="text-lg"],
 h3[class*="text-xl"],
 h3[class*="text-2xl"],
 .font-display {
-  font-family: var(--font-display), Impact, sans-serif;
-  font-weight: 400 !important;
-  letter-spacing: 0.02em !important;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
 }
 
 h1 {
-  font-size: clamp(34px, 6.5vw, 72px) !important;
+  font-size: var(--judul-1) !important;
   line-height: 1.02 !important;
+  letter-spacing: -0.035em !important;
 }
 
-/* Font display tidak dipakai di bawah 26px. */
-h2[class*="text-lg"],
-h2[class*="text-xl"] {
-  font-size: clamp(26px, 3.2vw, 32px) !important;
+h2:not(.text-xs):not(.text-sm):not(.sr-only) {
+  font-size: var(--judul-2) !important;
   line-height: 1.1 !important;
 }
 
 h3[class*="text-lg"],
 h3[class*="text-xl"],
 h3[class*="text-2xl"] {
-  font-size: 26px !important;
-  line-height: 1.15 !important;
+  font-size: var(--judul-3) !important;
+  line-height: 1.2 !important;
 }
 
 strong,
@@ -153,51 +156,6 @@ header nav a[aria-current="page"] {
 
 .border-b:is(.border-gray-100, .border-gray-200) {
   border-bottom-width: 1.5px;
-}
-
-/* Landing page memakai font dan ukuran judulnya sendiri. */
-.beranda-anton {
-  --font-display: var(--font-anton);
-}
-
-.beranda-anton h1 {
-  font-size: 3rem !important;
-  line-height: 1.02 !important;
-}
-
-@media (min-width: 640px) {
-  .beranda-anton h1 {
-    font-size: 3.75rem !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .beranda-anton h1 {
-    font-size: 76px !important;
-  }
-}
-
-/* Motif halftone: titik ember di atas gradasi violet ke ember. */
-.halftone {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(to top right, #524ae9 8%, #fc5000 82%);
-}
-
-.halftone::before,
-.halftone::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, #fc5000 34%, transparent 37%);
-  background-size: 14px 14px;
-}
-
-.halftone::after {
-  background-position: 7px 7px;
-  background-size: 14px 14px;
-  -webkit-mask-image: linear-gradient(to top right, transparent 25%, #000 80%);
-  mask-image: linear-gradient(to top right, transparent 25%, #000 80%);
 }
 
 /* Kursor ketik pemandu. Margin negatif menjaga lebarnya tidak menggeser baris. */

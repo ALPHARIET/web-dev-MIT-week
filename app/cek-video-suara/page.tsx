@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { KotakPrivasi } from '@/components/shared/KotakPrivasi';
+import { TATA_CEK } from '@/components/shared/tata-letak-cek';
 import {
   TombolContoh,
   type SkenarioContoh,
@@ -106,7 +107,7 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
   return (
     <main
       data-testid="halaman-cek-video-suara"
-      className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8 py-4 sm:py-6"
+      className="w-full max-w-4xl lg:max-w-none mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4"
     >
       {/* Header Halaman Cek Video & Suara */}
       <header className="space-y-4">
@@ -114,13 +115,13 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
           <div>
             <h1
               data-testid="judul-halaman-video"
-              className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
+              className="text-gray-900"
             >
               Cek Video & Suara
             </h1>
             <p
               data-testid="deskripsi-halaman-video"
-              className="text-sm sm:text-base text-gray-600 mt-1 max-w-2xl leading-relaxed"
+              className="text-base text-gray-600 mt-2 max-w-[70ch] leading-relaxed"
             >
               Periksa panggilan video call, rekaman suara, atau video figur publik mencurigakan
               untuk menilai indikasi rekayasa sosial dan manipulasi AI.
@@ -137,15 +138,18 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Kotak Privasi (halaman="video") (Requirement 8.1, 8.2, 8.3) */}
-        <KotakPrivasi halaman="video" />
       </header>
+
+      <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
+      {/* Kotak Privasi (halaman="video") (Requirement 8.1, 8.2, 8.3) */}
+      <KotakPrivasi halaman="video" className={hasil ? '' : TATA_CEK.samping} />
 
       {/* Konten Utama: Wizard Pemeriksaan atau Hasil Pemeriksaan */}
       {!hasil ? (
         <section
           data-testid="area-wizard-video"
           aria-label="Wizard Pemeriksaan Video dan Suara"
+          className={TATA_CEK.utama}
         >
           <WizardVideoSuara
             key={wizardKey}
@@ -166,6 +170,7 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
           />
         </section>
       )}
+      </div>
     </main>
   );
 }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer className="w-full bg-limestone mt-16 text-gray-600 text-sm">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl lg:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Kolom 1: Tentang Aplikasi & Catatan Batasan */}
           <div className="space-y-3">

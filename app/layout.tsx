@@ -11,16 +11,10 @@ const dmSans = localFont({
   weight: "100 1000",
   display: "swap",
 });
-const anton = localFont({
-  src: "../node_modules/@fontsource/anton/files/anton-latin-400-normal.woff2",
-  variable: "--font-anton",
-  weight: "400",
-  display: "swap",
-});
 const display = localFont({
-  src: "../node_modules/@fontsource/archivo-black/files/archivo-black-latin-400-normal.woff2",
+  src: "../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2",
   variable: "--font-display",
-  weight: "400",
+  weight: "200 800",
   display: "swap",
 });
 
@@ -72,7 +66,7 @@ export default function RootLayout({
   return (
     <html lang="id" className="h-full">
       <body
-        className={`${dmSans.variable} ${display.variable} ${anton.variable} font-sans antialiased min-h-screen flex flex-col bg-pumice text-obsidian overflow-x-hidden`}
+        className={`${dmSans.variable} ${display.variable} font-sans antialiased min-h-screen flex flex-col bg-pumice text-obsidian overflow-x-hidden`}
       >
         {/* Skip to main content link untuk aksesibilitas keyboard */}
         <a
@@ -88,7 +82,7 @@ export default function RootLayout({
         {/* Konten Halaman Utama */}
         <main
           id="main-content"
-          className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 focus:outline-none"
+          className="flex-1 w-full max-w-5xl lg:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6 sm:py-8 focus:outline-none"
           tabIndex={-1}
         >
           {children}

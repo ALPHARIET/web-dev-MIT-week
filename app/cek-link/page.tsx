@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { KotakPrivasi } from '@/components/shared/KotakPrivasi';
+import { KARTU_FORMULIR, TATA_CEK } from '@/components/shared/tata-letak-cek';
 import {
   TombolContoh,
   type SkenarioContoh,
@@ -180,22 +181,18 @@ export default function CekLinkPage(): React.JSX.Element {
   }, [resetPemandu]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4">
+    <div className="w-full max-w-4xl lg:max-w-none mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4">
       {/* Header Halaman Cek Link */}
       <header data-testid="header-cek-link" className="space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" aria-hidden="true" />
-          <span>Pemeriksaan Tautan Mandiri</span>
-        </div>
         <h1
           data-testid="judul-cek-link"
-          className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight"
+          className="text-gray-900"
         >
           Cek Link Mencurigakan
         </h1>
         <p
           data-testid="deskripsi-cek-link"
-          className="text-sm sm:text-base text-gray-600 leading-relaxed max-w-2xl"
+          className="text-base text-gray-600 leading-relaxed max-w-[70ch]"
         >
           Periksa alamat link atau nama domain tanpa membukanya. Sistem akan memeriksa reputasi di Google
           Safe Browsing, usia registrasi domain, dan karakteristik penulisan URL.
@@ -203,14 +200,15 @@ export default function CekLinkPage(): React.JSX.Element {
       </header>
 
       {/* Kotak Privasi: Ditampilkan sebelum area input (Requirements 8.1, 8.5, 8.6) */}
-      <KotakPrivasi halaman="link" className="w-full" />
+      <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
+      <KotakPrivasi halaman="link" className={`w-full ${hasil ? '' : TATA_CEK.samping}`.trim()} />
 
       {/* Konten Utama: Area Formulir Input vs Area Hasil Pemeriksaan */}
       {!hasil ? (
         <section
           data-testid="area-input-link"
           aria-label="Formulir Pemeriksaan Tautan"
-          className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-sm space-y-5"
+          className={`${KARTU_FORMULIR} ${TATA_CEK.utama} space-y-5`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100">
             <div>
@@ -382,6 +380,7 @@ export default function CekLinkPage(): React.JSX.Element {
           </aside>
         </section>
       )}
+      </div>
     </div>
   );
 }

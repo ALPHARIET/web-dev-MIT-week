@@ -365,7 +365,7 @@ export function InputChat({
   return (
     <div
       data-testid="input-chat-container"
-      className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${className}`}
+      className={`overflow-hidden ${className}`}
     >
       {/* Tab Navigasi: Tempel teks vs Unggah screenshot (Requirement 11.1, 27.2) */}
       <div
