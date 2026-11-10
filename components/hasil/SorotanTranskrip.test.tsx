@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { SorotanTranskrip } from './SorotanTranskrip';
 
 describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu (Task 18.1 / CH-07)', () => {
@@ -35,7 +35,6 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
       const konten = screen.getByTestId('konten-transkrip');
       expect(konten.textContent).toContain(transkripContoh);
 
-      // Tidak ada tag mark sorotan
       expect(screen.queryByTestId('sorotan-pemicu')).toBeNull();
       expect(screen.queryByTestId('badge-jumlah-sorotan')).toBeNull();
       expect(screen.getByTestId('keterangan-tanpa-sorotan')).toBeDefined();
@@ -68,12 +67,10 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
       const markElements = screen.getAllByTestId('sorotan-pemicu');
       expect(markElements).toHaveLength(2);
 
-      // Pastikan semua elemen sorotan adalah tag semantik <mark>
       markElements.forEach((el) => {
         expect(el.tagName.toLowerCase()).toBe('mark');
       });
 
-      // Verifikasi teks di dalam mark mencakup kalimat pemicu
       expect(markElements[0].textContent).toContain(
         'lakukan pembayaran biaya pendaftaran sebesar Rp150.000'
       );
@@ -91,7 +88,6 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
       );
 
       const mark = screen.getByTestId('sorotan-pemicu');
-      // Kontras tinggi: latar amber terang (bg-amber-100) dan teks amber gelap (text-amber-950)
       expect(mark.className).toContain('bg-amber-100');
       expect(mark.className).toContain('text-amber-950');
       expect(mark.className).toContain('border-amber-300');
@@ -158,7 +154,6 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
       );
 
       const markElements = screen.getAllByTestId('sorotan-pemicu');
-      // Harus menemukan ketiga pecahan
       expect(markElements.length).toBe(3);
       expect(markElements[0].textContent).toContain('like dan review produk');
       expect(markElements[1].textContent).toContain(
@@ -197,7 +192,6 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
 
     it('menggabungkan rentang sorotan yang tumpang tindih secara rapi tanpa duplikasi karakter', () => {
       const teks = 'Segera transfer biaya pendaftaran sekarang juga.';
-      // Bukti 1: "transfer biaya" [7, 21], Bukti 2: "biaya pendaftaran" [16, 34]
       render(
         <SorotanTranskrip
           transkrip={teks}
@@ -206,13 +200,10 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
       );
 
       const markElements = screen.getAllByTestId('sorotan-pemicu');
-      // Karena tumpang tindih pada kata "biaya", harus digabung menjadi 1 tag mark
       expect(markElements).toHaveLength(1);
       expect(markElements[0].textContent).toContain('transfer biaya pendaftaran');
 
-      // Teks utuh di dalam konten transkrip tetap sama dengan teks asli
       const konten = screen.getByTestId('konten-transkrip');
-      // Ganti whitespace yang ditambahkan oleh badge
       const teksBersih = konten.textContent?.replace(/\s*Pemicu/g, '') || '';
       expect(teksBersih).toBe(teks);
     });
@@ -283,7 +274,6 @@ describe('components/hasil/SorotanTranskrip.tsx — Fitur Sorotan Kalimat Pemicu
       const container = screen.getByTestId('sorotan-transkrip');
       const text = container.textContent?.toLowerCase() || '';
 
-      // Larangan penggunaan kata terlarang sebagai klaim kesimpulan
       expect(text).not.toMatch(/\bpasti aman\b/i);
       expect(text).not.toMatch(/\b100%\b/i);
       expect(text).not.toMatch(/\bterbukti asli\b/i);

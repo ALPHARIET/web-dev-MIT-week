@@ -1,14 +1,3 @@
-/**
- * lib/aturan/chat-rules.ts
- *
- * Implementasi aturan pra-pemindaian chat (isomorphic: murni TypeScript).
- * Mendeteksi 11 pola penipuan dalam pesan teks, menghitung skor aditif,
- * menangani kombinasi khusus tingkat tinggi, ekstraksi link, deteksi modus video,
- * serta menghasilkan FormatDataHasil lokal.
- *
- * References: Requirements 13.1, 13.2, 13.3, 13.4, 13.5, 16.4, and design.md
- */
-
 import {
   type Aturan,
   type HasilAturan,
@@ -20,34 +9,16 @@ import {
   type SituasiDarurat,
 } from '../hasil';
 
-/** Pola regex untuk mendeteksi permintaan uang, transfer, atau OTP */
 const POLA_MINTA_UANG_OTP =
   /\b(?:otp|pin|password|kata\s*sandi|passcode|transfer|tf|kirim\s*(?:uang|dana|saldo|pulsa|voucher)|top\s*up|(?:beli(?:kan)?|isi(?:kan)?|minta)?\s*pulsa|pulsa|voucher|biaya\s*(?:admin|pendaftaran)|deposit)\b/i;
 
-/** Pola regex untuk mendeteksi desakan waktu atau ancaman */
 const POLA_DESAKAN =
   /\b(?:segera|hari\s*ini\s*(?:juga|saja|terakhir)|(?:1x|2x)?24\s*jam|sekarang\s*juga|buruan|batas\s*waktu|slot\s*terbatas|penting\s*banget(?:\s*sekarang)?|di(?:blokir|tutup|nonaktifkan)|terancam\s*di(?:blokir|tutup)|hitungan\s*menit|sebelum\s*terlambat|akan\s*hangus|hangus\s*dalam)\b/i;
 
-/** Pola regex untuk mendeteksi instruksi merahasiakan sesuatu */
 const POLA_MERAHASIAKAN =
   /\b(?:rahasia|merahasiakan|jangan\s*(?:beritahu|kasih\s*tahu|bilang|cerita)|diam[- ]diam|tutup\s*mulut|jangan\s*sampai\s*ada\s*yang\s*tahu)\b/i;
 
-/**
- * 11 Aturan deteksi chat sesuai Requirement 13.2:
- * 1. Permintaan OTP/PIN/password (langsung waspada tinggi: langsung_tinggi = true)
- * 2. Permintaan transfer, pulsa, atau voucher (+3)
- * 3. Biaya di muka ("biaya admin", "biaya pendaftaran", "deposit dulu") (+3)
- * 4. Kirim file aplikasi / APK (".apk", "undangan.apk", "foto paket.apk") (+3)
- * 5. Desakan waktu ("segera", "hari ini juga", "24 jam", "diblokir") (+2)
- * 6. Mengaku keluarga ganti nomor ("ini nomor baru", "HP rusak", "pinjam HP teman") (+2)
- * 7. Mengaku pihak resmi ("dari bank", "CS", "kurir", "polisi", "BPJS") (+2)
- * 8. Gaji besar tanpa syarat ("gaji harian", "tanpa pengalaman", "kerja dari HP", "like dan review") (+2)
- * 9. Hadiah atau undian ("selamat anda", "pemenang", "klaim hadiah") (+2)
- * 10. Pindah aplikasi ("lanjut di Telegram", "chat WA saya") (+1)
- * 11. Keberadaan link di pesan (pola URL, link diteruskan ke Cek Link) (+1)
- */
 export const ATURAN_CHAT: Aturan[] = [
-  // 1. Permintaan OTP/PIN/password (langsung tinggi)
   {
     id: 'minta_otp',
     bobot: 0,
@@ -59,7 +30,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'kode OTP atau PIN'),
   },
 
-  // 2. Permintaan transfer, pulsa, atau voucher (+3)
   {
     id: 'minta_transfer',
     bobot: 3,
@@ -71,7 +41,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'permintaan transfer'),
   },
 
-  // 3. Biaya di muka (+3)
   {
     id: 'biaya_dimuka',
     bobot: 3,
@@ -83,7 +52,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'biaya di muka'),
   },
 
-  // 4. Kirim file aplikasi / APK (+3)
   {
     id: 'kirim_apk',
     bobot: 3,
@@ -95,7 +63,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'file aplikasi APK'),
   },
 
-  // 5. Desakan waktu (+2)
   {
     id: 'desakan_waktu',
     bobot: 2,
@@ -107,7 +74,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'desakan waktu'),
   },
 
-  // 6. Mengaku keluarga ganti nomor (+2)
   {
     id: 'keluarga_ganti_nomor',
     bobot: 2,
@@ -119,7 +85,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'mengaku keluarga ganti nomor'),
   },
 
-  // 7. Mengaku pihak resmi (+2)
   {
     id: 'pihak_resmi',
     bobot: 2,
@@ -131,7 +96,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'mengaku pihak resmi'),
   },
 
-  // 8. Gaji besar tanpa syarat (+2)
   {
     id: 'gaji_besar',
     bobot: 2,
@@ -143,7 +107,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'tawaran gaji besar'),
   },
 
-  // 9. Hadiah atau undian (+2)
   {
     id: 'hadiah_undian',
     bobot: 2,
@@ -155,7 +118,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'pemberitahuan hadiah atau undian'),
   },
 
-  // 10. Pindah aplikasi (+1)
   {
     id: 'pindah_aplikasi',
     bobot: 1,
@@ -167,7 +129,6 @@ export const ATURAN_CHAT: Aturan[] = [
     buktiExtractor: (_input, match) => (match ? match[0] : 'ajakan pindah aplikasi'),
   },
 
-  // 11. Keberadaan link di pesan (+1)
   {
     id: 'ada_link',
     bobot: 1,
@@ -183,30 +144,14 @@ export const ATURAN_CHAT: Aturan[] = [
   },
 ];
 
-/**
- * Mengevaluasi pesan teks chat terhadap 11 aturan pemindaian chat.
- *
- * Menerapkan kombinasi khusus langsung tinggi (Requirement 13.4):
- * Jika kombinasi (minta uang/transfer/OTP) AND (desakan waktu atau diminta merahasiakan) terdeteksi,
- * tingkat kewaspadaan otomatis ditetapkan ke "tinggi".
- *
- * Ekstrak semua URL ke dalam linkDitemukan (Requirement 13.5).
- * Mendeteksi modus video call / voice note (Requirement 16.4).
- *
- * @param teks Teks percakapan yang akan dievaluasi
- * @returns HasilAturan dengan skor, level, temuan, linkDitemukan, dan modusVideoDitemukan
- */
 export function evaluasiChat(teks: string): HasilAturan {
   const hasil = evaluasiAturan(teks, ATURAN_CHAT);
 
-  // Buat mapping judul -> aturan id untuk pengecekan cepat
   const aturanMap = new Map(ATURAN_CHAT.map((a) => [a.judul, a.id]));
   const idsCocok = new Set(
     hasil.temuan.map((t) => aturanMap.get(t.judul)).filter(Boolean)
   );
 
-  // Kombinasi khusus langsung tinggi (Requirement 13.4):
-  // (minta uang / transfer / OTP) AND (desakan waktu atau diminta merahasiakan)
   const adaMintaUangOtp =
     idsCocok.has('minta_otp') ||
     idsCocok.has('minta_transfer') ||
@@ -227,13 +172,8 @@ export function evaluasiChat(teks: string): HasilAturan {
   return hasil;
 }
 
-/** Alias untuk evaluasiChat untuk konsistensi dengan spesifikasi desain */
 export const evaluasiAturanChat = evaluasiChat;
 
-/**
- * Menentukan daftar langkah praktis yang disarankan berdasarkan hasil aturan chat.
- * Selalu menghasilkan minimal 2 langkah tindakan (Requirement 5.4).
- */
 function tentukanLangkahChat(hasil: HasilAturan): string[] {
   const langkah: string[] = [];
   const aturanMap = new Map(ATURAN_CHAT.map((a) => [a.judul, a.id]));
@@ -299,7 +239,6 @@ function tentukanLangkahChat(hasil: HasilAturan): string[] {
       'Jangan terburu-buru menuruti permintaan pengirim sebelum memastikan kebenarannya.'
     );
   } else {
-    // level === 'tidak_ditemukan'
     langkah.push(
       'Tetap waspada dan jangan mudah membagikan informasi rahasia kepada pihak mana pun.'
     );
@@ -311,9 +250,6 @@ function tentukanLangkahChat(hasil: HasilAturan): string[] {
   return langkah;
 }
 
-/**
- * Mendeteksi situasi darurat yang relevan untuk pembukaan Panel Darurat.
- */
 export function tentukanSituasiDaruratChat(
   teks: string,
   hasil: HasilAturan
@@ -325,7 +261,6 @@ export function tentukanSituasiDaruratChat(
     hasil.temuan.map((t) => aturanMap.get(t.judul)).filter(Boolean)
   );
 
-  // Indikasi transfer
   if (
     idsCocok.has('minta_transfer') ||
     idsCocok.has('biaya_dimuka') ||
@@ -336,7 +271,6 @@ export function tentukanSituasiDaruratChat(
     situasi.add('transfer');
   }
 
-  // Indikasi OTP / verifikasi
   if (
     idsCocok.has('minta_otp') ||
     /\b(?:sudah|udah|sempat|terlanjur)\s*(?:kasih|kirim|berikan|masukkan)?\s*otp\b/i.test(
@@ -346,7 +280,6 @@ export function tentukanSituasiDaruratChat(
     situasi.add('kirim_otp');
   }
 
-  // Indikasi klik link atau unduh/pasang file APK
   if (
     hasil.linkDitemukan.length > 0 ||
     idsCocok.has('ada_link') ||
@@ -358,7 +291,6 @@ export function tentukanSituasiDaruratChat(
     situasi.add('klik_link');
   }
 
-  // Indikasi isi data
   if (
     /\b(?:sudah|udah|sempat|terlanjur)\s*(?:isi|masukkan|input)\s*(?:data|password|sandi|form|formulir)\b/i.test(
       teksLower
@@ -367,7 +299,6 @@ export function tentukanSituasiDaruratChat(
     situasi.add('isi_data');
   }
 
-  // Indikasi akun diambil alih
   if (
     /\b(?:akun|wa|whatsapp|telegram|ig|instagram)\s*(?:diambil|dibajak|dikuasai|tidak\s*bisa\s*login|keluar\s*sendiri)\b/i.test(
       teksLower
@@ -379,13 +310,6 @@ export function tentukanSituasiDaruratChat(
   return Array.from(situasi);
 }
 
-/**
- * Menghasilkan objek FormatDataHasil lengkap langsung di browser (tanpa API)
- * menggunakan aturan lokal pra-pemindaian chat.
- *
- * @param teks Teks percakapan yang dianalisis
- * @returns FormatDataHasil yang sesuai dengan kontrak data bersama
- */
 export function generateHasilChatLokal(teks: string): FormatDataHasil {
   const hasilAturan = evaluasiChat(teks);
 

@@ -5,7 +5,12 @@ import { render, screen, fireEvent, cleanup, within } from '@testing-library/rea
 import CekVideoSuaraPage from './page';
 import videoContohData from '@/data/contoh/video-contoh.json';
 
-// Mock next/navigation untuk navigasi internal jika diperlukan
+function renderKuis() {
+  const hasil = render(<CekVideoSuaraPage />);
+  fireEvent.click(screen.getByTestId('tab-mode-kuis'));
+  return hasil;
+}
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/cek-video-suara',
   useRouter: () => ({
@@ -23,7 +28,7 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
   describe('1. Render Elemen Dasar Halaman Awal (Requirements 8.1, 9.1, 22.1)', () => {
     it('merender judul halaman dan deskripsi panduan yang sesuai', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const judul = screen.getByTestId('judul-halaman-video');
       expect(judul).toBeDefined();
@@ -33,32 +38,29 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
       const deskripsi = screen.getByTestId('deskripsi-halaman-video');
       expect(deskripsi).toBeDefined();
       expect(deskripsi.textContent).toContain('video call');
-      expect(deskripsi.textContent).toContain('rekaman suara');
-      expect(deskripsi.textContent).toContain('manipulasi AI');
+      expect(deskripsi.textContent).toContain('voice note');
+      expect(deskripsi.textContent).toContain('buatan AI');
     });
 
     it('merender KotakPrivasi dengan mode halaman="video" (Requirement 8.1, 8.2, 8.3)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const kotakPrivasi = screen.getByTestId('kotak-privasi');
       expect(kotakPrivasi).toBeDefined();
       expect(kotakPrivasi.getAttribute('data-halaman')).toBe('video');
 
-      // Memeriksa peringatan data sensitif
       const peringatan = screen.getByTestId('peringatan-sensitif');
       expect(peringatan.textContent).toContain(
         'jangan masukkan OTP, PIN, password, atau nomor rekening asli'
       );
 
-      // Memeriksa deskripsi transparansi offline lokal
       const deskripsiLayanan = screen.getByTestId('deskripsi-layanan');
-      expect(deskripsiLayanan.textContent).toContain(
-        'Penilaian konteks situasi dijalankan sepenuhnya di peramban'
-      );
+      expect(deskripsiLayanan.textContent).toContain('layanan AI');
+      expect(deskripsiLayanan.textContent).toContain('Video utuh tetap di perangkatmu');
     });
 
     it('merender TombolContoh dengan mode halaman="video" (Requirement 9.1, 9.4)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const tombolContoh = screen.getByTestId('tombol-coba-contoh');
       expect(tombolContoh).toBeDefined();
@@ -68,8 +70,20 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
       expect(dropdownToggle).toBeDefined();
     });
 
-    it('merender WizardVideoSuara pada Langkah 1 pada kondisi awal', () => {
+    it('membuka mode analisis AI sebagai tampilan awal', () => {
       render(<CekVideoSuaraPage />);
+
+      expect(screen.getByTestId('pemeriksa-media-ai')).toBeDefined();
+      expect(screen.getByTestId('tab-mode-ai').getAttribute('aria-selected')).toBe('true');
+      expect(screen.queryByTestId('wizard-video-suara')).toBeNull();
+
+      const tombol = screen.getByTestId('tombol-periksa-media') as HTMLButtonElement;
+      expect(tombol.disabled).toBe(true);
+      expect(screen.getByTestId('transparansi-media').textContent).toContain('Video utuh tetap di HP-mu');
+    });
+
+    it('merender WizardVideoSuara pada Langkah 1 setelah memilih tab pertanyaan', () => {
+      renderKuis();
 
       const areaWizard = screen.getByTestId('area-wizard-video');
       expect(areaWizard).toBeDefined();
@@ -80,7 +94,6 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
       const indikator = screen.getByTestId('indikator-langkah');
       expect(indikator.textContent).toContain('Langkah 1 dari 4');
 
-      // KomponenHasil belum tampil pada kondisi awal
       expect(screen.queryByTestId('komponen-hasil')).toBeNull();
     });
   });
@@ -88,55 +101,43 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
   describe('2. Alur Interaksi Wizard Manual & Langkah Verifikasi per Situasi (Requirements 22.1-22.4, 23.1-23.3, 24.1-24.4, 28.1, 29.1)', () => {
     it('menyelesaikan wizard untuk situasi keluarga/teman dan panggilan masih tersambung (Requirements 24.1, 24.4)', () => {
       const startTime = performance.now();
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // --- LANGKAH 1: Pilih video_call ---
+      // ===== LANGKAH 1: PILIH VIDEO_CALL =====
       const kartuVideoCall = screen.getByTestId('kartu-situasi-video_call');
       fireEvent.click(kartuVideoCall);
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
       expect(screen.getByTestId('indikator-langkah').textContent).toContain('Langkah 2 dari 4');
 
-      // --- LANGKAH 2: Isi Pertanyaan Konteks ---
-      // 1. Apa yang diminta: transfer
       fireEvent.click(screen.getByTestId('opsi-apa_diminta-transfer'));
-      // 2. Dari nomor mana: nomor baru
       fireEvent.click(screen.getByTestId('opsi-nomor_akun-nomor_baru'));
-      // 3. Darurat/desakan: ya
       fireEvent.click(screen.getByTestId('opsi-darurat-true'));
-      // 4. Diminta rahasiakan: ya
       fireEvent.click(screen.getByTestId('opsi-rahasiakan-true'));
-      // 5. Bisa ditelepon balik: tidak (menolak)
       fireEvent.click(screen.getByTestId('opsi-telepon_balik-false'));
-      // 6. Masih tersambung: ya (Requirement 24.4)
       fireEvent.click(screen.getByTestId('opsi-masih_tersambung-true'));
 
-      // Maju ke Langkah 3
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
       expect(screen.getByTestId('indikator-langkah').textContent).toContain('Langkah 3 dari 4');
 
-      // --- LANGKAH 3: Checklist (lewati) ---
+      // ===== LANGKAH 3: CHECKLIST =====
       fireEvent.click(screen.getByTestId('tombol-lewati-checklist'));
 
       const endTime = performance.now();
-      // Verifikasi kecepatan eksekusi lokal < 1 detik (1000 ms) (Requirement 28.1)
       expect(endTime - startTime).toBeLessThan(1000);
 
-      // --- VERIFIKASI HASIL (KomponenHasil) ---
+      // ===== VERIFIKASI HASIL =====
       const komponenHasil = screen.getByTestId('komponen-hasil');
       expect(komponenHasil).toBeDefined();
 
-      // Tingkat kewaspadaan: Waspada tinggi (karena transfer + darurat + rahasia)
       expect(screen.getByText('Waspada tinggi')).toBeDefined();
 
-      // Langkah verifikasi masih tersambung (Requirement 24.4)
       const langkahSection = screen.getByTestId('blok-langkah-disarankan');
       const langkahText = langkahSection.textContent || '';
       expect(langkahText).toContain(
         'Minta lawan bicara menoleh penuh ke samping atau melambaikan tangan di depan wajah'
       );
 
-      // Langkah verifikasi keluarga/teman (Requirement 24.1)
       expect(langkahText).toContain(
         'telepon balik ke nomor lama yang tersimpan di kontak ponsel kamu'
       );
@@ -147,19 +148,16 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
         'Hubungi anggota keluarga atau rekan terdekat lainnya'
       );
 
-      // Panel darurat terbuka otomatis karena ada permintaan transfer
       expect(screen.getByTestId('panel-darurat-section')).toBeDefined();
       expect(screen.getByTestId('blok-panel-darurat')).toBeDefined();
     });
 
     it('menghasilkan langkah verifikasi atasan/instansi saat situasi atasan dipilih (Requirement 24.2)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Langkah 1: Pilih rekaman video / voice note
       fireEvent.click(screen.getByTestId('kartu-situasi-rekaman'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 2: Konteks
       fireEvent.click(screen.getByTestId('opsi-apa_diminta-voucher'));
       fireEvent.click(screen.getByTestId('opsi-nomor_akun-nomor_baru'));
       fireEvent.click(screen.getByTestId('opsi-darurat-true'));
@@ -168,22 +166,18 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 3: Selesaikan
       fireEvent.click(screen.getByTestId('tombol-lewati-checklist'));
 
-      // Verifikasi hasil tampil
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByText('Waspada tinggi')).toBeDefined();
     });
 
     it('menghasilkan langkah verifikasi tokoh publik dan Kontak OJK 157 untuk situasi video tokoh (Requirement 24.3)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Langkah 1: Pilih tokoh
       fireEvent.click(screen.getByTestId('kartu-situasi-tokoh'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 2: Pertanyaan khusus tokoh
       fireEvent.click(screen.getByTestId('opsi-siapa_tampil-tokoh_publik'));
       fireEvent.click(screen.getByTestId('opsi-apa_diminta-investasi'));
       fireEvent.click(screen.getByTestId('opsi-janji_untung-true'));
@@ -194,18 +188,15 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Langkah 3: Centang salah satu checklist
       fireEvent.click(screen.getByTestId('checkbox-bibir_tidak_sinkron'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Verifikasi KomponenHasil
       const komponenHasil = screen.getByTestId('komponen-hasil');
       expect(komponenHasil).toBeDefined();
 
       const langkahSection = screen.getByTestId('blok-langkah-disarankan');
       const text = langkahSection.textContent || '';
 
-      // Requirement 24.3: cek akun resmi & Kontak OJK 157
       expect(text).toContain(
         'Cek akun media sosial dan situs web resmi terverifikasi milik tokoh tersebut'
       );
@@ -218,36 +209,30 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
   describe('3. Alur Penggunaan Skenario Fiktif dari TombolContoh (Requirements 9.1, 9.4, 28.1, 29.1)', () => {
     it('langsung menghasilkan FormatDataHasil dan merender KomponenHasil saat memilih skenario 1 (video-call-kakak)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const skenario1 = videoContohData.skenario[0];
 
-      // Buka dropdown skenario
       fireEvent.click(screen.getByTestId('tombol-pilih-dropdown'));
 
-      // Pilih skenario video-call-kakak
       const opsiSkenario = screen.getByTestId(`opsi-skenario-${skenario1.id}`);
       fireEvent.click(opsiSkenario);
 
-      // Verifikasi KomponenHasil langsung tampil tanpa API eksternal
       const komponenHasil = screen.getByTestId('komponen-hasil');
       expect(komponenHasil).toBeDefined();
 
-      // Tingkat kewaspadaan Waspada tinggi
       expect(screen.getByText('Waspada tinggi')).toBeDefined();
 
-      // Langkah keluarga/teman tersedia
       const langkahSection = screen.getByTestId('blok-langkah-disarankan');
       expect(langkahSection.textContent).toContain('telepon balik ke nomor lama');
       expect(langkahSection.textContent).toContain('kode rahasia keluarga');
 
-      // Indikator skenario aktif tampil
       expect(screen.getByTestId('skenario-aktif')).toBeDefined();
       expect(screen.getByTestId('skenario-aktif-judul').textContent).toBe(skenario1.judul);
     });
 
     it('langsung menghasilkan FormatDataHasil saat memilih skenario 2 (voice-note-atasan)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const skenario2 = videoContohData.skenario[1];
 
@@ -257,13 +242,12 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByText('Waspada tinggi')).toBeDefined();
 
-      // Temuan permintaan voucher
       const temuanSection = screen.getByTestId('blok-temuan');
       expect(temuanSection.textContent).toContain('Permintaan transfer dana, pulsa, atau pembelian voucher');
     });
 
     it('langsung menghasilkan FormatDataHasil saat memilih skenario 3 (video-tokoh-investasi)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const skenario3 = videoContohData.skenario[2];
 
@@ -273,30 +257,26 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByText('Waspada tinggi')).toBeDefined();
 
-      // Temuan tokoh publik dan langkah OJK 157
       const langkahSection = screen.getByTestId('blok-langkah-disarankan');
       expect(langkahSection.textContent).toContain('Kontak OJK 157');
     });
 
     it('dapat berganti antar skenario menggunakan tombol utama "Coba contoh"', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
       const tombolUtama = screen.getByTestId('tombol-coba-contoh');
 
-      // Klik 1: skenario 1
       fireEvent.click(tombolUtama);
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByTestId('skenario-aktif-judul').textContent).toBe(
         videoContohData.skenario[0].judul
       );
 
-      // Klik 2: skenario 2
       fireEvent.click(tombolUtama);
       expect(screen.getByTestId('skenario-aktif-judul').textContent).toBe(
         videoContohData.skenario[1].judul
       );
 
-      // Klik 3: skenario 3
       fireEvent.click(tombolUtama);
       expect(screen.getByTestId('skenario-aktif-judul').textContent).toBe(
         videoContohData.skenario[2].judul
@@ -306,44 +286,36 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
   describe('4. Tombol "Cek lagi" Me-reset Wizard ke Kondisi Awal (Requirement 35.2)', () => {
     it('mengembalikan halaman ke Langkah 1 saat tombol "Cek lagi" diklik setelah menyelesaikan pemeriksaan', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Jalankan skenario contoh agar hasil muncul
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.queryByTestId('wizard-video-suara')).toBeNull();
 
-      // Klik tombol "Cek lagi" pada KomponenHasil
       const tombolCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(tombolCekLagi);
 
-      // KomponenHasil harus hilang
       expect(screen.queryByTestId('komponen-hasil')).toBeNull();
 
-      // Wizard harus kembali tampil pada Langkah 1
       const wizardEl = screen.getByTestId('wizard-video-suara');
       expect(wizardEl).toBeDefined();
 
       const indikator = screen.getByTestId('indikator-langkah');
       expect(indikator.textContent).toContain('Langkah 1 dari 4');
 
-      // Tombol lanjut dinonaktifkan kembali karena belum ada situasi yang dipilih
       const tombolLanjut = screen.getByTestId('tombol-lanjut');
       expect((tombolLanjut as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('dapat melakukan pemeriksaan baru setelah tombol "Cek lagi" diklik', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Skenario awal
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
 
-      // Reset
       fireEvent.click(screen.getByTestId('tombol-cek-lagi'));
       expect(screen.getByTestId('wizard-video-suara')).toBeDefined();
 
-      // Pilih situasi baru secara manual
       fireEvent.click(screen.getByTestId('kartu-situasi-tokoh'));
       expect(screen.getByTestId('kartu-situasi-tokoh').getAttribute('aria-checked')).toBe('true');
 
@@ -357,9 +329,8 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
   describe('5. Tautan Navigasi ke Halaman Cek Lainnya & Cross-Links (Requirements 34.4)', () => {
     it('menampilkan tautan ke dua halaman cek lainnya di KomponenHasil', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Jalankan skenario contoh
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
 
       const areaHalamanLain = screen.getByTestId('area-halaman-lain');
@@ -373,9 +344,8 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
     });
 
     it('menampilkan tombol cross-link ke Cek Link dan Cek Chat jika relevan', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Pilih skenario 3 (video-tokoh-investasi yang ada ajakan link WA/Telegram)
       fireEvent.click(screen.getByTestId('tombol-pilih-dropdown'));
       fireEvent.click(screen.getByTestId('opsi-skenario-video-tokoh-investasi'));
 
@@ -392,9 +362,8 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
   describe('6. Larangan Kata Terlarang (Requirements 2.4, 6.7, 30.1)', () => {
     it('memastikan teks halaman dan hasil bebas dari kata terlarang sebagai vonis atau janji keamanan', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
 
-      // Cek pada kondisi awal
       const mainEl = screen.getByTestId('halaman-cek-video-suara');
       const initialText = (mainEl.textContent || '').toLowerCase();
 
@@ -403,7 +372,6 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
       expect(initialText).not.toContain('100%');
       expect(initialText).not.toContain('dijamin');
 
-      // Cek saat hasil tampil
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       const hasilText = (screen.getByTestId('komponen-hasil').textContent || '').toLowerCase();
 
@@ -416,7 +384,7 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
 
   describe('7. Responsivitas dan Aksesibilitas Layout (Requirements 27.1, 27.2)', () => {
     it('menggunakan container responsif yang mendukung layar 360px hingga desktop', () => {
-      const { container } = render(<CekVideoSuaraPage />);
+      const { container } = renderKuis();
       const main = container.querySelector('main');
 
       expect(main).toBeDefined();
@@ -426,7 +394,7 @@ describe('app/cek-video-suara/page.tsx — Halaman Cek Video & Suara (Task 9.2)'
     });
 
     it('memiliki struktur landmark heading semantik (h1)', () => {
-      render(<CekVideoSuaraPage />);
+      renderKuis();
       const h1List = screen.getAllByRole('heading', { level: 1 });
       expect(h1List.length).toBe(1);
       expect(h1List[0].textContent).toBe('Cek Video & Suara');

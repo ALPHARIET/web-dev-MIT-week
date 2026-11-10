@@ -4,7 +4,6 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import Header, { NAV_ITEMS } from './Header';
 
-// Default mock for next/navigation
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
@@ -101,7 +100,6 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
       render(<Header />);
       const hamburgerButton = screen.getByRole('button', { name: /buka menu navigasi/i });
 
-      // Klik untuk membuka
       fireEvent.click(hamburgerButton);
 
       expect(hamburgerButton.getAttribute('aria-expanded')).toBe('true');
@@ -118,11 +116,9 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
       render(<Header />);
       const hamburgerButton = screen.getByRole('button', { name: /buka menu navigasi/i });
 
-      // Buka
       fireEvent.click(hamburgerButton);
       expect(screen.getByRole('navigation', { name: 'Navigasi Menu Mobile' })).toBeDefined();
 
-      // Tutup
       fireEvent.click(hamburgerButton);
       expect(hamburgerButton.getAttribute('aria-expanded')).toBe('false');
       expect(screen.queryByRole('navigation', { name: 'Navigasi Menu Mobile' })).toBeNull();
@@ -132,15 +128,12 @@ describe('components/layout/Header.tsx (Requirement 1.1, 1.2, 1.5, 27.2)', () =>
       render(<Header />);
       const hamburgerButton = screen.getByRole('button', { name: /buka menu navigasi/i });
 
-      // Buka menu mobile
       fireEvent.click(hamburgerButton);
       const mobileNav = screen.getByRole('navigation', { name: 'Navigasi Menu Mobile' });
       const linkCekChat = within(mobileNav).getByText('Cek Chat');
 
-      // Klik link
       fireEvent.click(linkCekChat);
 
-      // Menu mobile harus otomatis tertutup
       expect(screen.queryByRole('navigation', { name: 'Navigasi Menu Mobile' })).toBeNull();
       expect(hamburgerButton.getAttribute('aria-expanded')).toBe('false');
     });

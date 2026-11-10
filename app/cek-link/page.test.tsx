@@ -40,17 +40,14 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       expect(kotakPrivasi).toBeDefined();
       expect(kotakPrivasi.getAttribute('data-halaman')).toBe('link');
 
-      // Pastikan menyebutkan Google Safe Browsing dan RDAP (Requirement 8.5)
       const deskripsiLayanan = screen.getByTestId('deskripsi-layanan');
       expect(deskripsiLayanan.textContent).toContain('Google Safe Browsing');
       expect(deskripsiLayanan.textContent).toContain('layanan data domain');
       expect(deskripsiLayanan.textContent).toContain('Link tidak akan kami buka');
 
-      // Peringatan data sensitif (Requirement 8.2)
       const peringatanSensitif = screen.getByTestId('peringatan-sensitif');
       expect(peringatanSensitif.textContent).toContain('jangan masukkan OTP, PIN, password, atau nomor rekening asli');
 
-      // KotakPrivasi berada sebelum area input di hierarki DOM (Requirement 8.6)
       const areaInput = screen.getByTestId('area-input-link');
       expect(
         kotakPrivasi.compareDocumentPosition(areaInput) &
@@ -73,7 +70,6 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       expect(tombolPeriksa).toBeDefined();
 
-      // Hasil belum dirender pada kondisi awal
       expect(screen.queryByTestId('area-hasil-link')).toBeNull();
       expect(screen.queryByTestId('komponen-hasil')).toBeNull();
     });
@@ -86,11 +82,9 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
 
       render(<CekLinkPage />);
 
-      // Input otomatis terisi
       const input = screen.getByTestId('input-link') as HTMLInputElement;
       expect(input.value).toBe(urlDariChat);
 
-      // Key url_dari_chat sudah dibersihkan dari sessionStorage
       expect(sessionStorage.getItem('url_dari_chat')).toBeNull();
     });
 
@@ -112,17 +106,14 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       const tombolCobaContoh = screen.getByTestId('tombol-coba-contoh');
       fireEvent.click(tombolCobaContoh);
 
-      // Hasil simulasi langsung dirender di KomponenHasil
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
       const komponenHasil = screen.getByTestId('komponen-hasil');
       expect(komponenHasil).toBeDefined();
 
-      // Verifikasi fetch TIDAK PERNAH dipanggil (Requirement 21.1 - tanpa kuota API)
       expect(mockFetch).not.toHaveBeenCalled();
 
-      // Memastikan salah satu temuan dari skenario pertama muncul
       const skenarioPertama = linkContohData.skenario[0];
       expect(screen.getByText(skenarioPertama.hasilSimulasi.ringkasan)).toBeDefined();
     });
@@ -135,7 +126,6 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
 
       await screen.findByTestId('area-hasil-link');
 
-      // Cari elemen temuan yang memuat kotak bukti URL
       const buktiList = screen.getAllByTestId('kotak-bukti');
       expect(buktiList.length).toBeGreaterThan(0);
 
@@ -191,7 +181,6 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       const form = screen.getByTestId('form-input-link');
       fireEvent.submit(form);
 
-      // Verifikasi fetch dipanggil ke endpoint /api/cek-link
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledTimes(1);
       });
@@ -207,13 +196,11 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       expect(body.temuanAturan).toBeDefined();
       expect(options.signal).toBeDefined();
 
-      // Verifikasi hasil dari server dirender
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
       expect(screen.getByText(mockHasilServer.ringkasan)).toBeDefined();
       expect(screen.getByText(mockHasilServer.temuan[0].judul)).toBeDefined();
 
-      // Verifikasi status layanan ditampilkan (Requirement 18.4)
       const blokBatasanLayanan = screen.getByTestId('blok-batasan-layanan');
       expect(blokBatasanLayanan.textContent).toContain('Google Safe Browsing');
       expect(blokBatasanLayanan.textContent).toContain('Berjalan normal');
@@ -259,18 +246,15 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
 
       await screen.findByTestId('area-hasil-link');
 
-      // Verifikasi PemecahUrl dirender dengan bar sorotan dan rincian bagian
       const pemecah = screen.getByTestId('pemecah-url');
       expect(pemecah).toBeDefined();
 
       const barPemecah = screen.getByTestId('bar-pemecah-url');
       expect(barPemecah).toBeDefined();
 
-      // Memastikan bagian domainUtama terdeteksi
       const sorotanDomain = screen.getByTestId('sorotan-domainUtama');
       expect(sorotanDomain.textContent).toContain('sh0pee-promo');
 
-      // Memastikan kartu rincian tersedia
       expect(screen.getByTestId('kartu-bagian-domainUtama')).toBeDefined();
       expect(screen.getByTestId('kartu-bagian-path')).toBeDefined();
     });
@@ -291,23 +275,19 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       const form = screen.getByTestId('form-input-link');
       fireEvent.submit(form);
 
-      // Hasil fallback aturan lokal tetap tampil (Requirement 29.1)
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // Banner peringatan fallback server tampil
       const bannerFallback = screen.getByTestId('banner-fallback-link');
       expect(bannerFallback.textContent).toContain('Layanan pengecekan server sedang tidak tersedia');
       expect(bannerFallback.textContent).toContain('aturan leksikal lokal');
 
-      // Hasil tetap memuat minimal 1 temuan dan minimal 2 langkah (Requirement 29.4)
       const kartuTemuanList = screen.getAllByTestId('kartu-temuan');
       expect(kartuTemuanList.length).toBeGreaterThanOrEqual(1);
 
       const langkahItems = screen.getAllByTestId(/^langkah-item-/);
       expect(langkahItems.length).toBeGreaterThanOrEqual(2);
 
-      // Status layanan Safe Browsing dan RDAP menandai status gagal (Requirement 18.4, 29.3)
       const statusBadge = screen.getByTestId('status-badge-safe_browsing');
       expect(statusBadge.textContent).toContain('Gagal (menggunakan fallback aturan lokal)');
     });
@@ -333,7 +313,6 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       const areaHasil = await screen.findByTestId('area-hasil-link');
       expect(areaHasil).toBeDefined();
 
-      // Banner fallback tampil
       expect(screen.getByTestId('banner-fallback-link')).toBeDefined();
     });
   });
@@ -342,14 +321,11 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
     it('menyembunyikan KotakPrivasi dan tidak merender kotak atribusi tambahan saat hasil ditampilkan', async () => {
       render(<CekLinkPage />);
 
-      // Saat masih di area input, KotakPrivasi tampil
       expect(screen.getByTestId('kotak-privasi')).toBeDefined();
 
-      // Pilih contoh untuk menampilkan hasil
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       await screen.findByTestId('area-hasil-link');
 
-      // Setelah hasil tampil, KotakPrivasi disembunyikan dan kotak atribusi tidak ada
       expect(screen.queryByTestId('kotak-privasi')).toBeNull();
       expect(screen.queryByTestId('atribusi-google-safe-browsing')).toBeNull();
     });
@@ -359,22 +335,17 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
     it('mengosongkan input dan hasil serta mengembalikan tampilan ke formulir awal saat "Cek lagi" diklik', async () => {
       render(<CekLinkPage />);
 
-      // Pilih contoh skenario
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       await screen.findByTestId('area-hasil-link');
 
-      // Klik tombol "Cek lagi" di KomponenHasil
       const tombolCekLagi = screen.getByTestId('tombol-cek-lagi');
       fireEvent.click(tombolCekLagi);
 
-      // Area hasil hilang
       expect(screen.queryByTestId('area-hasil-link')).toBeNull();
 
-      // Formulir input kembali tampil dalam keadaan kosong
       const input = (await screen.findByTestId('input-link')) as HTMLInputElement;
       expect(input.value).toBe('');
 
-      // Tombol periksa kembali siap menerima input
       expect(screen.getByTestId('tombol-periksa')).toBeDefined();
     });
   });
@@ -392,7 +363,6 @@ describe('app/cek-link/page.tsx — Halaman Cek Link (Task 8.2)', () => {
       expect(/\bpasti\b/i.test(textInput)).toBe(false);
       expect(/\bterbukti\b/i.test(textInput)).toBe(false);
 
-      // Pilih contoh untuk memeriksa bagian hasil
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
       const areaHasil = await screen.findByTestId('area-hasil-link');
       const textHasil = (areaHasil.textContent || '').toLowerCase();

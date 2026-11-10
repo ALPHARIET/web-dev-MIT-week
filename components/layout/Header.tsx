@@ -26,7 +26,6 @@ export const NAV_ITEMS: NavItem[] = [
 export function Header({ currentPath }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Ambil pathname dari next/navigation atau prop currentPath jika disediakan
   let hookPathname = '';
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -50,7 +49,7 @@ export function Header({ currentPath }: HeaderProps) {
       <div className="relative">
       <div className="relative z-20 bg-limestone px-3 sm:px-4 rounded-[32px] shadow-xs">
         <div className="flex items-center justify-between h-14">
-          {/* Logo / Nama Aplikasi */}
+          {/* ===== LOGO / NAMA APLIKASI ===== */}
           <div className="flex items-center">
             <div
               className="font-display flex items-center gap-2 text-obsidian text-xl sm:text-2xl"
@@ -67,7 +66,7 @@ export function Header({ currentPath }: HeaderProps) {
             </div>
           </div>
 
-          {/* Navigasi Desktop (lebar > 640px) */}
+          {/* ===== NAVIGASI DESKTOP ===== */}
           <nav
             aria-label="Navigasi Utama"
             className="hidden sm:flex sm:items-center sm:gap-1 sm:border-l-[1.5px] sm:border-dotted sm:border-obsidian/50 sm:pl-3"
@@ -91,7 +90,7 @@ export function Header({ currentPath }: HeaderProps) {
             })}
           </nav>
 
-          {/* Tombol Hamburger Menu Mobile (≤ 640px) */}
+          {/* ===== TOMBOL HAMBURGER MENU MOBILE ===== */}
           <div className="flex sm:hidden">
             <button
               type="button"
@@ -139,7 +138,7 @@ export function Header({ currentPath }: HeaderProps) {
           </div>
         </div>
 
-        {/* Menu Mobile Terbuka */}
+        {/* ===== MENU MOBILE TERBUKA ===== */}
         {isMobileMenuOpen && (
           <nav
             id="mobile-navigation"

@@ -3,40 +3,16 @@ import type { FormatDataHasil } from '@/lib/hasil';
 import { tanyaGemini, filterKataTerlarang } from '@/lib/gemini';
 import { bangunJawabanEdukasiBawaan } from '@/lib/tanya-helper';
 
-/**
- * Interface request body untuk POST /api/tanya
- */
 export interface TanyaRequestBody {
   pertanyaan: string;
   konteksHasil?: FormatDataHasil;
   riwayat?: Array<{ peran: 'pengguna' | 'asisten'; isi: string }>;
 }
 
-/**
- * Interface response body untuk POST /api/tanya
- */
 export interface TanyaResponseBody {
   jawaban: string;
 }
 
-/**
- * Route Handler Next.js POST /api/tanya
- *
- * Menerima pertanyaan lanjutan dari pengguna beserta riwayat percakapan dan konteks hasil pemeriksaan.
- *
- * Validasi:
- * - Pertanyaan wajib ada, bertipe string, non-kosong, maks 1.000 karakter
- * - Maksimal 10 pertanyaan per sesi (jika riwayat pengguna >= 10, kembalikan pesan batas sesi tercapai)
- * - Batasi topik HANYA pada keamanan digital, penipuan online, dan privasi
- * - Tolak pertanyaan di luar topik keamanan digital
- * - Larang meminta data pribadi (OTP, PIN, password, nomor rekening)
- * - Larang menyarankan membalas atau memancing pelaku
- * - Filter kata terlarang ("aman", "pasti", "terbukti", "100%") dari respons sebagai kesimpulan
- * - Pemanggilan Gemini via REST API v1beta dengan timeout 15 detik (fallback jika API key tidak disetel atau gagal)
- * - Logging aman: tidak mencatat isi pertanyaan, riwayat, atau data pengguna di log console
- *
- * References: Requirements 30.1, 30.2, 31.1, 31.5, 32.4
- */
 export async function POST(req: Request): Promise<Response> {
   const startTime = Date.now();
 
@@ -71,7 +47,6 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // 1. Validasi pertanyaan (Requirements 32.4)
   if (
     typeof body.pertanyaan !== 'string' ||
     body.pertanyaan.trim().length === 0
@@ -103,7 +78,6 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // 2. Maksimal 10 pertanyaan per sesi (Requirement 31.5, 32.4)
   const jumlahPertanyaanPengguna = Array.isArray(body.riwayat)
     ? body.riwayat.filter((r) => r && r.peran === 'pengguna').length
     : 0;
@@ -121,7 +95,6 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    // 3. Pemanggilan Gemini via REST API v1beta dengan timeout 15 detik
     const hasilGemini = await tanyaGemini(
       {
         pertanyaan: body.pertanyaan,
@@ -142,7 +115,6 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    // 4. Fallback jika Gemini API key tidak disetel, error, atau timeout
     const durasiMs = Date.now() - startTime;
     console.warn(
       `[POST /api/tanya] status=fallback durasi=${durasiMs}ms errorType=ai_gagal_atau_timeout`
@@ -158,7 +130,6 @@ export async function POST(req: Request): Promise<Response> {
       { status: 200 }
     );
   } catch {
-    // 5. Exception tak terduga: fallback edukatif bawaan dengan 200 OK
     const durasiMs = Date.now() - startTime;
     console.warn(
       `[POST /api/tanya] status=fallback durasi=${durasiMs}ms errorType=unexpected_exception`

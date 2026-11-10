@@ -1,21 +1,3 @@
-/**
- * lib/virustotal.ts
- *
- * Helper integrasi dengan VirusTotal v3 API (Public API).
- * Digunakan sebagai sumber reputasi kedua untuk pemeriksaan URL pada halaman Cek Link.
- *
- * Fitur:
- * - Pemeriksaan reputasi URL melalui VirusTotal v3 API (`GET /api/v3/urls/{id}`)
- * - Penghitungan URL identifier base64url tanpa padding sesuai standar RFC 4648
- * - Rate limiting internal: 4 permintaan/menit, 500 permintaan/hari
- * - Batas waktu (timeout) 5 detik
- * - Dukungan mode simulasi jika API key tidak disetel atau diminta via options
- *
- * References:
- * - Requirements LN-08 (P1), 18.1, 18.2, 18.3
- * - PRD Aplikasi Web Cek Penipuan (P1 Fitur VirusTotal)
- */
-
 export interface VirusTotalResult {
   ditemukan: boolean;
   jumlahVendorBerbahaya: number;
@@ -33,42 +15,25 @@ export interface VirusTotalOptions {
   skipRateLimit?: boolean;
 }
 
-/** Base URL endpoint VirusTotal v3 URLs API */
 export const VIRUSTOTAL_API_BASE_URL = 'https://www.virustotal.com/api/v3/urls';
 
-/** Batas waktu default: 5 detik (5.000 ms) sesuai Requirement 18.2 */
 export const DEFAULT_VIRUSTOTAL_TIMEOUT_MS = 5000;
 
-/** Batas kuota VirusTotal Public API */
 export const VIRUSTOTAL_RATE_LIMIT_PER_MINUTE = 4;
 export const VIRUSTOTAL_RATE_LIMIT_PER_DAY = 500;
 export const VIRUSTOTAL_WINDOW_MINUTE_MS = 60 * 1000;
 export const VIRUSTOTAL_WINDOW_DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Riwayat timestamp panggilan API untuk rate limiting internal */
 let requestTimestamps: number[] = [];
 
-/**
- * Mereset riwayat panggilan API VirusTotal (terutama untuk pengujian)
- */
 export function resetVirusTotalRateLimit(): void {
   requestTimestamps = [];
 }
 
-/**
- * Mendapatkan salinan riwayat timestamp panggilan aktif
- */
 export function getVirusTotalTimestamps(): number[] {
   return [...requestTimestamps];
 }
 
-/**
- * Mengubah URL menjadi VirusTotal URL Identifier menggunakan URL-safe base64
- * tanpa padding '=' sesuai spesifikasi VirusTotal v3 (RFC 4648 §5).
- *
- * @param url Alamat URL yang akan di-encode
- * @returns String URL identifier
- */
 export function getVirusTotalUrlId(url: string): string {
   if (!url || typeof url !== 'string') {
     return '';
@@ -81,13 +46,6 @@ export function getVirusTotalUrlId(url: string): string {
     .replace(/\//g, '_');
 }
 
-/**
- * Menghasilkan respons simulasi VirusTotal tanpa memanggil API jaringan nyata.
- * Digunakan untuk pengujian atau jika API key tidak disetel.
- *
- * @param url Alamat URL yang diperiksa
- * @returns VirusTotalResult simulasi
- */
 export function simulateVirusTotal(url: string): VirusTotalResult {
   if (!url || typeof url !== 'string' || url.trim() === '') {
     return {
@@ -138,27 +96,10 @@ export function simulateVirusTotal(url: string): VirusTotalResult {
   };
 }
 
-/**
- * Memeriksa reputasi URL menggunakan VirusTotal v3 API.
- *
- * Alur pemeriksaan:
- * 1. Validasi input URL.
- * 2. Cek API key (options.apiKey atau process.env.VIRUSTOTAL_API_KEY).
- *    Jika tidak disetel dan mode simulasi aktif, gunakan simulasi.
- *    Jika tidak ada API key, kembalikan status 'tidak_tersedia'.
- * 3. Terapkan rate limiting internal (4 req/menit, 500 req/hari).
- * 4. Panggil GET https://www.virustotal.com/api/v3/urls/{id} dengan timeout 5 detik.
- * 5. Ekstrak last_analysis_stats (malicious, total vendor) dan tentukan status.
- *
- * @param url Alamat URL yang akan diperiksa
- * @param options Opsi opsional (apiKey, timeoutMs, fetchFn, simulate, dll.)
- * @returns Promise<VirusTotalResult>
- */
 export async function checkVirusTotal(
   url: string,
   options?: VirusTotalOptions
 ): Promise<VirusTotalResult> {
-  // 1. Validasi input URL
   if (!url || typeof url !== 'string' || url.trim() === '') {
     return {
       ditemukan: false,
@@ -169,7 +110,6 @@ export async function checkVirusTotal(
     };
   }
 
-  // 2. Evaluasi API Key & Mode Simulasi
   const apiKey = (options?.apiKey ?? process.env.VIRUSTOTAL_API_KEY ?? '').trim();
   const shouldSimulate =
     options?.simulate === true ||
@@ -190,13 +130,11 @@ export async function checkVirusTotal(
     };
   }
 
-  // 3. Rate limiting internal (4 req/menit, 500 req/hari)
   const now = options?.now ?? Date.now();
   if (!options?.skipRateLimit) {
     const dayThreshold = now - VIRUSTOTAL_WINDOW_DAY_MS;
     const minuteThreshold = now - VIRUSTOTAL_WINDOW_MINUTE_MS;
 
-    // Bersihkan timestamp yang lebih lama dari 24 jam
     requestTimestamps = requestTimestamps.filter((t) => t > dayThreshold);
 
     const minuteCount = requestTimestamps.filter((t) => t > minuteThreshold).length;
@@ -222,11 +160,9 @@ export async function checkVirusTotal(
       };
     }
 
-    // Catat waktu permintaan
     requestTimestamps.push(now);
   }
 
-  // 4. Timeout dan AbortController
   const timeoutMs = options?.timeoutMs ?? DEFAULT_VIRUSTOTAL_TIMEOUT_MS;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -247,7 +183,6 @@ export async function checkVirusTotal(
       signal: controller.signal,
     });
 
-    // 5. Penanganan status HTTP
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         return {
@@ -269,7 +204,6 @@ export async function checkVirusTotal(
         };
       }
 
-      // 404: URL belum pernah dianalisis / belum ada di database VirusTotal
       if (response.status === 404) {
         return {
           ditemukan: false,
@@ -306,7 +240,6 @@ interface VirusTotalApiResponse {
   };
 }
 
-    // 6. Parsing response JSON
     let data: VirusTotalApiResponse;
     try {
       data = (await response.json()) as VirusTotalApiResponse;

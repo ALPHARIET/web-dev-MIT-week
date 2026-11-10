@@ -3,20 +3,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cariPesan, pesanBawaan, salamWaktu, type PesanPemandu } from '@/lib/pemandu-kursor';
 
-/** Jeda sebelum kembali ke pesan bawaan, supaya teks tidak berkedip di celah antarelemen. */
 const JEDA_KEMBALI_MS = 300;
 
-/** Jeda tenang setelah scroll berhenti sebelum kursor boleh memicu pop-up lagi. */
 const JEDA_SCROLL_MS = 400;
 
-/** Kecepatan efek mengetik. */
 const MS_PER_HURUF = 18;
 
-/**
- * Bagian pemandu yang menyatu dengan header.
- * - Sembunyi 100% ketika kursor tidak berada di area target atau saat sedang scroll.
- * - Meluncur turun secara fluid menampilkan murni catatan panduan saat kursor berada di area target.
- */
 export function PemanduKursor({ pathname }: { pathname: string }): React.JSX.Element {
   const [aktif, setAktif] = useState<PesanPemandu | null>(null);
   const [diAtasPemandu, setDiAtasPemandu] = useState(false);
@@ -33,7 +25,6 @@ export function PemanduKursor({ pathname }: { pathname: string }): React.JSX.Ele
   const butuhGerakKursorRef = useRef(false);
   const posisiKursorTerakhirRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Jam dan jenis perangkat baru diketahui di browser, jadi dibaca setelah mount.
   useEffect(() => {
     setSalam(salamWaktu(new Date().getHours()));
     setSentuh(Boolean(window.matchMedia?.('(hover: none)').matches));
@@ -165,7 +156,6 @@ export function PemanduKursor({ pathname }: { pathname: string }): React.JSX.Ele
   const teks = tampil.pesan;
   const terbuka = !sedangScroll && (Boolean(aktif) || (diAtasPemandu && Boolean(aktif)));
 
-  // Efek mengetik: teks muncul per huruf dan mulai lagi setiap pesannya berganti.
   useEffect(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setKetikan({ teks, jumlah: teks.length });
@@ -210,12 +200,10 @@ export function PemanduKursor({ pathname }: { pathname: string }): React.JSX.Ele
             >
               {tampil.judul}
             </span>
-            {/* Pembaca layar menerima kalimat utuh, bukan huruf demi huruf. */}
             <span data-testid="pemandu-pesan" className="sr-only">{teks}</span>
             <span aria-hidden="true">
               <span data-testid="pemandu-ketikan">{teks.slice(0, jumlahHuruf)}</span>
               {sedangMengetik && <span data-testid="pemandu-caret" className="pemandu-caret" />}
-              {/* Sisa teks tak terlihat menahan posisi baris supaya tulisan tidak melompat. */}
               <span className="invisible">{teks.slice(jumlahHuruf)}</span>
             </span>
           </p>

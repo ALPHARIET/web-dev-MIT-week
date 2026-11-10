@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import React, { useState } from 'react';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import {
@@ -22,9 +22,6 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
     vi.useRealTimers();
   });
 
-  // =========================================================================
-  // 1. Tiga Pemicu Skrip Kontekstual & Teks Bawaan (Requirement LN-09)
-  // =========================================================================
   describe('1. Tiga Pemicu Skrip Kontekstual (Requirement LN-09)', () => {
     it('merender panduan fokus dengan teks dan atribut yang sesuai', () => {
       render(<PemanduHalaman pemicu="fokus" />);
@@ -107,9 +104,6 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
     });
   });
 
-  // =========================================================================
-  // 2. Penutupan Tooltip: Manual via Tombol 'X' & Otomatis saat Mengetik (Requirement 3)
-  // =========================================================================
   describe('2. Penutupan Tooltip (Manual via Tombol X & Otomatis saat Mengetik)', () => {
     it('dapat ditutup secara manual melalui tombol silang "X"', () => {
       const onTutup = vi.fn();
@@ -165,9 +159,6 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
     });
   });
 
-  // =========================================================================
-  // 3. Aksesibilitas & Target Sentuh Minimal 44px (Requirements 4, 27.2)
-  // =========================================================================
   describe('3. Aksesibilitas & Ukuran Target Sentuh (Requirement 4, 27.2)', () => {
     it('memastikan tombol penutup memiliki ukuran target sentuh minimal 44px', () => {
       render(<PemanduHalaman pemicu="fokus" />);
@@ -194,9 +185,6 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
     });
   });
 
-  // =========================================================================
-  // 4. Bebas Kata Terlarang sebagai Kesimpulan (Requirement 5, 30.1)
-  // =========================================================================
   describe('4. Bebas Kata Terlarang (Requirement 5, 30.1)', () => {
     it('tidak memuat kata terlarang ("aman", "pasti", "terbukti", "100%") sebagai klaim atau kesimpulan', () => {
       const pemicuList: PemicuPemandu[] = ['fokus', 'submit_kosong', 'idle_8s'];
@@ -217,9 +205,6 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
     });
   });
 
-  // =========================================================================
-  // 5. Hook usePemanduHalaman (State & Timer 8 Detik)
-  // =========================================================================
   describe('5. Hook usePemanduHalaman (State & Timer 8 Detik)', () => {
     function TestHarness({
       idleTimeoutMs = 8000,
@@ -336,34 +321,26 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
         vi.advanceTimersByTime(3000);
       });
 
-      // Pengguna mulai mengetik di detik ke-3
       fireEvent.click(screen.getByTestId('btn-ketik'));
 
       act(() => {
         vi.advanceTimersByTime(6000);
       });
 
-      // Tetap null, tidak memicu idle_8s
       expect(screen.getByTestId('status-pemicu').textContent).toBe('null');
       expect(screen.queryByTestId('pemandu-halaman')).toBeNull();
     });
   });
 
-  // =========================================================================
-  // 6. Integrasi Pemandu Halaman di Halaman Cek Link (/cek-link)
-  // =========================================================================
   describe('6. Integrasi Pemandu Halaman di Cek Link (app/cek-link/page.tsx)', () => {
     it('menampilkan panduan fokus saat input link difokuskan', () => {
       render(<CekLinkPage />);
 
-      // Awalnya tidak ada tooltip
       expect(screen.queryByTestId('pemandu-halaman')).toBeNull();
 
-      // Pengguna fokus ke kolom input
       const input = screen.getByTestId('input-link');
       fireEvent.focus(input);
 
-      // Tooltip panduan fokus tampil
       const pemandu = screen.getByTestId('pemandu-halaman');
       expect(pemandu).toBeDefined();
       expect(pemandu.getAttribute('data-pemicu')).toBe('fokus');
@@ -389,7 +366,6 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(tombolPeriksa);
 
-      // Tooltip submit_kosong tampil
       const pemandu = screen.getByTestId('pemandu-halaman');
       expect(pemandu).toBeDefined();
       expect(pemandu.getAttribute('data-pemicu')).toBe('submit_kosong');
@@ -401,15 +377,12 @@ describe('components/shared/PemanduHalaman.tsx — Pemandu Halaman Berbasis Skri
     it('menutup tooltip pemandu saat pengguna mulai mengetik di kolom input link', () => {
       render(<CekLinkPage />);
 
-      // Munculkan panduan via fokus
       const input = screen.getByTestId('input-link');
       fireEvent.focus(input);
       expect(screen.getByTestId('pemandu-halaman')).toBeDefined();
 
-      // Pengguna mulai mengetik
       fireEvent.change(input, { target: { value: 'https://nama-situs.com' } });
 
-      // Tooltip otomatis hilang
       expect(screen.queryByTestId('pemandu-halaman')).toBeNull();
     });
 

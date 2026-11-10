@@ -1,11 +1,3 @@
-/**
- * Helper untuk integrasi dengan Google Safe Browsing v4 Lookup API.
- * Digunakan untuk memeriksa apakah sebuah URL terdaftar dalam database ancaman (malware, phishing/social engineering, dll.)
- *
- * References:
- * - Requirements 18.1, 18.2, 25.1
- */
-
 export interface SafeBrowsingResult {
   ditemukan: boolean;
   ancaman: string[];
@@ -34,13 +26,6 @@ export const SAFE_BROWSING_PLATFORM_TYPES = ['ANY_PLATFORM'] as const;
 
 export const SAFE_BROWSING_THREAT_ENTRY_TYPES = ['URL'] as const;
 
-/**
- * Memeriksa URL menggunakan Google Safe Browsing v4 Lookup API.
- *
- * @param url Alamat URL yang akan diperiksa
- * @param options Opsi opsional (apiKey, timeoutMs)
- * @returns SafeBrowsingResult dengan status 'ok', 'gagal', atau 'tidak_tersedia'
- */
 export async function checkSafeBrowsing(
   url: string,
   options?: SafeBrowsingOptions
@@ -169,7 +154,4 @@ export async function checkSafeBrowsing(
   }
 }
 
-/**
- * Alias untuk checkSafeBrowsing
- */
 export const checkUrl = checkSafeBrowsing;

@@ -4,36 +4,22 @@ import React, { useEffect, useRef } from 'react';
 import { SENSOR_PLACEHOLDER } from '@/lib/sensor';
 
 export interface PratinjauSensorProps {
-  /** Menentukan apakah modal dialog sedang terbuka */
   isOpen: boolean;
-  /** Teks asli sebelum disensor oleh utilitas sensor otomatis */
   teksAsli: string;
-  /** Teks yang sudah disensor dengan placeholder [disensor] */
   teksTersensor: string;
-  /** Jumlah data sensitif yang berhasil disensor */
   jumlahDiganti: number;
-  /** Callback ketika pengguna mengonfirmasi untuk melanjutkan pemeriksaan */
   onKonfirmasi: () => void;
-  /** Callback ketika pengguna membatalkan atau ingin mengedit kembali */
   onBatal: () => void;
-  /** Status sedang memproses / mengirim ke backend */
   isLoading?: boolean;
-  /** Menandakan apakah pengguna mengunggah tangkapan layar (screenshot) */
   adaScreenshot?: boolean;
-  /** Kelas CSS tambahan untuk kontainer modal */
   className?: string;
 }
 
-/**
- * Memecah teks tersensor menjadi bagian teks biasa dan badge highlight untuk `[disensor]`.
- * Memberi kontras visual yang jelas dengan warna amber/merah WCAG AA.
- */
 export function renderTeksDenganHighlight(teks: string): React.ReactNode {
   if (!teks) {
     return <span className="text-gray-400 italic">Tidak ada teks yang dimasukkan.</span>;
   }
 
-  // Pecah berdasarkan [disensor]
   const regex = /(\[disensor\])/g;
   const parts = teks.split(regex);
 
@@ -54,24 +40,6 @@ export function renderTeksDenganHighlight(teks: string): React.ReactNode {
   });
 }
 
-/**
- * Komponen modal dialog untuk menampilkan pratinjau teks yang telah disensor otomatis
- * sebelum dikirim ke backend / layanan AI.
- *
- * Fitur Aksesibilitas & Fungsionalitas:
- * - WAI-ARIA Modal (`role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `aria-describedby`)
- * - Trap focus: siklus Tab/Shift+Tab terkunci di dalam dialog
- * - Tombol Escape untuk menutup dialog (`onBatal`)
- * - Backdrop click untuk menutup dialog (`onBatal`)
- * - Highlight visual khusus pada setiap bagian `[disensor]` (badge amber)
- * - Ringkasan jumlah data sensitif yang tersensor
- * - Tombol aksi primer ("Lanjut Periksa") dan sekunder ("Batal / Edit Kembali")
- * - Target sentuh minimal 44px (Requirement 27.2)
- * - Peringatan khusus jika terdapat screenshot: gambar tidak bisa disensor otomatis (Requirement 12.3)
- * - Bagian akordeon / perbandingan untuk melihat teks asli
- *
- * References: Requirements 12.2, 12.3, 27.2
- */
 export function PratinjauSensor({
   isOpen,
   teksAsli,
@@ -86,18 +54,14 @@ export function PratinjauSensor({
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
-  // Aksesibilitas: Trap focus, Escape handler, dan kunci scroll body
   useEffect(() => {
     if (!isOpen) return;
 
-    // Simpan elemen yang aktif sebelum modal terbuka
     previousActiveElementRef.current = document.activeElement as HTMLElement | null;
 
-    // Cegah scrolling pada background
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Fokus ke dialog atau elemen interaktif pertama di dalam dialog
     const timer = setTimeout(() => {
       if (dialogRef.current) {
         const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
@@ -179,7 +143,6 @@ export function PratinjauSensor({
       data-testid="modal-pratinjau-backdrop"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
       onClick={(e) => {
-        // Klik di luar dialog menutup modal
         if (e.target === e.currentTarget && !isLoading) {
           onBatal();
         }
@@ -196,7 +159,7 @@ export function PratinjauSensor({
         className={`relative w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-gray-200 flex flex-col max-h-[90vh] overflow-hidden ${className}`.trim()}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Modal */}
+        {/* ===== HEADER MODAL ===== */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50/75">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
@@ -249,9 +212,9 @@ export function PratinjauSensor({
           </button>
         </div>
 
-        {/* Isi Modal (Scrollable) */}
+        {/* ===== ISI MODAL ===== */}
         <div className="p-5 overflow-y-auto space-y-4">
-          {/* Ringkasan Jumlah Data Sensitif */}
+          {/* ===== RINGKASAN JUMLAH DATA SENSITIF ===== */}
           <div
             data-testid="kotak-ringkasan"
             className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-50/70 border border-blue-200"
@@ -289,7 +252,6 @@ export function PratinjauSensor({
             </div>
           </div>
 
-          {/* Peringatan jika pengguna mengunggah screenshot (Requirement 12.3) */}
           {adaScreenshot && (
             <div
               role="alert"
@@ -323,7 +285,7 @@ export function PratinjauSensor({
             </div>
           )}
 
-          {/* Kotak Pratinjau Teks Tersensor */}
+          {/* ===== KOTAK PRATINJAU TEKS TERSENSOR ===== */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label
@@ -349,7 +311,6 @@ export function PratinjauSensor({
             </div>
           </div>
 
-          {/* Opsi melihat teks asli untuk perbandingan */}
           {teksAsli && (
             <details
               data-testid="detail-teks-asli"
@@ -400,7 +361,7 @@ export function PratinjauSensor({
           )}
         </div>
 
-        {/* Footer Tombol Aksi (Target sentuh minimal 44px - Requirement 27.2) */}
+        {/* ===== FOOTER TOMBOL AKSI ===== */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 p-4 sm:p-5 border-t border-gray-200 bg-gray-50">
           <button
             type="button"

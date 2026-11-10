@@ -194,10 +194,9 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
       expect(hasil.status).toBe('ok');
       expect(hasil.ditemukan).toBe(true);
       expect(hasil.jumlahVendorBerbahaya).toBe(4);
-      expect(hasil.totalVendor).toBe(80); // 65 + 4 + 1 + 10 + 0
+      expect(hasil.totalVendor).toBe(80);
       expect(hasil.keterangan).toContain('4 dari 80 vendor');
 
-      // Verifikasi header dan endpoint
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [calledUrl, calledInit] = mockFetch.mock.calls[0];
       expect(calledUrl).toContain(VIRUSTOTAL_API_BASE_URL);
@@ -427,7 +426,6 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
 
       const baseNow = 1_000_000;
 
-      // Panggilan 1-4 harus sukses
       for (let i = 1; i <= 4; i++) {
         const res = await checkVirusTotal(`https://example${i}.com`, {
           apiKey: 'test-key',
@@ -437,7 +435,6 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
         expect(res.status).toBe('ok');
       }
 
-      // Panggilan ke-5 pada menit yang sama harus ditolak
       const res5 = await checkVirusTotal('https://example5.com', {
         apiKey: 'test-key',
         fetchFn: mockFetch as unknown as typeof fetch,
@@ -446,7 +443,7 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
 
       expect(res5.status).toBe('tidak_tersedia');
       expect(res5.keterangan).toContain('4 permintaan per menit');
-      expect(mockFetch).toHaveBeenCalledTimes(4); // Panggilan ke-5 tidak diteruskan ke fetch
+      expect(mockFetch).toHaveBeenCalledTimes(4);
     });
 
     it('mengizinkan permintaan kembali setelah melewati jendela 1 menit', async () => {
@@ -464,7 +461,6 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
 
       const baseNow = 1_000_000;
 
-      // 4 panggilan pertama
       for (let i = 1; i <= 4; i++) {
         await checkVirusTotal(`https://example${i}.com`, {
           apiKey: 'test-key',
@@ -473,7 +469,6 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
         });
       }
 
-      // Panggilan setelah 61 detik diizinkan
       const resAfterMinute = await checkVirusTotal('https://example5.com', {
         apiKey: 'test-key',
         fetchFn: mockFetch as unknown as typeof fetch,
@@ -499,9 +494,6 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
 
       const baseNow = 1_000_000_000;
 
-      // Panggilan 1-4 dalam menit terpisah agar tidak kena limit per menit
-      // Simulasikan 500 panggilan dengan memanipulasi riwayat timestamp atau pengulangan
-      // Kita panggil reset lalu isi riwayat
       const resAwal = await checkVirusTotal('https://contoh.com', {
         apiKey: 'test-key',
         fetchFn: mockFetch as unknown as typeof fetch,
@@ -509,21 +501,16 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
       });
       expect(resAwal.status).toBe('ok');
 
-      // Panggil resetVirusTotalRateLimit lalu lakukan loop uji limit harian dengan memanipulasi waktu
-      // Simulasikan batas harian terlampaui
       for (let i = 2; i <= 500; i++) {
-        // Setiap panggilan berjarak 2 menit agar lolos rate limit per menit
         await checkVirusTotal(`https://contoh-${i}.com`, {
           apiKey: 'test-key',
           fetchFn: mockFetch as unknown as typeof fetch,
-          now: baseNow + i * 120_000, // 2 menit per request
-          skipRateLimit: true, // cepat isi
+          now: baseNow + i * 120_000,
+          skipRateLimit: true,
         });
       }
 
-      // Sekarang ada riwayat 500 entri jika dicatat, mari kita uji dengan fungsi langsung
       resetVirusTotalRateLimit();
-      // Tambahkan 500 entri ke internal tracker
       for (let i = 0; i < 500; i++) {
         await checkVirusTotal('https://dummy.com', {
           apiKey: 'test-key',
@@ -532,7 +519,6 @@ describe('lib/virustotal.ts — VirusTotal v3 Helper', () => {
         });
       }
 
-      // Permintaan ke-501 harus ditolak
       const res501 = await checkVirusTotal('https://contoh-501.com', {
         apiKey: 'test-key',
         fetchFn: mockFetch as unknown as typeof fetch,

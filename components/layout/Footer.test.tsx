@@ -50,7 +50,6 @@ describe('components/layout/Footer.tsx (Requirement 1.3, 1.4, 27.2)', () => {
       const { container } = render(<Footer />);
       const text = container.textContent?.toLowerCase() || '';
 
-      // Periksa bahwa kata tidak dipakai sembarangan
       expect(text).not.toContain('pasti aman');
       expect(text).not.toContain('terbukti aman');
       expect(text).not.toContain('100%');

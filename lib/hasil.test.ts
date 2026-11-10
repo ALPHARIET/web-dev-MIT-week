@@ -123,10 +123,6 @@ describe('lib/hasil.ts', () => {
   });
 
   describe('Property-Based Tests', () => {
-    /**
-     * Feature: cek-penipuan-web, Property 1: Round-trip serialisasi FormatDataHasil
-     * **Validates: Requirements 5.5, 32.5**
-     */
     it('Feature: cek-penipuan-web, Property 1: Round-trip serialisasi FormatDataHasil (**Validates: Requirements 5.5, 32.5**)', () => {
       fc.assert(
         fc.property(arbitraryFormatDataHasil(), (hasil) => {

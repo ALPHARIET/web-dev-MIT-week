@@ -91,15 +91,12 @@ describe('components/shared/Akordeon.tsx (Task 4.10)', () => {
       const konten1 = screen.getByTestId('akordeon-konten-cara-penilaian');
       const chevron1 = screen.getByTestId('akordeon-chevron-cara-penilaian');
 
-      // Sebelum diklik: tertutup
       expect(button1.getAttribute('aria-expanded')).toBe('false');
       expect(konten1.hasAttribute('hidden')).toBe(true);
       expect(chevron1.classList.contains('rotate-0')).toBe(true);
 
-      // Klik untuk membuka
       fireEvent.click(button1);
 
-      // Setelah diklik: terbuka
       expect(button1.getAttribute('aria-expanded')).toBe('true');
       expect(konten1.hasAttribute('hidden')).toBe(false);
       expect(konten1.classList.contains('hidden')).toBe(false);
@@ -115,14 +112,11 @@ describe('components/shared/Akordeon.tsx (Task 4.10)', () => {
       const konten1 = screen.getByTestId('akordeon-konten-cara-penilaian');
       const chevron1 = screen.getByTestId('akordeon-chevron-cara-penilaian');
 
-      // Awalnya terbuka
       expect(button1.getAttribute('aria-expanded')).toBe('true');
       expect(konten1.hasAttribute('hidden')).toBe(false);
 
-      // Klik untuk menutup
       fireEvent.click(button1);
 
-      // Sekarang tertutup
       expect(button1.getAttribute('aria-expanded')).toBe('false');
       expect(konten1.hasAttribute('hidden')).toBe(true);
       expect(chevron1.classList.contains('rotate-0')).toBe(true);
@@ -135,12 +129,10 @@ describe('components/shared/Akordeon.tsx (Task 4.10)', () => {
       const button2 = screen.getByTestId('akordeon-header-batasan-deteksi');
       const konten2 = screen.getByTestId('akordeon-konten-batasan-deteksi');
 
-      // Tekan Enter untuk membuka
       fireEvent.keyDown(button2, { key: 'Enter' });
       expect(button2.getAttribute('aria-expanded')).toBe('true');
       expect(konten2.hasAttribute('hidden')).toBe(false);
 
-      // Tekan Enter lagi untuk menutup
       fireEvent.keyDown(button2, { key: 'Enter' });
       expect(button2.getAttribute('aria-expanded')).toBe('false');
       expect(konten2.hasAttribute('hidden')).toBe(true);
@@ -151,12 +143,10 @@ describe('components/shared/Akordeon.tsx (Task 4.10)', () => {
       const button3 = screen.getByTestId('akordeon-header-privasi-data');
       const konten3 = screen.getByTestId('akordeon-konten-privasi-data');
 
-      // Tekan Spasi (' ') untuk membuka
       fireEvent.keyDown(button3, { key: ' ' });
       expect(button3.getAttribute('aria-expanded')).toBe('true');
       expect(konten3.hasAttribute('hidden')).toBe(false);
 
-      // Tekan Spasi lagi untuk menutup
       fireEvent.keyDown(button3, { key: ' ' });
       expect(button3.getAttribute('aria-expanded')).toBe('false');
       expect(konten3.hasAttribute('hidden')).toBe(true);
@@ -193,14 +183,12 @@ describe('components/shared/Akordeon.tsx (Task 4.10)', () => {
       const button2 = screen.getByTestId('akordeon-header-batasan-deteksi');
       const konten2 = screen.getByTestId('akordeon-konten-batasan-deteksi');
 
-      // Buka item 1
       fireEvent.click(button1);
       expect(button1.getAttribute('aria-expanded')).toBe('true');
       expect(konten1.hasAttribute('hidden')).toBe(false);
       expect(button2.getAttribute('aria-expanded')).toBe('false');
       expect(konten2.hasAttribute('hidden')).toBe(true);
 
-      // Buka item 2 -> item 1 harus otomatis tertutup
       fireEvent.click(button2);
       expect(button1.getAttribute('aria-expanded')).toBe('false');
       expect(konten1.hasAttribute('hidden')).toBe(true);
@@ -234,19 +222,16 @@ describe('components/shared/Akordeon.tsx (Task 4.10)', () => {
       const button2 = screen.getByTestId('akordeon-header-batasan-deteksi');
       const konten2 = screen.getByTestId('akordeon-konten-batasan-deteksi');
 
-      // Buka item 1
       fireEvent.click(button1);
       expect(button1.getAttribute('aria-expanded')).toBe('true');
       expect(konten1.hasAttribute('hidden')).toBe(false);
 
-      // Buka item 2 -> keduanya harus tetap terbuka
       fireEvent.click(button2);
       expect(button1.getAttribute('aria-expanded')).toBe('true');
       expect(konten1.hasAttribute('hidden')).toBe(false);
       expect(button2.getAttribute('aria-expanded')).toBe('true');
       expect(konten2.hasAttribute('hidden')).toBe(false);
 
-      // Tutup item 1 -> item 2 tetap terbuka
       fireEvent.click(button1);
       expect(button1.getAttribute('aria-expanded')).toBe('false');
       expect(konten1.hasAttribute('hidden')).toBe(true);

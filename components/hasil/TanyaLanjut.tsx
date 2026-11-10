@@ -7,11 +7,6 @@ export interface TanyaLanjutProps {
   hasil: FormatDataHasil;
   pertanyaanCepat?: string[];
   className?: string;
-  /**
-   * Callback kustom untuk pengiriman pertanyaan.
-   * Sangat berguna untuk pengujian unit tanpa memerlukan mocking jaringan tingkat global.
-   * Jika tidak disediakan, komponen akan melakukan HTTP POST ke '/api/tanya'.
-   */
   onKirimPertanyaan?: (pertanyaan: string) => Promise<string>;
 }
 
@@ -22,19 +17,21 @@ export interface PesanPercakapan {
   waktu?: string;
 }
 
-/** Batas maksimal pertanyaan yang diajukan pengguna per sesi (P1) */
 export const MAKS_PERTANYAAN_PER_SESI = 10;
 
-/** Batas maksimal karakter untuk satu pertanyaan bebas */
 export const MAKS_KARAKTER_PERTANYAAN = 1000;
 
-/**
- * Menghasilkan 2-3 pertanyaan cepat yang relevan dan kontekstual
- * berdasarkan jenis halaman pemeriksaan dan tingkat kewaspadaannya.
- */
 export function dapatkanPertanyaanCepatDefault(hasil: FormatDataHasil): string[] {
   const halaman: HalamanCek = hasil.halaman;
   const level = hasil.level;
+
+  if (hasil.analisis_media?.kategori === 'konten_ai') {
+    return [
+      'Bagaimana cara mengenali video buatan AI?',
+      'Bolehkah video ini saya bagikan?',
+      'Di mana saya bisa cek kebenaran beritanya?',
+    ];
+  }
 
   if (halaman === 'chat') {
     if (level === 'tinggi') {
@@ -80,7 +77,6 @@ export function dapatkanPertanyaanCepatDefault(hasil: FormatDataHasil): string[]
     ];
   }
 
-  // Halaman Cek Video & Suara
   if (level === 'tinggi') {
     return [
       'Bagaimana cara memastikan apakah suara atau video ini deepfake?',
@@ -102,22 +98,6 @@ export function dapatkanPertanyaanCepatDefault(hasil: FormatDataHasil): string[]
   ];
 }
 
-/**
- * Komponen TanyaLanjut
- *
- * Komponen interaktif tanya jawab berbasis AI untuk konsultasi keamanan digital
- * lanjutan setelah melihat hasil pemeriksaan.
- *
- * Fitur Utama:
- * 1. Tombol 2-3 pertanyaan cepat kontekstual sesuai jenis halaman & temuan.
- * 2. Kolom input teks untuk pertanyaan bebas pengguna (maksimal 1.000 karakter).
- * 3. Riwayat percakapan disimpan HANYA di memori komponen browser (Requirement 31.5).
- * 4. Batas maksimal 10 pertanyaan per sesi dengan counter interaktif (misal "2/10 pertanyaan").
- * 5. Balon percakapan interaktif (pengguna & asisten AI) dengan indikator sedang mengetik.
- * 6. Target sentuh minimal 44px untuk semua elemen interaktif (Requirement 1.5, 27.2).
- *
- * References: Requirements 31.5, 32.4
- */
 export function TanyaLanjut({
   hasil,
   pertanyaanCepat,
@@ -126,13 +106,11 @@ export function TanyaLanjut({
 }: TanyaLanjutProps): React.JSX.Element {
   const inputId = useId();
 
-  // Daftar pertanyaan cepat (gunakan prop kustom atau default kontekstual)
   const daftarPertanyaanCepat =
     pertanyaanCepat && pertanyaanCepat.length > 0
       ? pertanyaanCepat.slice(0, 3)
       : dapatkanPertanyaanCepatDefault(hasil).slice(0, 3);
 
-  // Riwayat percakapan disimpan HANYA di memori komponen React (Requirement 31.5)
   const [riwayat, setRiwayat] = useState<PesanPercakapan[]>([
     {
       id: 'sambutan-awal',
@@ -144,23 +122,17 @@ export function TanyaLanjut({
   const [inputTeks, setInputTeks] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Hitung jumlah pertanyaan yang telah diajukan pengguna (batas 10 per sesi)
   const jumlahPertanyaanUser = riwayat.filter((p) => p.peran === 'pengguna').length;
   const batasTercapai = jumlahPertanyaanUser >= MAKS_PERTANYAAN_PER_SESI;
 
-  /**
-   * Menangani pengiriman pertanyaan (baik dari input bebas maupun tombol pertanyaan cepat).
-   */
   const kirimPertanyaan = async (teks: string) => {
     const teksBersih = teks.trim();
     if (!teksBersih || isLoading || batasTercapai) {
       return;
     }
 
-    // Pastikan tidak melebihi 1.000 karakter
     const teksFinal = teksBersih.slice(0, MAKS_KARAKTER_PERTANYAAN);
 
-    // Tambahkan pesan pengguna ke riwayat memori komponen
     const pesanPengguna: PesanPercakapan = {
       id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       peran: 'pengguna',
@@ -175,10 +147,8 @@ export function TanyaLanjut({
       let jawabanAsisten: string;
 
       if (onKirimPertanyaan) {
-        // Gunakan handler kustom jika diinjeksikan (misal dalam unit test)
         jawabanAsisten = await onKirimPertanyaan(teksFinal);
       } else {
-        // Panggil endpoint backend POST /api/tanya (Requirement 32.4)
         const res = await fetch('/api/tanya', {
           method: 'POST',
           headers: {
@@ -200,7 +170,6 @@ export function TanyaLanjut({
             data.jawaban ||
             'Terima kasih atas pertanyaanmu. Tetap berhati-hati dan jangan pernah membagikan data pribadi atau kode rahasia kepada siapa pun.';
         } else {
-          // Tangani status error HTTP secara informatif
           let pesanError =
             'Maaf, layanan tanya jawab sedang tidak dapat dihubungi. Silakan coba beberapa saat lagi.';
           try {
@@ -211,7 +180,6 @@ export function TanyaLanjut({
               pesanError = dataErr.pesan;
             }
           } catch {
-            // abaikan kegagalan JSON
           }
           jawabanAsisten = pesanError;
         }
@@ -226,7 +194,6 @@ export function TanyaLanjut({
         },
       ]);
     } catch {
-      // Tangani kegagalan jaringan atau timeout
       setRiwayat((prev) => [
         ...prev,
         {
@@ -258,7 +225,6 @@ export function TanyaLanjut({
       aria-labelledby="judul-tanya-lanjut"
       className={`rounded-2xl border border-blue-200 bg-white p-5 sm:p-6 shadow-sm space-y-5 ${className}`.trim()}
     >
-      {/* Header Bagian Tanya Lanjut & Counter Pertanyaan */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
           <div
@@ -290,7 +256,7 @@ export function TanyaLanjut({
           </div>
         </div>
 
-        {/* Counter Batas Pertanyaan Per Sesi (Requirement 31.5: memori browser, batas 10) */}
+        {/* ===== COUNTER BATAS PERTANYAAN PER SESI ===== */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <span
             data-testid="counter-pertanyaan"
@@ -306,7 +272,7 @@ export function TanyaLanjut({
         </div>
       </div>
 
-      {/* Tombol Pertanyaan Cepat (2-3 tombol relevan) */}
+      {/* ===== TOMBOL PERTANYAAN CEPAT ===== */}
       <div className="space-y-2">
         <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
           Pertanyaan Cepat:
@@ -330,7 +296,7 @@ export function TanyaLanjut({
         </div>
       </div>
 
-      {/* Area Balon Percakapan Interaktif (Pengguna & Asisten AI) */}
+      {/* ===== AREA BALON PERCAKAPAN INTERAKTIF ===== */}
       <div
         data-testid="wadah-balon-chat"
         aria-label="Riwayat percakapan"
@@ -407,7 +373,7 @@ export function TanyaLanjut({
           );
         })}
 
-        {/* Indikator Mengetik / Memuat Asisten AI */}
+        {/* ===== INDIKATOR MENGETIK / MEMUAT ASISTEN AI ===== */}
         {isLoading && (
           <div
             data-testid="balon-loading"
@@ -459,7 +425,6 @@ export function TanyaLanjut({
         )}
       </div>
 
-      {/* Banner Peringatan jika Batas 10 Pertanyaan Tercapai */}
       {batasTercapai && (
         <div
           data-testid="banner-batas-pertanyaan"
@@ -491,7 +456,7 @@ export function TanyaLanjut({
         </div>
       )}
 
-      {/* Form Input Pertanyaan Bebas Pengguna */}
+      {/* ===== FORM INPUT PERTANYAAN BEBAS PENGGUNA ===== */}
       <form onSubmit={handleSubmitForm} className="space-y-2">
         <label htmlFor={inputId} className="sr-only">
           Ketik pertanyaan lanjutan
@@ -516,7 +481,6 @@ export function TanyaLanjut({
           />
         </div>
 
-        {/* Footer Form: Counter Karakter & Tombol Aksi Submit */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <span
             data-testid="counter-karakter"

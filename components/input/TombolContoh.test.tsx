@@ -8,7 +8,6 @@ import {
   type SkenarioChat,
   type SkenarioLink,
   type SkenarioVideo,
-  type HalamanContoh,
 } from './TombolContoh';
 import chatContohJson from '../../data/contoh/chat-contoh.json';
 import linkContohJson from '../../data/contoh/link-contoh.json';
@@ -119,7 +118,6 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
 
       const tombolUtama = screen.getByTestId('tombol-coba-contoh');
 
-      // Klik 1: memilih skenario ke-0 (chat-like-review)
       fireEvent.click(tombolUtama);
       expect(onPilihContoh).toHaveBeenCalledTimes(1);
       expect(onContohDipilih).toHaveBeenCalledTimes(1);
@@ -131,7 +129,6 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       );
       expect(screen.getByTestId('skenario-aktif').textContent).toContain('(1/3)');
 
-      // Klik 2: memilih skenario ke-1 (chat-otp-kurir)
       fireEvent.click(tombolUtama);
       expect(onPilihContoh).toHaveBeenCalledTimes(2);
       expect(onContohDipilih).toHaveBeenCalledTimes(2);
@@ -143,7 +140,6 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       );
       expect(screen.getByTestId('skenario-aktif').textContent).toContain('(2/3)');
 
-      // Klik 3: memilih skenario ke-2 (chat-keluarga-ganti-nomor)
       fireEvent.click(tombolUtama);
       expect(onPilihContoh).toHaveBeenCalledTimes(3);
       expect(onContohDipilih).toHaveBeenCalledTimes(3);
@@ -155,7 +151,6 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       );
       expect(screen.getByTestId('skenario-aktif').textContent).toContain('(3/3)');
 
-      // Klik 4: berputar kembali ke skenario ke-0 (chat-like-review)
       fireEvent.click(tombolUtama);
       expect(onPilihContoh).toHaveBeenCalledTimes(4);
       expect(onContohDipilih).toHaveBeenCalledTimes(4);
@@ -213,16 +208,13 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
 
       const tombolDropdown = screen.getByTestId('tombol-pilih-dropdown');
 
-      // Awalnya tertutup
       expect(screen.queryByTestId('menu-skenario')).toBeNull();
       expect(tombolDropdown.getAttribute('aria-expanded')).toBe('false');
 
-      // Buka dropdown
       fireEvent.click(tombolDropdown);
       expect(screen.getByTestId('menu-skenario')).toBeDefined();
       expect(tombolDropdown.getAttribute('aria-expanded')).toBe('true');
 
-      // Tutup kembali dropdown
       fireEvent.click(tombolDropdown);
       expect(screen.queryByTestId('menu-skenario')).toBeNull();
       expect(tombolDropdown.getAttribute('aria-expanded')).toBe('false');
@@ -257,18 +249,14 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       const tombolDropdown = screen.getByTestId('tombol-pilih-dropdown');
       fireEvent.click(tombolDropdown);
 
-      // Pilih opsi kedua: link-marketplace-typo
       const opsi2 = screen.getByTestId('opsi-skenario-link-marketplace-typo');
       fireEvent.click(opsi2);
 
-      // Callback terpanggil dengan data skenario link kedua
       expect(onPilihContoh).toHaveBeenCalledTimes(1);
       expect(onPilihContoh).toHaveBeenCalledWith(linkContohJson.skenario[1]);
 
-      // Menu dropdown otomatis tertutup
       expect(screen.queryByTestId('menu-skenario')).toBeNull();
 
-      // Indikator skenario aktif terpasang
       expect(screen.getByTestId('skenario-aktif-judul').textContent).toBe(
         linkContohJson.skenario[1].judul
       );
@@ -281,11 +269,9 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       const tombolDropdown = screen.getByTestId('tombol-pilih-dropdown');
       fireEvent.click(tombolDropdown);
 
-      // Pilih opsi ketiga: video-tokoh-investasi
       const opsi3 = screen.getByTestId('opsi-skenario-video-tokoh-investasi');
       fireEvent.click(opsi3);
 
-      // Buka dropdown kembali
       fireEvent.click(tombolDropdown);
       const indikator = screen.getByTestId('indikator-terpilih');
       expect(indikator).toBeDefined();
@@ -296,13 +282,11 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       const onPilih = vi.fn();
       render(<TombolContoh halaman="chat" onPilihContoh={onPilih} />);
 
-      // Pilih opsi 1 (indeks 1) via dropdown
       const tombolDropdown = screen.getByTestId('tombol-pilih-dropdown');
       fireEvent.click(tombolDropdown);
       fireEvent.click(screen.getByTestId('opsi-skenario-chat-otp-kurir'));
       expect(onPilih).toHaveBeenLastCalledWith(chatContohJson.skenario[1]);
 
-      // Tekan tombol utama "Coba contoh" -> harus maju ke indeks 2 (chat-keluarga-ganti-nomor)
       const tombolUtama = screen.getByTestId('tombol-coba-contoh');
       fireEvent.click(tombolUtama);
       expect(onPilih).toHaveBeenLastCalledWith(chatContohJson.skenario[2]);
@@ -333,7 +317,6 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
       fireEvent.click(tombolDropdown);
       expect(screen.getByTestId('menu-skenario')).toBeDefined();
 
-      // Klik elemen di luar komponen
       fireEvent.mouseDown(screen.getByTestId('luar-komponen'));
       expect(screen.queryByTestId('menu-skenario')).toBeNull();
     });
@@ -358,7 +341,6 @@ describe('components/input/TombolContoh.tsx (Task 4.12)', () => {
         chatContohJson.skenario[0].judul
       );
 
-      // Ubah prop halaman ke 'link'
       rerender(<TombolContoh halaman="link" />);
       expect(screen.queryByTestId('skenario-aktif')).toBeNull();
     });

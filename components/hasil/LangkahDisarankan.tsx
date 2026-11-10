@@ -2,20 +2,11 @@
 
 import React, { useState } from 'react';
 
-/**
- * Daftar langkah pencegahan umum sebagai cadangan (fallback)
- * ketika data langkah kosong atau kurang dari batas minimal 2 langkah.
- * Mematuhi aturan tanpa kata terlarang (aman, pasti, terbukti, 100%).
- */
 export const FALLBACK_LANGKAH: string[] = [
   'Jangan terburu-buru mengambil keputusan, mentransfer dana, atau memberikan data pribadi apa pun.',
   'Lakukan verifikasi secara mandiri melalui saluran resmi yang terpisah dan terpercaya sebelum melanjutkan interaksi.',
 ];
 
-/**
- * Memvalidasi dan memastikan daftar langkah minimal memuat 2 langkah tindakan.
- * Jika kosong atau invalid, mengembalikan langkah pencegahan umum (fallback).
- */
 export function validasiLangkah(langkah?: string[]): string[] {
   if (!langkah || !Array.isArray(langkah)) {
     return FALLBACK_LANGKAH;
@@ -37,22 +28,11 @@ export function validasiLangkah(langkah?: string[]): string[] {
 }
 
 export interface LangkahDisarankanProps {
-  /** Daftar instruksi langkah tindakan */
   langkah?: string[];
-  /** Kelas CSS tambahan opsional untuk penyesuaian layout */
   className?: string;
-  /** Callback opsional saat status centang pada salah satu langkah diubah */
   onToggle?: (index: number, checked: boolean) => void;
 }
 
-/**
- * Komponen LangkahDisarankan
- * Menampilkan daftar tindakan praktis yang disarankan dalam format numbered list interaktif
- * dengan indikator progres dinamis, target sentuh WCAG AA (min 44px),
- * serta opsi untuk menyalin rangkuman tindakan.
- *
- * References: Requirements 5.4, 6.1, 27.2, 27.3
- */
 export default function LangkahDisarankan({
   langkah,
   className = '',
@@ -89,7 +69,6 @@ export default function LangkahDisarankan({
         setTimeout(() => setSalinStatus(false), 2500);
       }
     } catch {
-      // Fallback diam jika clipboard tidak didukung
     }
   };
 
@@ -99,10 +78,10 @@ export default function LangkahDisarankan({
       className={`rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm ${className}`}
       data-testid="langkah-disarankan-section"
     >
-      {/* Header Bagian */}
+      {/* ===== HEADER BAGIAN ===== */}
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-3">
-          {/* Ikon Tindakan / Checklist Header */}
+          {/* ===== IKON TINDAKAN / CHECKLIST HEADER ===== */}
           <div
             className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-700 shrink-0"
             aria-hidden="true"
@@ -134,7 +113,7 @@ export default function LangkahDisarankan({
           </div>
         </div>
 
-        {/* Status Singkat Selesai */}
+        {/* ===== STATUS SINGKAT SELESAI ===== */}
         {completedCount > 0 && (
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
             {completedCount} dari {items.length} diselesaikan
@@ -142,7 +121,7 @@ export default function LangkahDisarankan({
         )}
       </div>
 
-      {/* Interactive Progress Bar */}
+      {/* ===== INTERACTIVE PROGRESS BAR ===== */}
       <div
         className="mb-4 p-3 sm:p-3.5 bg-gray-50 rounded-xl border border-gray-200"
         aria-label="Progres langkah tindakan pencegahan"
@@ -174,7 +153,7 @@ export default function LangkahDisarankan({
           </span>
         </div>
 
-        {/* Progress Track */}
+        {/* ===== PROGRESS TRACK ===== */}
         <div
           role="progressbar"
           aria-valuenow={progressPercent}
@@ -192,7 +171,7 @@ export default function LangkahDisarankan({
         </div>
       </div>
 
-      {/* Numbered List Langkah Tindakan */}
+      {/* ===== NUMBERED LIST LANGKAH TINDAKAN ===== */}
       <ol className="space-y-3" role="list">
         {items.map((teks, index) => {
           const isChecked = Boolean(checkedState[index]);
@@ -208,7 +187,6 @@ export default function LangkahDisarankan({
                   : 'bg-gray-50 border-gray-200 hover:border-gray-300'
               }`}
             >
-              {/* Nomor Bulat yang Jelas (1, 2, 3...) */}
               <span
                 aria-hidden="true"
                 data-testid={`langkah-nomor-${index}`}
@@ -221,7 +199,7 @@ export default function LangkahDisarankan({
                 {index + 1}
               </span>
 
-              {/* Teks Instruksi Praktis (WCAG AA Contrast) */}
+              {/* ===== TEKS INSTRUKSI PRAKTIS ===== */}
               <div className="flex-1 min-w-0 pt-0.5">
                 <label
                   htmlFor={inputId}
@@ -235,7 +213,7 @@ export default function LangkahDisarankan({
                   {teks}
                 </label>
 
-                {/* Status Selesai Badge */}
+                {/* ===== STATUS SELESAI BADGE ===== */}
                 {isChecked && (
                   <span
                     className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"
@@ -260,7 +238,7 @@ export default function LangkahDisarankan({
                 )}
               </div>
 
-              {/* Kotak Checklist Tindakan (Target Sentuh Minimal 44px) */}
+              {/* ===== KOTAK CHECKLIST TINDAKAN ===== */}
               <div className="flex items-center justify-center shrink-0 min-w-[44px] min-h-[44px] -m-2">
                 <input
                   id={inputId}
@@ -276,7 +254,7 @@ export default function LangkahDisarankan({
         })}
       </ol>
 
-      {/* Footer Aksi Bermanfaat: Salin Catatan Tindakan */}
+      {/* ===== FOOTER AKSI BERMANFAAT: SALIN CATATAN TINDAKAN ===== */}
       <div className="mt-4 pt-3.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2.5">
         <span className="text-xs text-gray-700">
           Centang tindakan yang telah selesai Anda ambil untuk memantau progres pencegahan.

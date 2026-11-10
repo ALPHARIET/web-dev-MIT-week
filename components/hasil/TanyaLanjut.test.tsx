@@ -90,19 +90,16 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       expect(screen.getByTestId('komponen-tanya-lanjut')).toBeDefined();
       expect(screen.getByText('Tanya Lanjut Seputar Hasil Ini')).toBeDefined();
 
-      // Counter pertanyaan awal
       const counter = screen.getByTestId('counter-pertanyaan');
       expect(counter.textContent).toContain('0/10 pertanyaan');
 
-      // Pesan awal sambutan asisten
       const pesanAsisten = screen.getByTestId('pesan-asisten');
       expect(pesanAsisten.textContent).toContain('Halo! Ada yang ingin kamu tanyakan lebih lanjut');
 
-      // Input teks dan tombol submit
       expect(screen.getByTestId('input-tanya-lanjut')).toBeDefined();
       const tombolKirim = screen.getByTestId('tombol-kirim-pertanyaan');
       expect(tombolKirim).toBeDefined();
-      expect((tombolKirim as HTMLButtonElement).disabled).toBe(true); // Disabled karena input masih kosong
+      expect((tombolKirim as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('mendukung kustomisasi className', () => {
@@ -121,7 +118,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
 
   describe('2. Pertanyaan Cepat Kontekstual & Kustom', () => {
     it('menghasilkan 3 pertanyaan cepat default sesuai halaman dan level risiko', () => {
-      // Halaman Chat
       const tanyaChatTinggi = dapatkanPertanyaanCepatDefault(dummyHasilChatTinggi);
       expect(tanyaChatTinggi).toHaveLength(3);
       expect(tanyaChatTinggi[0]).toContain('paling berbahaya');
@@ -140,7 +136,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       expect(tanyaChatTidak).toHaveLength(3);
       expect(tanyaChatTidak[0]).toContain('belum menunjukkan tanda mencurigakan');
 
-      // Halaman Link
       const tanyaLinkTinggi = dapatkanPertanyaanCepatDefault({
         ...dummyHasilLinkSedang,
         level: 'tinggi',
@@ -159,7 +154,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       expect(tanyaLinkTidak).toHaveLength(3);
       expect(tanyaLinkTidak[0]).toContain('benar-benar resmi');
 
-      // Halaman Video & Suara
       const tanyaVideoTinggi = dapatkanPertanyaanCepatDefault({
         ...dummyHasilVideoTidakDitemukan,
         level: 'tinggi',
@@ -193,7 +187,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       expect(btn1).toBeDefined();
       expect(btn2).toBeDefined();
 
-      // Target sentuh minimal 44px (Requirement 1.5, 27.2)
       expect(btn0.classList.contains('min-h-[44px]')).toBe(true);
       expect(btn1.classList.contains('min-h-[44px]')).toBe(true);
       expect(btn2.classList.contains('min-h-[44px]')).toBe(true);
@@ -233,7 +226,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
 
       expect(counterKarakter.textContent).toBe('39/1000 karakter');
 
-      // Tombol submit menjadi aktif saat input tidak kosong
       const tombolKirim = screen.getByTestId('tombol-kirim-pertanyaan');
       expect((tombolKirim as HTMLButtonElement).disabled).toBe(false);
       expect(tombolKirim.classList.contains('min-h-[44px]')).toBe(true);
@@ -275,13 +267,10 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       const tombolKirim = screen.getByTestId('tombol-kirim-pertanyaan');
       fireEvent.click(tombolKirim);
 
-      // Loading indikator tampil saat proses
       expect(screen.getByTestId('balon-loading')).toBeDefined();
 
-      // Input teks langsung dikosongkan
       expect((input as HTMLTextAreaElement).value).toBe('');
 
-      // Tunggu respons asisten muncul
       await waitFor(() => {
         expect(screen.getByText('Mengapa kode OTP tidak boleh diberikan?')).toBeDefined();
         expect(
@@ -294,7 +283,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       expect(mockHandler).toHaveBeenCalledTimes(1);
       expect(mockHandler).toHaveBeenCalledWith('Mengapa kode OTP tidak boleh diberikan?');
 
-      // Counter pertanyaan bertambah menjadi 1/10
       const counter = screen.getByTestId('counter-pertanyaan');
       expect(counter.textContent).toContain('1/10 pertanyaan');
     });
@@ -346,7 +334,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
         target: { value: 'Bagaimana cara melapor ke IASC?' },
       });
 
-      // Tekan Enter biasa (submit)
       fireEvent.keyDown(input, { key: 'Enter', shiftKey: false });
 
       await waitFor(() => {
@@ -410,7 +397,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       expect(parsedBody.konteksHasil).toEqual(dummyHasilChatTinggi);
       expect(Array.isArray(parsedBody.riwayat)).toBe(true);
 
-      // Pastikan jawaban muncul di DOM
       await waitFor(() => {
         expect(
           screen.getByText('Ini adalah jawaban dari endpoint backend /api/tanya.')
@@ -443,7 +429,6 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
         ).toBeDefined();
       });
 
-      // Status loading selesai
       expect(screen.queryByTestId('balon-loading')).toBeNull();
     });
 
@@ -488,40 +473,32 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
       const input = screen.getByTestId('input-tanya-lanjut');
       const tombolKirim = screen.getByTestId('tombol-kirim-pertanyaan');
 
-      // Kirim 10 pertanyaan berturut-turut
       for (let i = 1; i <= MAKS_PERTANYAAN_PER_SESI; i++) {
         fireEvent.change(input, { target: { value: `Pertanyaan ke-${i}` } });
         fireEvent.click(tombolKirim);
 
-        // Tunggu respon selesai
         await waitFor(() => {
           expect(screen.getByText(`Jawaban ke-${i} untuk: Pertanyaan ke-${i}`)).toBeDefined();
         });
 
-        // Verifikasi counter bertambah
         const counter = screen.getByTestId('counter-pertanyaan');
         expect(counter.textContent).toContain(`${i}/${MAKS_PERTANYAAN_PER_SESI} pertanyaan`);
       }
 
       expect(mockHandler).toHaveBeenCalledTimes(10);
 
-      // Saat batas 10 tercapai:
-      // 1. Banner batas pertanyaan tampil
       const bannerBatas = screen.getByTestId('banner-batas-pertanyaan');
       expect(bannerBatas).toBeDefined();
       expect(bannerBatas.textContent).toContain('Batas 10 pertanyaan per sesi telah tercapai');
 
-      // 2. Input dan tombol kirim dinonaktifkan
       expect((input as HTMLTextAreaElement).disabled).toBe(true);
       expect((tombolKirim as HTMLButtonElement).disabled).toBe(true);
 
-      // 3. Tombol pertanyaan cepat dinonaktifkan
       const btn0 = screen.getByTestId('btn-pertanyaan-cepat-0');
       expect((btn0 as HTMLButtonElement).disabled).toBe(true);
 
-      // Coba klik tombol pertanyaan cepat setelah batas tercapai
       fireEvent.click(btn0);
-      expect(mockHandler).toHaveBeenCalledTimes(10); // Tidak bertambah
+      expect(mockHandler).toHaveBeenCalledTimes(10);
     });
   });
 
@@ -546,12 +523,10 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
         expect(screen.getByText('Jawaban rahasia.')).toBeDefined();
       });
 
-      // Pastikan localStorage dan sessionStorage kosong dan tidak pernah dipanggil untuk riwayat tanya jawab
       expect(localStorage.length).toBe(0);
       expect(sessionStorage.getItem('tanya_lanjut')).toBeNull();
       expect(sessionStorage.getItem('riwayat_chat')).toBeNull();
 
-      // Memastikan tidak ada pemanggilan setItem untuk percakapan
       const callsToStorage = setItemSpyLocal.mock.calls.filter(
         ([key]) => key.includes('tanya') || key.includes('riwayat') || key.includes('percakapan')
       );
@@ -576,13 +551,10 @@ describe('components/hasil/TanyaLanjut.tsx (Task 17.2, Requirements 31.5, 32.4)'
         expect(screen.getByText('Pertanyaan di sesi pertama')).toBeDefined();
       });
 
-      // Unmount komponen (simulasi pengguna berpindah halaman atau menekan Cek Lagi)
       unmount();
 
-      // Mount kembali dengan hasil baru/sama
       render(<TanyaLanjut hasil={dummyHasilChatTinggi} />);
 
-      // Riwayat lama tidak ada, counter kembali ke 0/10
       expect(screen.queryByText('Pertanyaan di sesi pertama')).toBeNull();
       expect(screen.getByTestId('counter-pertanyaan').textContent).toContain('0/10 pertanyaan');
     });

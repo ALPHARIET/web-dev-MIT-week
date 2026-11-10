@@ -5,9 +5,6 @@ import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-li
 import CekChatPage from './page';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-/**
- * Helper untuk membuat mock File gambar dengan magic bytes valid
- */
 function createMockImageFile(name: string, type: string, magicBytes: number[], size = 64): File {
   const buffer = new Uint8Array(size);
   magicBytes.forEach((byte, index) => {
@@ -47,7 +44,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock Canvas dan ImageBitmap untuk kompresGambar di JSDOM
     if (typeof HTMLCanvasElement.prototype.toBlob !== 'function') {
       HTMLCanvasElement.prototype.toBlob = vi.fn(function (callback, type) {
         callback(new Blob(['mock-compressed-data'], { type: type || 'image/jpeg' }));
@@ -86,7 +82,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       } as unknown as ImageBitmap);
     }
 
-    // Mock sessionStorage
     const sessionStorageMock = (() => {
       let store: Record<string, string> = {};
       return {
@@ -107,7 +102,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       writable: true,
     });
 
-    // Mock URL.createObjectURL & revokeObjectURL
     if (typeof window.URL.createObjectURL !== 'function') {
       window.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
     } else {
@@ -119,7 +113,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
     }
 
-    // Default mock fetch
     global.fetch = vi.fn();
   });
 
@@ -142,11 +135,9 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       expect(kotakPrivasi).toBeDefined();
       expect(kotakPrivasi.getAttribute('data-halaman')).toBe('chat');
 
-      // Memastikan menyebutkan AI Cek Penipuan dan peringatan data sensitif
       expect(within(kotakPrivasi).getAllByText(/AI Cek Penipuan/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/jangan masukkan OTP, PIN, password, atau nomor rekening asli/i)).toBeDefined();
 
-      // Memastikan letak KotakPrivasi berada sebelum area input di DOM
       const areaInput = screen.getByTestId('area-input-chat');
       expect(
         kotakPrivasi.compareDocumentPosition(areaInput) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -170,18 +161,14 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       const tombolContoh = screen.getByTestId('tombol-coba-contoh');
       fireEvent.click(tombolContoh);
 
-      // Hasil simulasi langsung muncul
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Verifikasi fetch API TIDAK pernah dipanggil
       expect(global.fetch).not.toHaveBeenCalled();
 
-      // Verifikasi hasil simulasi berisi temuan dari data contoh
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
       expect(screen.getByTestId('blok-temuan')).toBeDefined();
-      // Verifikasi sorotan transkrip muncul pada skenario contoh (Requirement CH-07)
       expect(screen.getByTestId('sorotan-transkrip')).toBeDefined();
     });
   });
@@ -191,7 +178,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       render(<CekChatPage />);
 
       const textarea = screen.getByRole('textbox', { name: /teks percakapan chat/i });
-      // Input teks yang memuat data sensitif: nomor HP dan nomor rekening
       fireEvent.change(textarea, {
         target: {
           value: 'Halo kak, mohon transfer ke nomor 081234567890 rekening 123456789012 sebesar 500rb.',
@@ -201,17 +187,14 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(tombolPeriksa);
 
-      // Modal PratinjauSensor harus terbuka
       await waitFor(() => {
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
 
-      // Verifikasi judul modal dan badge [disensor]
       expect(screen.getByText(/Pratinjau Sensor Data Sensitif/i)).toBeDefined();
       const badgesDisensor = screen.getAllByTestId('badge-disensor');
       expect(badgesDisensor.length).toBeGreaterThanOrEqual(1);
 
-      // Verifikasi fetch belum dipanggil sebelum konfirmasi
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -230,16 +213,13 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
 
-      // Klik tombol Batal
       const btnBatal = screen.getByTestId('btn-batal');
       fireEvent.click(btnBatal);
 
-      // Modal harus tertutup
       await waitFor(() => {
         expect(screen.queryByTestId('modal-pratinjau-dialog')).toBeNull();
       });
 
-      // Teks tetap ada di textarea
       expect((screen.getByRole('textbox', { name: /teks percakapan chat/i }) as HTMLTextAreaElement).value).toBe(
         'Pesan chat dengan nomor 081234567890 penting.'
       );
@@ -268,7 +248,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
         expect(screen.getByTestId('modal-pratinjau-dialog')).toBeDefined();
       });
 
-      // Klik "Lanjut Periksa"
       const btnLanjut = screen.getByTestId('btn-lanjut-periksa');
       fireEvent.click(btnLanjut);
 
@@ -276,7 +255,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
       });
 
-      // Periksa payload fetch: teks yang dikirim adalah teks tersensor
       const [url, requestInit] = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(url).toBe('/api/cek-chat');
       expect(requestInit.method).toBe('POST');
@@ -287,7 +265,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       expect(parsedBody.teks).not.toContain('081234567890');
       expect(parsedBody.levelMinimum).toBeDefined();
 
-      // KomponenHasil menampilkan hasil dari API
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
         expect(screen.getByText(/Hasil dari Gemini AI/i)).toBeDefined();
@@ -317,30 +294,24 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
 
       fireEvent.click(screen.getByTestId('btn-lanjut-periksa'));
 
-      // Tunggu hingga fallback ditampilkan
       await waitFor(() => {
         expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       });
 
-      // Memeriksa teks keterangan wajib sesuai Requirement 15.1
       expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       expect(screen.getAllByText(/analisis AI sedang tidak tersedia/i).length).toBeGreaterThanOrEqual(1);
 
-      // Memeriksa KomponenHasil tetap tampil dengan hasil aturan lokal (Requirement 15.3)
       expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       expect(screen.getByText(/Waspada tinggi/i)).toBeDefined();
       expect(screen.getByText(/Permintaan kode OTP, PIN, atau kata sandi/i)).toBeDefined();
 
-      // Memeriksa tombol "Coba lagi" tersedia (Requirement 15.2)
       expect(screen.getByTestId('tombol-coba-lagi')).toBeDefined();
     });
 
     it('menjalankan pemanggilan ulang API saat tombol "Coba lagi" ditekan (Requirement 15.2)', async () => {
-      // Panggilan 1: gagal
       (global.fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error('Network error')
       );
-      // Panggilan 2: berhasil
       (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         ok: true,
         json: async () => mockApiHasil,
@@ -361,23 +332,19 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
 
       fireEvent.click(screen.getByTestId('btn-lanjut-periksa'));
 
-      // Tunggu hingga fallback muncul
       await waitFor(() => {
         expect(screen.getByTestId('banner-fallback-ai')).toBeDefined();
       });
 
       expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      // Klik tombol "Coba lagi"
       const tombolCobaLagi = screen.getByTestId('tombol-coba-lagi');
       fireEvent.click(tombolCobaLagi);
 
-      // Verifikasi API dipanggil kembali
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
       });
 
-      // Banner fallback hilang dan hasil sukses ditampilkan
       await waitFor(() => {
         expect(screen.queryByTestId('banner-fallback-ai')).toBeNull();
         expect(screen.getByText(/Hasil dari Gemini AI/i)).toBeDefined();
@@ -414,14 +381,11 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Cross link "Cek link ini" harus tampil
       const btnCekLink = screen.getByText('Cek link ini');
       expect(btnCekLink).toBeDefined();
 
-      // Klik tombol "Cek link ini"
       fireEvent.click(btnCekLink);
 
-      // Pastikan sessionStorage.setItem('url_dari_chat', url) terpanggil (Requirement 34.2)
       expect(window.sessionStorage.setItem).toHaveBeenCalledWith(
         'url_dari_chat',
         'https://hadiah-kejutan.xyz/klaim'
@@ -456,7 +420,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // Cross link ke Cek Video & Suara harus tampil di area-cross-links
       const areaCrossLinks = screen.getByTestId('area-cross-links');
       const linkVideo = within(areaCrossLinks).getByText('Cek Video & Suara');
       expect(linkVideo).toBeDefined();
@@ -468,25 +431,21 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
     it('mengosongkan hasil dan mengembalikan halaman ke kondisi awal siap menerima input baru (Requirements 35.1, 35.3)', async () => {
       render(<CekChatPage />);
 
-      // 1. Pilih contoh skenario
       fireEvent.click(screen.getByTestId('tombol-coba-contoh'));
 
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });
 
-      // 2. Klik tombol "Cek lagi"
       const tombolCekLagi = screen.getByTestId('tombol-cek-lagi');
       expect(tombolCekLagi).toBeDefined();
       fireEvent.click(tombolCekLagi);
 
-      // 3. Verifikasi halaman kembali ke kondisi awal
       await waitFor(() => {
         expect(screen.queryByTestId('komponen-hasil')).toBeNull();
         expect(screen.getByTestId('area-input-chat')).toBeDefined();
       });
 
-      // Area input kosong
       const textarea = screen.getByRole('textbox', { name: /teks percakapan chat/i }) as HTMLTextAreaElement;
       expect(textarea.value).toBe('');
     });
@@ -501,14 +460,11 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
 
       render(<CekChatPage />);
 
-      // Pindah ke tab Unggah screenshot
       const tabScreenshot = screen.getByRole('tab', { name: /unggah screenshot/i });
       fireEvent.click(tabScreenshot);
 
-      // Peringatan screenshot tidak bisa disensor otomatis tampil (Requirement 12.3)
       expect(screen.getByTestId('peringatan-privasi-screenshot')).toBeDefined();
 
-      // Pilih file gambar
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(input, {
         target: { files: [validJpgFile] },
@@ -519,14 +475,11 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
         expect(screen.getByTestId('tombol-periksa').hasAttribute('disabled')).toBe(false);
       });
 
-      // Klik tombol Periksa
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(tombolPeriksa);
 
-      // Tidak boleh membuka modal PratinjauSensor teks
       expect(screen.queryByTestId('modal-pratinjau-dialog')).toBeNull();
 
-      // API langsung dipanggil
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
       });
@@ -537,7 +490,6 @@ describe('app/cek-chat/page.tsx — Halaman Cek Chat (Task 7.3)', () => {
       expect(parsedBody.mode).toBe('screenshot');
       expect(Array.isArray(parsedBody.gambar)).toBe(true);
 
-      // Hasil ditampilkan
       await waitFor(() => {
         expect(screen.getByTestId('komponen-hasil')).toBeDefined();
       });

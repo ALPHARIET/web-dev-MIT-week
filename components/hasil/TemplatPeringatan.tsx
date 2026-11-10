@@ -13,10 +13,6 @@ export interface TemplatPeringatanProps {
   tombolLabel?: string;
 }
 
-/**
- * Mendeteksi nama merek atau pihak yang dicatut dalam modus berdasarkan temuan dan ringkasan.
- * Menggunakan data/merek.json dan kata kunci umum tanpa menyertakan data pribadi pengguna.
- */
 export function deteksiPihakDicatut(hasil: FormatDataHasil): string {
   const kumpulanTeks = [
     hasil.ringkasan || '',
@@ -25,7 +21,6 @@ export function deteksiPihakDicatut(hasil: FormatDataHasil): string {
     .join(' ')
     .toLowerCase();
 
-  // 1. Cek merek dari merek.json
   if (Array.isArray(merekData?.merek)) {
     for (const m of merekData.merek) {
       const namaRegex = new RegExp(`\\b${m.nama.toLowerCase()}\\b`, 'i');
@@ -44,7 +39,6 @@ export function deteksiPihakDicatut(hasil: FormatDataHasil): string {
     }
   }
 
-  // 2. Cek institusi atau pihak umum berdasarkan konteks
   if (/\b(?:kurir|paket|ekspedisi|pengiriman)\b/i.test(kumpulanTeks)) {
     return 'layanan kurir / ekspedisi paket';
   }
@@ -73,7 +67,6 @@ export function deteksiPihakDicatut(hasil: FormatDataHasil): string {
     return 'penyelenggara undian / hadiah';
   }
 
-  // 3. Fallback berdasarkan jenis halaman
   if (hasil.halaman === 'video') {
     return 'tokoh publik atau kenalan';
   }
@@ -84,10 +77,6 @@ export function deteksiPihakDicatut(hasil: FormatDataHasil): string {
   return 'pihak resmi tertentu';
 }
 
-/**
- * Mendeteksi jenis permintaan atau modus utama penipuan (misal OTP, transfer, link).
- * Diformulasikan secara umum tanpa memuat data spesifik pengguna.
- */
 export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
   const situasi = hasil.situasi_darurat || [];
   const teksJudul = (hasil.temuan || []).map((t) => t.judul).join(' ').toLowerCase();
@@ -98,7 +87,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     .join(' ')
     .toLowerCase();
 
-  // 1. Modus unduh file APK berbahaya (prioritas jika terdeteksi file APK)
   if (
     /\b(?:apk|\.apk|file apk)\b/i.test(teksJudul) ||
     /\b(?:unduh apk|pasang aplikasi|file apk)\b/i.test(teks)
@@ -106,7 +94,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     return 'mengunduh dan memasang file APK berbahaya';
   }
 
-  // 2. Modus tugas like & follow / deposit
   if (
     /\b(?:like|follow|tugas|komisi|pekerjaan paruh waktu)\b/i.test(teksJudul) ||
     /\b(?:tugas like|komisi like)\b/i.test(teks)
@@ -114,7 +101,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     return 'tugas like media sosial dan setoran dana';
   }
 
-  // 3. Modus permintaan kode OTP / PIN rahasia
   if (
     situasi.includes('kirim_otp') ||
     /\b(?:minta otp|kirimkan otp|kode otp|kode 6 digit|minta pin|minta password)\b/i.test(teks) ||
@@ -123,7 +109,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     return 'kode OTP, PIN, atau verifikasi rahasia';
   }
 
-  // 4. Modus transfer / deposit dana
   if (
     situasi.includes('transfer') ||
     /\b(?:transfer|deposit|kirim uang|biaya di muka|talangan)\b/i.test(teks)
@@ -131,7 +116,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     return 'transfer dana atau deposit uang';
   }
 
-  // 5. Modus klik tautan / phishing link
   if (
     situasi.includes('klik_link') ||
     /\b(?:klik link|buka tautan|tautan palsu|phishing)\b/i.test(teks) ||
@@ -140,7 +124,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     return 'klik tautan atau link mencurigakan';
   }
 
-  // 6. Modus pengisian data pribadi
   if (
     situasi.includes('isi_data') ||
     /\b(?:data pribadi|isi data|formulir|nomor kartu)\b/i.test(teks)
@@ -148,7 +131,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
     return 'pengisian data pribadi atau informasi rekening';
   }
 
-  // 7. Modus pengambilalihan akun
   if (
     situasi.includes('akun_diambil') ||
     /\b(?:ambil alih|perangkat tertaut|hack)\b/i.test(teks)
@@ -159,10 +141,6 @@ export function deteksiPermintaanModus(hasil: FormatDataHasil): string {
   return 'transfer dana, kode OTP, atau klik tautan';
 }
 
-/**
- * Mengambil tanda bahaya utama dari temuan untuk disertakan ke dalam templat peringatan.
- * Setiap tanda dibersihkan melalui sensorTeks untuk menjaga privasi pengguna.
- */
 export function dapatkanTandaBahayaUtama(hasil: FormatDataHasil): string[] {
   if (hasil.temuan && hasil.temuan.length > 0) {
     const items = hasil.temuan
@@ -181,16 +159,6 @@ export function dapatkanTandaBahayaUtama(hasil: FormatDataHasil): string[] {
   ];
 }
 
-/**
- * Menghasilkan templat pesan peringatan dinamis untuk keluarga & rekan.
- *
- * Sesuai spesifikasi PRD & Task 21.2:
- * 1. Judul modus & pihak yang dicatut
- * 2. Tanda bahaya utama yang perlu diwaspadai
- * 3. Langkah perlindungan: jangan dibalas, cek lewat kontak resmi, jangan transfer/kirim OTP
- * 4. Tanpa menyertakan data pribadi pengguna (Requirement P1)
- * 5. Bebas dari kata terlarang sebagai kesimpulan (Requirements 6.7, 30.1)
- */
 export function buatTemplatPeringatan(hasil: FormatDataHasil): string {
   const pihak = deteksiPihakDicatut(hasil);
   const modus = deteksiPermintaanModus(hasil);
@@ -216,15 +184,6 @@ Mari saling mengingatkan keluarga dan rekan agar selalu waspada dan terhindar da
   return sensorTeks(pesan).hasil;
 }
 
-/**
- * Komponen TemplatPeringatan
- *
- * Menyediakan tombol "Kirim peringatan" yang membuka dialog modal berisi
- * templat pesan siap kirim untuk keluarga & kerabat. Dilengkapi tombol Salin
- * dan Bagikan langsung ke WhatsApp.
- *
- * References: Requirements P1 — Peringatkan orang lain, 27.2
- */
 export function TemplatPeringatan({
   hasil,
   className = '',
@@ -239,7 +198,6 @@ export function TemplatPeringatan({
   const dialogId = useId();
   const textareaId = useId();
 
-  // Sinkronisasi teks ketika data hasil berubah
   useEffect(() => {
     setTeksPesan(buatTemplatPeringatan(hasil));
   }, [hasil]);
@@ -255,7 +213,6 @@ export function TemplatPeringatan({
     onTutup?.();
   }, [onTutup]);
 
-  // Bersihkan timeout saat komponen unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -264,7 +221,6 @@ export function TemplatPeringatan({
     };
   }, []);
 
-  // Tangani tombol Escape untuk menutup dialog modal
   useEffect(() => {
     if (!isOpen) return;
 
@@ -283,7 +239,6 @@ export function TemplatPeringatan({
       if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         await navigator.clipboard.writeText(teksPesan);
       } else {
-        // Fallback untuk environment tanpa Clipboard API
         const textArea = document.createElement('textarea');
         textArea.value = teksPesan;
         textArea.style.position = 'fixed';
@@ -303,7 +258,6 @@ export function TemplatPeringatan({
         setTersalin(false);
       }, 2500);
     } catch {
-      // Fallback feedback visual
       setTersalin(true);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
@@ -312,12 +266,11 @@ export function TemplatPeringatan({
     }
   };
 
-  // URL pembagian WhatsApp sesuai format standar
   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(teksPesan)}`;
 
   return (
     <div className={`inline-block ${className}`.trim()}>
-      {/* Tombol Pemicu Pembuka Dialog Modal (Target sentuh minimal 44px) */}
+      {/* ===== TOMBOL PEMICU PEMBUKA DIALOG MODAL ===== */}
       <button
         type="button"
         data-testid="tombol-kirim-peringatan"
@@ -343,7 +296,7 @@ export function TemplatPeringatan({
         <span>{tombolLabel}</span>
       </button>
 
-      {/* Dialog Modal Templat Peringatan */}
+      {/* ===== DIALOG MODAL TEMPLAT PERINGATAN ===== */}
       {isOpen && (
         <div
           data-testid="overlay-templat-peringatan"
@@ -362,7 +315,7 @@ export function TemplatPeringatan({
             data-testid="dialog-templat-peringatan"
             className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden my-8"
           >
-            {/* Header Modal */}
+            {/* ===== HEADER MODAL ===== */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50/80">
               <div className="flex items-center gap-2.5">
                 <div
@@ -393,7 +346,7 @@ export function TemplatPeringatan({
                 </div>
               </div>
 
-              {/* Tombol Silang Tutup Modal (min-h-[44px], min-w-[44px]) */}
+              {/* ===== TOMBOL SILANG TUTUP MODAL ===== */}
               <button
                 type="button"
                 data-testid="tombol-silang-templat"
@@ -417,7 +370,7 @@ export function TemplatPeringatan({
               </button>
             </div>
 
-            {/* Isi Konten Modal */}
+            {/* ===== ISI KONTEN MODAL ===== */}
             <div className="p-5 space-y-4">
               <p
                 id={`deskripsi-${dialogId}`}
@@ -450,7 +403,7 @@ export function TemplatPeringatan({
                 />
               </div>
 
-              {/* Status Feedback Salin Teks */}
+              {/* ===== STATUS FEEDBACK SALIN TEKS ===== */}
               {tersalin && (
                 <div
                   role="status"
@@ -476,9 +429,9 @@ export function TemplatPeringatan({
               )}
             </div>
 
-            {/* Footer Modal: Tombol Aksi (Seluruh tombol memenuhi min-h-[44px]) */}
+            {/* ===== FOOTER MODAL: TOMBOL AKSI ===== */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 px-5 py-4 bg-gray-50/80 border-t border-gray-200">
-              {/* Tombol Salin Teks */}
+              {/* ===== TOMBOL SALIN TEKS ===== */}
               <button
                 type="button"
                 data-testid="tombol-salin-templat"
@@ -519,7 +472,7 @@ export function TemplatPeringatan({
                 )}
               </button>
 
-              {/* Tombol Bagikan ke WhatsApp */}
+              {/* ===== TOMBOL BAGIKAN KE WHATSAPP ===== */}
               <a
                 href={whatsappUrl}
                 target="_blank"
@@ -538,7 +491,7 @@ export function TemplatPeringatan({
                 <span>Bagikan ke WhatsApp</span>
               </a>
 
-              {/* Tombol Tutup */}
+              {/* ===== TOMBOL TUTUP ===== */}
               <button
                 type="button"
                 data-testid="tombol-tutup-modal"

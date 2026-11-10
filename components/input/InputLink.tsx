@@ -3,37 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export interface InputLinkProps {
-  /** Callback saat form disubmit dengan URL yang sudah divalidasi */
   onSubmit: (url: string) => void | Promise<void>;
-  /** Status sedang memproses / memeriksa URL */
   isLoading?: boolean;
-  /** Nilai URL awal (misal dari state navigasi chat atau tombol contoh) */
   initialUrl?: string;
-  /** Kelas CSS tambahan untuk styling form */
   className?: string;
-  /** Callback saat kolom input difokuskan atau disentuh (Requirement LN-09) */
   onFocus?: () => void;
-  /** Callback saat tombol Periksa ditekan sebelum kolom input terisi (Requirement LN-09) */
   onSubmitEmpty?: () => void;
-  /** Callback saat pengguna mulai mengetik di input (Requirement LN-09) */
   onTyping?: () => void;
 }
 
-/**
- * Komponen InputLink untuk memasukkan alamat URL atau nama domain yang akan diperiksa.
- *
- * Fitur & Keamanan Kritis:
- * 1. Satu kolom input untuk URL atau domain dengan batas maksimal 2.000 karakter (Requirement 17.1).
- * 2. Keamanan Kritis: Link pratinjau ditampilkan sebagai TEKS BIASA, TIDAK PERNAH sebagai tautan
- *    yang bisa diklik (tag <a> atau link aktif dilarang keras untuk URL input pengguna) (Requirements 17.2, 17.5).
- * 3. Validasi input: tidak boleh kosong atau hanya berupa spasi.
- * 4. Tombol bersihkan input jika kolom sudah terisi dengan target sentuh minimal 44px (Requirement 27.2).
- * 5. Teks pratinjau alamat yang akan diperiksa yang mudah dibaca/disalin sebagai teks biasa.
- * 6. Tombol utama "Periksa" dengan target sentuh minimal 44px (Requirement 27.2).
- * 7. Bebas dari klaim atau kata terlarang (aman, pasti, terbukti, 100%) sebagai kesimpulan (Requirement 30.1).
- *
- * References: Requirements 17.1, 17.2, 17.5, 27.2, 30.1
- */
 export function InputLink({
   onSubmit,
   isLoading = false,
@@ -47,8 +25,6 @@ export function InputLink({
   const [error, setError] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sinkronkan state lokal jika nilai initialUrl dari luar berubah
-  // (misal via navigasi Cek Chat atau tombol Coba Contoh)
   useEffect(() => {
     if (initialUrl !== undefined) {
       setUrl(initialUrl);
@@ -60,7 +36,6 @@ export function InputLink({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Maksimal 2.000 karakter (Requirement 17.1)
     if (val.length <= 2000) {
       setUrl(val);
       if (error && val.trim()) {
@@ -80,7 +55,6 @@ export function InputLink({
     e.preventDefault();
     const trimmed = url.trim();
 
-    // Validasi: input tidak boleh kosong atau hanya spasi
     if (!trimmed) {
       setError('Masukkan URL atau nama domain yang ingin diperiksa.');
       inputRef.current?.focus();
@@ -102,7 +76,7 @@ export function InputLink({
       data-testid="form-input-link"
       className={`w-full flex flex-col gap-4 ${className}`.trim()}
     >
-      {/* Bagian Input URL */}
+      {/* ===== BAGIAN INPUT URL ===== */}
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="input-link-field"
@@ -116,7 +90,7 @@ export function InputLink({
         </p>
 
         <div className="relative flex items-center mt-1">
-          {/* Ikon Tautan di sisi kiri input */}
+          {/* ===== IKON TAUTAN DI SISI KIRI INPUT ===== */}
           <div
             className="absolute left-3.5 flex items-center pointer-events-none text-gray-400"
             aria-hidden="true"
@@ -166,7 +140,7 @@ export function InputLink({
             } disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed`}
           />
 
-          {/* Tombol Bersihkan Input (hanya jika ada isi) */}
+          {/* ===== TOMBOL BERSIHKAN INPUT ===== */}
           {isFilled && !isLoading && (
             <button
               type="button"
@@ -190,7 +164,7 @@ export function InputLink({
           )}
         </div>
 
-        {/* Counter Karakter & Info Bawah Input */}
+        {/* ===== COUNTER KARAKTER & INFO BAWAH INPUT ===== */}
         <div
           id="input-link-hint"
           className="flex items-center justify-between text-xs text-gray-500 px-1 mt-0.5"
@@ -204,7 +178,6 @@ export function InputLink({
           </span>
         </div>
 
-        {/* Pesan Validasi Error jika input kosong / tidak valid */}
         {error && (
           <p
             id="input-link-error"
@@ -231,7 +204,7 @@ export function InputLink({
         )}
       </div>
 
-      {/* Pratinjau Teks Alamat (Keamanan Kritis: TEKS BIASA, TIDAK PERNAH BISA DIKLIK) */}
+      {/* ===== PRATINJAU TEKS ALAMAT ===== */}
       {trimmedUrl && (
         <div
           data-testid="pratinjau-alamat"
@@ -249,11 +222,6 @@ export function InputLink({
             </span>
           </div>
 
-          {/*
-            PENTING: Elemen ini secara mutlak TIDAK BOLEH berupa tag <a> atau tautan klik.
-            Alamat ditampilkan sebagai teks biasa murni menggunakan tag <div> / <span>
-            untuk mencegah pengguna secara tidak sengaja membuka tautan berbahaya.
-          */}
           <div
             data-testid="teks-pratinjau-url"
             className="font-mono text-sm text-gray-900 break-all select-all bg-white p-3 rounded-lg border border-gray-200 leading-relaxed shadow-xs"
@@ -284,7 +252,7 @@ export function InputLink({
         </div>
       )}
 
-      {/* Tombol Utama Periksa (Target sentuh minimal 44px - Requirement 27.2) */}
+      {/* ===== TOMBOL UTAMA PERIKSA ===== */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 pt-1">
         <button
           type="submit"

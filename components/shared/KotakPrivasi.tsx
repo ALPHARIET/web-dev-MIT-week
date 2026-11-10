@@ -16,10 +16,6 @@ export interface InfoPrivasiHalaman {
   catatanTransparansi?: string;
 }
 
-/**
- * Konfigurasi informasi privasi dan pihak ketiga spesifik per halaman.
- * Sesuai Requirement 8.3, 8.4, 8.5
- */
 export const DATA_PRIVASI_PER_HALAMAN: Record<HalamanPrivasi, InfoPrivasiHalaman> = {
   chat: {
     namaHalaman: 'Cek Chat',
@@ -35,17 +31,14 @@ export const DATA_PRIVASI_PER_HALAMAN: Record<HalamanPrivasi, InfoPrivasiHalaman
   },
   video: {
     namaHalaman: 'Cek Video & Suara',
-    layananPihakKetiga: ['Lokal (Tanpa Server Luar)'],
+    layananPihakKetiga: ['Analisis AI'],
     deskripsiLayanan:
-      'Penilaian konteks situasi dijalankan sepenuhnya di peramban tanpa mengirim data ke server luar.',
+      'Saat kamu menekan Periksa, beberapa potongan gambar dan maksimal 60 detik suara dikirim ke layanan AI untuk dicek. Video utuh tetap di perangkatmu.',
     catatanTransparansi:
-      'Jika fitur analisis media (P1) diaktifkan, frame gambar atau audio dikirim ke Reality Defender tanpa menyimpan file.',
+      'File tidak kami simpan. Pilihan "Jawab pertanyaan" berjalan sepenuhnya di peramban tanpa mengirim data ke server luar.',
   },
 };
 
-/**
- * Ikon Perisai dengan Gembok Privasi (Shield Lock)
- */
 export function ShieldLockIcon({ className = 'w-5 h-5' }: { className?: string }): React.JSX.Element {
   return (
     <svg
@@ -67,9 +60,6 @@ export function ShieldLockIcon({ className = 'w-5 h-5' }: { className?: string }
   );
 }
 
-/**
- * Ikon Peringatan Segitiga (Alert Warning)
- */
 export function AlertWarningIcon({ className = 'w-5 h-5' }: { className?: string }): React.JSX.Element {
   return (
     <svg
@@ -91,9 +81,6 @@ export function AlertWarningIcon({ className = 'w-5 h-5' }: { className?: string
   );
 }
 
-/**
- * Ikon Centang (Checkmark) untuk Jaminan Privasi
- */
 export function CheckCircleIcon({ className = 'w-4 h-4' }: { className?: string }): React.JSX.Element {
   return (
     <svg
@@ -113,22 +100,6 @@ export function CheckCircleIcon({ className = 'w-4 h-4' }: { className?: string 
   );
 }
 
-/**
- * Komponen KotakPrivasi
- *
- * Ditampilkan di setiap halaman cek sebelum area input (Requirement 8.1, 8.6).
- * Memuat:
- * 1. Peringatan utama perlindungan data sensitif (Requirement 8.2):
- *    "jangan masukkan OTP, PIN, password, atau nomor rekening asli"
- * 2. Daftar layanan pihak ketiga spesifik per halaman (Requirement 8.3, 8.4, 8.5):
- *    - Cek Chat: Google Gemini untuk analisis teks/screenshot
- *    - Cek Link: Google Safe Browsing & RDAP, link tidak dibuka
- *    - Cek Video & Suara: Dijalankan sepenuhnya di peramban tanpa mengirim data
- * 3. Jaminan privasi: Tanpa login, input tidak disimpan setelah sesi selesai
- * 4. Desain ramah pengguna, ikon perisai/gembok privasi, kontras WCAG AA
- *
- * References: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 27.3, 31.1, 31.3
- */
 export function KotakPrivasi({
   halaman,
   className = '',
@@ -143,7 +114,6 @@ export function KotakPrivasi({
       data-halaman={halaman}
       className={`rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 text-gray-900 shadow-sm transition-all duration-200 space-y-4 ${className}`.trim()}
     >
-      {/* Header Kotak Privasi: Ikon Perisai & Judul */}
       <div className="flex items-center gap-3">
         <div
           className="flex h-8 w-8 items-center justify-center shrink-0"
@@ -169,7 +139,6 @@ export function KotakPrivasi({
         </div>
       </div>
 
-      {/* Peringatan Utama: Data Sensitif (Requirement 8.2) - Desain flat callout beraksen kiri tanpa bubble rounded berlebih */}
       <div
         data-testid="peringatan-sensitif"
         className="border-l-4 border-amber-500 bg-amber-50/80 px-3.5 py-2.5 text-xs sm:text-sm text-amber-950 flex items-start gap-2.5 rounded-r-md"
@@ -183,7 +152,6 @@ export function KotakPrivasi({
         </div>
       </div>
 
-      {/* Rincian Pengiriman Data & Pihak Ketiga (Requirement 8.3, 8.4, 8.5) - Alur datar dengan divider tipis */}
       <div
         data-testid="layanan-pihak-ketiga"
         className="pt-3 border-t border-gray-100 space-y-2"
@@ -222,7 +190,7 @@ export function KotakPrivasi({
         )}
       </div>
 
-      {/* Jaminan Privasi (Tanpa Login & Input Tidak Disimpan) */}
+      {/* ===== JAMINAN PRIVASI ===== */}
       <div
         data-testid="jaminan-privasi"
         className="pt-3 border-t border-gray-100 space-y-1.5 text-xs text-gray-600"

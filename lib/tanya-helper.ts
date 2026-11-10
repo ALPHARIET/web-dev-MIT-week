@@ -1,26 +1,11 @@
-/**
- * lib/tanya-helper.ts
- *
- * Helper functions untuk fitur Tanya Lanjut (Chatbot Keamanan Digital):
- * - isPertanyaanKeamananDigital: verifikasi filter topik keamanan digital
- * - bangunJawabanEdukasiBawaan: jawaban fallback edukatif tanpa AI
- *
- * References: Requirements 30.1, 30.2, 31.5, 32.4
- */
-
 import type { FormatDataHasil } from './hasil';
 
-/**
- * Mengecek apakah pertanyaan berkaitan dengan keamanan digital,
- * pencegahan penipuan online, atau perlindungan privasi.
- */
 export function isPertanyaanKeamananDigital(
   pertanyaan: string,
   adaKonteksHasil = false
 ): boolean {
   const p = pertanyaan.toLowerCase();
 
-  // Jika ada konteks pemeriksaan sebelumnya, izinkan pertanyaan tindak lanjut atau klarifikasi
   if (adaKonteksHasil) {
     const followupKeywords = [
       'selanjutnya', 'berikutnya', 'harus apa', 'gimana', 'bagaimana', 'apa yang harus',
@@ -33,7 +18,6 @@ export function isPertanyaanKeamananDigital(
     }
   }
 
-  // Kata kunci keamanan digital & modus penipuan
   const securityKeywords = [
     'penipuan', 'tipu', 'penipu', 'scam', 'phish', 'phishing', 'hacker', 'peretas',
     'bajak', 'bobol', 'curi', 'modus', 'jebakan', 'manipulasi', 'chat', 'wa', 'whatsapp',
@@ -55,17 +39,10 @@ export function isPertanyaanKeamananDigital(
   return securityKeywords.some((kw) => p.includes(kw));
 }
 
-/**
- * Membangun jawaban edukatif bawaan (fallback) ketika Gemini API
- * tidak tersedia, API key tidak disetel, error, atau timeout.
- *
- * References: Requirements 30.1, 30.2, 31.5, 32.4
- */
 export function bangunJawabanEdukasiBawaan(
   pertanyaan: string,
   konteksHasil?: FormatDataHasil
 ): string {
-  // 1. Tolak permintaan membuat skrip penipuan atau peretasan
   if (
     /\b(?:buatkan|buat|bikin|ajarkan)\b.*?\b(?:pesan|skrip|script|trik)?\s*(?:penipuan|phishing|menipu|scam|hack|bobol|bajak)\b/i.test(
       pertanyaan
@@ -75,12 +52,10 @@ export function bangunJawabanEdukasiBawaan(
     return 'Mohon maaf, saya tidak dapat membantu membuat pesan penipuan, skrip tipu muslihat, atau cara melakukan peretasan. Saya hanya dapat membantu mengidentifikasi potensi penipuan dan memberikan langkah perlindungan diri.';
   }
 
-  // 2. Tolak dengan sopan jika di luar topik keamanan digital
   if (!isPertanyaanKeamananDigital(pertanyaan, !!konteksHasil)) {
     return 'Mohon maaf, saya hanya dapat menjawab pertanyaan seputar keamanan digital, pencegahan penipuan online, dan perlindungan privasi. Ada yang ingin kamu tanyakan terkait pesan, link, atau panggilan yang mencurigakan?';
   }
 
-  // 3. Larang membalas atau memancing pelaku
   if (
     /\b(?:balas|membalas|pancing|memancing|debat|mendebat|prank|mengerjai|kerjai)\b/i.test(
       pertanyaan
@@ -89,7 +64,6 @@ export function bangunJawabanEdukasiBawaan(
     return 'Sangat tidak disarankan untuk membalas, mendebat, atau memancing pelaku penipuan. Hal ini dapat menandakan nomormu aktif, mengundang pesan penipuan lain, atau memicu risiko privasimu. Langkah terbaik adalah menghentikan komunikasi, memblokir nomornya, dan melapor ke kanal resmi jika diperlukan.';
   }
 
-  // 4. Larangan meminta atau membagikan data pribadi / rahasia
   if (
     /\b(?:minta|berikan|kirim|kasih|bagikan)\s+(?:otp|pin|password|kata sandi|nomor rekening|rekening)\b/i.test(
       pertanyaan
@@ -98,7 +72,6 @@ export function bangunJawabanEdukasiBawaan(
     return 'Jangan pernah membagikan kode OTP, PIN, password, atau nomor rekening kepada siapa pun, termasuk pihak yang mengaku dari instansi resmi atau bank. Pihak bank atau perusahaan resmi tidak akan pernah meminta kode OTP atau PIN kamu.';
   }
 
-  // 5. Sudah klik link atau membuka situs
   if (
     /\b(?:klik|buka)\b.*?\b(?:link|tautan|web|situs|halaman)\w*/i.test(
       pertanyaan
@@ -116,7 +89,6 @@ export function bangunJawabanEdukasiBawaan(
     ].join('\n');
   }
 
-  // 6. Penjelasan gembok HTTPS
   if (/\b(?:https|gembok|ssl|sertifikat)\b/i.test(pertanyaan)) {
     return [
       'Ikon gembok (HTTPS) hanya menunjukkan bahwa sambungan komunikasi antara browsermu dan situs tersebut dienkripsi, bukan jaminan bahwa situs atau pemiliknya dapat dipercaya.',
@@ -124,7 +96,6 @@ export function bangunJawabanEdukasiBawaan(
     ].join('\n');
   }
 
-  // 7. Sudah transfer uang atau ingin melapor ke kanal resmi
   if (
     /\b(?:transfer|kirim\s+uang|duit|uang\s+hilang|tertipu\s+uang|lapor|laporkan|iasc|ojk|polisi)\b/i.test(
       pertanyaan
@@ -140,7 +111,6 @@ export function bangunJawabanEdukasiBawaan(
     ].join('\n');
   }
 
-  // 8. Panggilan video, voice note, atau deepfake
   if (
     /\b(?:video call|voice note|vn|rekaman|suara|deepfake|wajah)\b/i.test(
       pertanyaan
@@ -155,7 +125,6 @@ export function bangunJawabanEdukasiBawaan(
     ].join('\n');
   }
 
-  // 9. Jawaban berbasis konteks hasil pemeriksaan sebelumnya jika tersedia
   if (konteksHasil) {
     const langkahList =
       Array.isArray(konteksHasil.langkah) && konteksHasil.langkah.length > 0
@@ -170,7 +139,6 @@ export function bangunJawabanEdukasiBawaan(
     ].join('\n');
   }
 
-  // 10. Jawaban umum edukasi keamanan digital
   return [
     'Untuk melindungi keamanan digitalmu:',
     '1. Jangan pernah membagikan kode OTP, PIN, password, atau nomor rekening kepada siapa pun.',

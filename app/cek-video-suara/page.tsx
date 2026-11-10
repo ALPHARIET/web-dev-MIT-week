@@ -9,6 +9,7 @@ import {
   type SkenarioVideo,
 } from '@/components/input/TombolContoh';
 import { WizardVideoSuara } from '@/components/input/WizardVideoSuara';
+import { PemeriksaMediaAI } from '@/components/input/PemeriksaMediaAI';
 import { KomponenHasil, type CrossLink } from '@/components/hasil/KomponenHasil';
 import {
   generateHasilVideoLokal,
@@ -16,39 +17,29 @@ import {
 } from '@/lib/aturan/video-rules';
 import type { FormatDataHasil } from '@/lib/hasil';
 
-/**
- * Halaman Cek Video & Suara (`/cek-video-suara`)
- *
- * Alur pemeriksaan P0 berjalan sepenuhnya offline di peramban tanpa panggilan API eksternal:
- * 1. Pengguna menyelesaikan wizard 4 langkah atau memilih skenario fiktif dari TombolContoh.
- * 2. Logika langsung menghitung skor dan menghasilkan FormatDataHasil via generateHasilVideoLokal (< 1 detik).
- * 3. Render KomponenHasil dengan langkah verifikasi per situasi:
- *    - Keluarga/teman: telepon balik nomor lama, kode rahasia keluarga
- *    - Atasan/instansi: konfirmasi lewat jalur resmi kantor
- *    - Tokoh publik/investasi: cek akun resmi & Kontak OJK 157
- *    - Masih tersambung: minta menoleh penuh / lambaikan tangan
- * 4. Tombol "Cek lagi": reset wizard kembali ke kondisi awal (Langkah 1).
- *
- * References: Requirements 24.1, 24.2, 24.3, 24.4, 28.1, 29.1, 34.4, 35.2
- */
 export default function CekVideoSuaraPage(): React.JSX.Element {
-  // State hasil pemeriksaan (FormatDataHasil atau null)
   const [hasil, setHasil] = useState<FormatDataHasil | null>(null);
 
-  // State nilai awal jawaban wizard (dari tombol contoh)
   const [initialJawaban, setInitialJawaban] = useState<
     Partial<JawabanWizardVideo> | undefined
   >(undefined);
 
-  // Key untuk me-reset instance WizardVideoSuara ke Langkah 1 saat "Cek lagi"
   const [wizardKey, setWizardKey] = useState<number>(0);
 
-  // Handler saat wizard menyelesaikan kalkulasi di Langkah 4
+  const [mode, setMode] = useState<'ai' | 'kuis'>('ai');
+
+  const [framePratinjau, setFramePratinjau] = useState<string[]>([]);
+
   const handleHasilReady = (hasilBaru: FormatDataHasil) => {
+    setFramePratinjau([]);
     setHasil(hasilBaru);
   };
 
-  // Handler saat pengguna memilih skenario fiktif dari TombolContoh
+  const handleHasilMedia = (hasilBaru: FormatDataHasil, frames: string[]) => {
+    setFramePratinjau(frames);
+    setHasil(hasilBaru);
+  };
+
   const handlePilihContoh = (contoh: SkenarioContoh) => {
     const skenario = contoh as SkenarioVideo;
     const jawabanLengkap: JawabanWizardVideo = {
@@ -57,25 +48,24 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
     };
 
     setInitialJawaban(jawabanLengkap);
+    setMode('kuis');
+    setFramePratinjau([]);
 
-    // Langsung hitung hasil lokal secara offline (< 1 detik, Requirement 28.1)
     const hasilLokal = generateHasilVideoLokal(jawabanLengkap);
     setHasil(hasilLokal);
   };
 
-  // Handler tombol "Cek lagi": reset wizard kembali ke Langkah 1
   const handleCekLagi = () => {
     setHasil(null);
     setInitialJawaban(undefined);
+    setFramePratinjau([]);
     setWizardKey((prev) => prev + 1);
   };
 
-  // Tentukan cross-links tambahan jika terdeteksi situasi link atau chat
   const crossLinks: CrossLink[] = useMemo(() => {
     if (!hasil) return [];
     const links: CrossLink[] = [];
 
-    // Jika terdeteksi permintaan klik link atau situasi darurat link
     if (
       hasil.situasi_darurat.includes('klik_link') ||
       hasil.temuan.some(
@@ -92,7 +82,6 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
       });
     }
 
-    // Jika situasi pesan rekaman suara/chat mencurigakan
     if (hasil.halaman === 'video') {
       links.push({
         label: 'Periksa Teks di Cek Chat',
@@ -109,7 +98,7 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
       data-testid="halaman-cek-video-suara"
       className="w-full max-w-4xl lg:max-w-none mx-auto space-y-6 sm:space-y-8 py-2 sm:py-4"
     >
-      {/* Header Halaman Cek Video & Suara */}
+      {/* ===== HEADER HALAMAN CEK VIDEO & SUARA ===== */}
       <header className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -123,12 +112,12 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
               data-testid="deskripsi-halaman-video"
               className="text-base text-gray-600 mt-2 max-w-[70ch] leading-relaxed"
             >
-              Periksa panggilan video call, rekaman suara, atau video figur publik mencurigakan
-              untuk menilai indikasi rekayasa sosial dan manipulasi AI.
+              Unggah video, voice note, atau screenshot video call yang mencurigakan. AI memeriksa
+              tanda wajah dan suara buatan AI, lalu mencocokkan isi ucapannya dengan pola penipuan.
             </p>
           </div>
 
-          {/* Tombol Coba Contoh Fiktif (Requirement 9.1, 9.4) */}
+          {/* ===== TOMBOL COBA CONTOH FIKTIF ===== */}
           <div className="flex-shrink-0">
             <TombolContoh
               halaman="video"
@@ -141,21 +130,55 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
       </header>
 
       <div className={hasil ? TATA_CEK.bertumpuk : TATA_CEK.wadah}>
-      {/* Kotak Privasi (halaman="video") (Requirement 8.1, 8.2, 8.3) */}
+      {/* ===== KOTAK PRIVASI ===== */}
       {!hasil && <KotakPrivasi halaman="video" className={TATA_CEK.samping} />}
 
-      {/* Konten Utama: Wizard Pemeriksaan atau Hasil Pemeriksaan */}
       {!hasil ? (
         <section
           data-testid="area-wizard-video"
-          aria-label="Wizard Pemeriksaan Video dan Suara"
-          className={TATA_CEK.utama}
+          aria-label="Pemeriksaan Video dan Suara"
+          className={`${TATA_CEK.utama} space-y-4`}
         >
-          <WizardVideoSuara
-            key={wizardKey}
-            initialJawaban={initialJawaban}
-            onHasilReady={handleHasilReady}
-          />
+          <div
+            role="tablist"
+            aria-label="Cara memeriksa"
+            className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-gray-100"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'ai'}
+              data-testid="tab-mode-ai"
+              onClick={() => setMode('ai')}
+              className={`px-3 py-2.5 rounded-lg text-sm font-semibold min-h-[44px] transition-colors ${
+                mode === 'ai' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Punya file? Cek dengan AI
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'kuis'}
+              data-testid="tab-mode-kuis"
+              onClick={() => setMode('kuis')}
+              className={`px-3 py-2.5 rounded-lg text-sm font-semibold min-h-[44px] transition-colors ${
+                mode === 'kuis' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Tanpa rekaman? Jawab pertanyaan
+            </button>
+          </div>
+
+          {mode === 'ai' ? (
+            <PemeriksaMediaAI onHasilReady={handleHasilMedia} />
+          ) : (
+            <WizardVideoSuara
+              key={wizardKey}
+              initialJawaban={initialJawaban}
+              onHasilReady={handleHasilReady}
+            />
+          )}
         </section>
       ) : (
         <section
@@ -167,6 +190,7 @@ export default function CekVideoSuaraPage(): React.JSX.Element {
             hasil={hasil}
             onCekLagi={handleCekLagi}
             crossLinks={crossLinks}
+            framePratinjau={framePratinjau}
           />
         </section>
       )}

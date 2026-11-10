@@ -5,7 +5,6 @@ import type { FormatDataHasil } from '@/lib/hasil';
 
 const MAKS_PAYLOAD_BYTES = 4 * 1024 * 1024;
 
-// Mock lib/gemini
 vi.mock('@/lib/gemini', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/gemini')>();
   return {
@@ -17,7 +16,6 @@ vi.mock('@/lib/gemini', async (importOriginal) => {
 describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
   const originalEnv = process.env;
 
-  // Base64 sampel valid
   const sampleJpgBase64 =
     'data:image/jpeg;base64,' +
     Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]).toString('base64');
@@ -33,7 +31,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
       0x56, 0x50, 0x38,
     ]).toString('base64');
 
-  // File bukan gambar (misal GIF atau teks biasa)
   const sampleGifBase64 =
     'data:image/gif;base64,' +
     Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00]).toString('base64');
@@ -41,7 +38,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
   const sampleTextFileBase64 =
     'data:text/plain;base64,' + Buffer.from('Halo ini bukan gambar').toString('base64');
 
-  // Helper membuat Request objek
   const createRequest = (
     body: unknown,
     headers: Record<string, string> = {}
@@ -56,7 +52,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
     });
   };
 
-  // Helper FormatDataHasil simulasi dari Gemini
   const createGeminiResult = (
     overrides?: Partial<FormatDataHasil>
   ): FormatDataHasil => ({
@@ -121,9 +116,7 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
     });
 
     it('mengembalikan status 413 jika total ukuran data gambar melebihi 4 MB', async () => {
-      // 1 buffer base64 berukuran > 4 MB
       const bigBuffer = Buffer.alloc(MAKS_PAYLOAD_BYTES + 100);
-      // Awali dengan magic bytes JPEG agar lolos validasi magic bytes awal
       bigBuffer[0] = 0xff;
       bigBuffer[1] = 0xd8;
       bigBuffer[2] = 0xff;
@@ -328,8 +321,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
     });
 
     it('gabungLevel: menjamin level lokal dari client tidak pernah turun (Requirement 14.4)', async () => {
-      // Client mendeteksi 'tinggi' (misal karena minta OTP)
-      // Gemini mengembalikan 'sedang'
       const mockGemini = createGeminiResult({
         level: 'sedang',
       });
@@ -345,7 +336,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
       expect(res.status).toBe(200);
 
       const json: FormatDataHasil = await res.json();
-      // Level akhir HARUS tetap 'tinggi'
       expect(json.level).toBe('tinggi');
     });
 
@@ -389,7 +379,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
 
   describe('6. Mode "screenshot" & Evaluasi Transkrip Server (Requirement 14.3)', () => {
     it('menjalankan evaluasiChat atas transkrip Gemini dan menggabungkan temuan aturan lokal', async () => {
-      // Gemini menganalisis screenshot dan menghasilkan transkrip percakapan
       const mockGemini = createGeminiResult({
         level: 'sedang',
         transkrip:
@@ -415,10 +404,8 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
       expect(res.status).toBe(200);
 
       const json: FormatDataHasil = await res.json();
-      // Karena transkrip memuat permintaan OTP (langsung_tinggi), level akhir harus naik ke 'tinggi'
       expect(json.level).toBe('tinggi');
 
-      // Temuan aturan lokal (Permintaan kode OTP) harus digabungkan ke temuan
       expect(
         json.temuan.some((t) =>
           t.judul.toLowerCase().includes('otp') || t.sumber === 'aturan'
@@ -429,7 +416,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
 
   describe('7. Fallback saat Gemini Error / Timeout / API Key Tidak Disetel (Requirements 15.1, 15.3, 29.1, 29.2)', () => {
     it('mengembalikan status 200 OK (bukan 500) dengan hasil aturan lokal saat analyzeChat return null', async () => {
-      // analyzeChat return null menandakan Gemini gagal/timeout/key kosong
       vi.mocked(analyzeChat).mockResolvedValue(null);
 
       const req = createRequest({
@@ -438,15 +424,14 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
       });
 
       const res = await POST(req);
-      expect(res.status).toBe(200); // Harus 200 OK, bukan 500!
+      expect(res.status).toBe(200);
 
       const json: FormatDataHasil = await res.json();
       expect(json.halaman).toBe('chat');
-      expect(json.status_layanan.ai).toBe('gagal'); // Status layanan ai = 'gagal'
+      expect(json.status_layanan.ai).toBe('gagal');
       expect(json.pihak_ketiga).toContain('Google Gemini');
       expect(json.batasan).toMatch(/analisis AI sedang tidak tersedia/i);
 
-      // Tingkat kewaspadaan dievaluasi dari aturan lokal (minta transfer + desakan waktu = tinggi)
       expect(json.level).toBe('tinggi');
       expect(json.temuan.length).toBeGreaterThanOrEqual(1);
       expect(json.langkah.length).toBeGreaterThanOrEqual(2);
@@ -523,14 +508,12 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
       const res = await POST(req);
       expect(res.status).toBe(200);
 
-      // Kumpulkan semua output log console
       const allLogMessages = [
         ...consoleLogSpy.mock.calls.flat(),
         ...consoleWarnSpy.mock.calls.flat(),
         ...consoleErrorSpy.mock.calls.flat(),
       ].map((msg) => (typeof msg === 'string' ? msg : JSON.stringify(msg)));
 
-      // Verifikasi bahwa secretText sama sekali TIDAK pernah muncul di console logs
       for (const logMsg of allLogMessages) {
         expect(logMsg).not.toContain(secretText);
       }
@@ -540,7 +523,7 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const sensitiveText = 'SENSITIVE_TEXT_FALLBACK_TEST_999';
-      vi.mocked(analyzeChat).mockResolvedValue(null); // paksa fallback
+      vi.mocked(analyzeChat).mockResolvedValue(null);
 
       const req = createRequest({
         mode: 'teks',
@@ -584,7 +567,6 @@ describe('POST /api/cek-chat Route Handler (Task 12.1)', () => {
     });
 
     it('kata terlarang tidak lolos sebagai kesimpulan (Requirements 30.1, 30.3)', async () => {
-      // Gemini mengembalikan kata terlarang sebagai kesimpulan
       const mockGeminiWithForbiddenWords = createGeminiResult({
         ringkasan: 'Pesan ini pasti penipuan dan 100% scam.',
         temuan: [

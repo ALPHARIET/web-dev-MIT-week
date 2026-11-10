@@ -21,11 +21,9 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       const onHasilReady = vi.fn();
       render(<WizardVideoSuara onHasilReady={onHasilReady} />);
 
-      // Verifikasi indikator langkah awal
       const indikator = screen.getByTestId('indikator-langkah');
       expect(indikator.textContent).toContain('Langkah 1 dari 4');
 
-      // Verifikasi keberadaan 3 kartu situasi
       for (const situasi of DAFTAR_SITUASI_VIDEO) {
         const kartu = screen.getByTestId(`kartu-situasi-${situasi.id}`);
         expect(kartu).toBeDefined();
@@ -34,7 +32,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
         expect(kartu.getAttribute('aria-checked')).toBe('false');
       }
 
-      // Tombol lanjut dinonaktifkan di awal karena belum ada situasi yang dipilih
       const tombolLanjut = screen.getByTestId('tombol-lanjut');
       expect((tombolLanjut as HTMLButtonElement).disabled).toBe(true);
     });
@@ -90,17 +87,14 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       fireEvent.click(screen.getByTestId('kartu-situasi-video_call'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Pertanyaan wajib
       expect(screen.getByTestId('pertanyaan-apa-diminta')).toBeDefined();
       expect(screen.getByTestId('pertanyaan-nomor-akun')).toBeDefined();
       expect(screen.getByTestId('pertanyaan-darurat-desakan')).toBeDefined();
       expect(screen.getByTestId('pertanyaan-diminta-rahasiakan')).toBeDefined();
       expect(screen.getByTestId('pertanyaan-bisa-telepon-balik')).toBeDefined();
 
-      // Pertanyaan tambahan untuk video_call (Requirement 24.4)
       expect(screen.getByTestId('pertanyaan-masih-tersambung')).toBeDefined();
 
-      // Tidak merender pertanyaan khusus tokoh pada situasi video_call
       expect(screen.queryByTestId('pertanyaan-siapa-tampil')).toBeNull();
       expect(screen.queryByTestId('pertanyaan-janji-untung')).toBeNull();
     });
@@ -112,11 +106,9 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       fireEvent.click(screen.getByTestId('kartu-situasi-tokoh'));
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Pertanyaan khusus tokoh
       expect(screen.getByTestId('pertanyaan-siapa-tampil')).toBeDefined();
       expect(screen.getByTestId('pertanyaan-janji-untung')).toBeDefined();
 
-      // Tidak merender pertanyaan masih_tersambung pada situasi tokoh
       expect(screen.queryByTestId('pertanyaan-masih-tersambung')).toBeNull();
     });
 
@@ -130,23 +122,18 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       const tombolLanjut = screen.getByTestId('tombol-lanjut') as HTMLButtonElement;
       expect(tombolLanjut.disabled).toBe(true);
 
-      // Isi pertanyaan 1
       fireEvent.click(screen.getByTestId('opsi-apa_diminta-transfer'));
       expect(tombolLanjut.disabled).toBe(true);
 
-      // Isi pertanyaan 2
       fireEvent.click(screen.getByTestId('opsi-nomor_akun-nomor_baru'));
       expect(tombolLanjut.disabled).toBe(true);
 
-      // Isi pertanyaan 3
       fireEvent.click(screen.getByTestId('opsi-darurat-true'));
       expect(tombolLanjut.disabled).toBe(true);
 
-      // Isi pertanyaan 4
       fireEvent.click(screen.getByTestId('opsi-rahasiakan-true'));
       expect(tombolLanjut.disabled).toBe(true);
 
-      // Isi pertanyaan 5 (lengkap)
       fireEvent.click(screen.getByTestId('opsi-telepon_balik-false'));
       expect(tombolLanjut.disabled).toBe(false);
     });
@@ -219,11 +206,9 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       const itemBibir = DAFTAR_CHECKLIST_PENGAMATAN[0];
       const checkboxBibir = screen.getByTestId(`checkbox-${itemBibir.id}`) as HTMLInputElement;
 
-      // Centang
       fireEvent.click(checkboxBibir);
       expect(checkboxBibir.checked).toBe(true);
 
-      // Batalkan centang
       fireEvent.click(checkboxBibir);
       expect(checkboxBibir.checked).toBe(false);
     });
@@ -244,7 +229,7 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       const hasil: FormatDataHasil = onHasilReady.mock.calls[0][0];
 
       expect(hasil.halaman).toBe('video');
-      expect(hasil.level).toBe('tinggi'); // Kombinasi minta transfer + darurat = tinggi
+      expect(hasil.level).toBe('tinggi');
       expect(hasil.langkah.length).toBeGreaterThanOrEqual(2);
       expect(screen.getByTestId('langkah-selesai')).toBeDefined();
     });
@@ -252,7 +237,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
     it('menghasilkan hasil dengan temuan checklist saat tombol "Lihat Hasil" ditekan', () => {
       const onHasilReady = majuKeLangkah3();
 
-      // Pilih dua tanda checklist
       fireEvent.click(screen.getByTestId('checkbox-bibir_tidak_sinkron'));
       fireEvent.click(screen.getByTestId('checkbox-suara_datar_napas'));
 
@@ -261,7 +245,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       expect(onHasilReady).toHaveBeenCalledTimes(1);
       const hasil: FormatDataHasil = onHasilReady.mock.calls[0][0];
 
-      // Verifikasi temuan checklist tercatat
       const temuanBibir = hasil.temuan.find((t) => t.judul.includes('Bibir tidak sinkron'));
       const temuanSuara = hasil.temuan.find((t) => t.judul.includes('Suara datar tanpa tarikan napas'));
 
@@ -288,17 +271,13 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
         />
       );
 
-      // Maju dari L1 ke L2
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
-      // Maju dari L2 ke L3
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
-      // Selesaikan wizard di L3
       fireEvent.click(screen.getByTestId('tombol-lewati-checklist'));
 
       expect(screen.getByTestId('langkah-selesai')).toBeDefined();
       expect(screen.getByText('Pemeriksaan Selesai')).toBeDefined();
 
-      // Reset wizard
       fireEvent.click(screen.getByTestId('tombol-reset-wizard'));
       expect(screen.getByTestId('indikator-langkah').textContent).toContain('Langkah 1 dari 4');
     });
@@ -346,14 +325,11 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
         />
       );
 
-      // Kartu video_call langsung terpilih di Langkah 1
       const kartu = screen.getByTestId('kartu-situasi-video_call');
       expect(kartu.getAttribute('aria-checked')).toBe('true');
 
-      // Maju ke Langkah 2
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Pertanyaan konteks sudah terisi otomatis dari initialJawaban
       const radioApaDiminta = screen.getByTestId('opsi-apa_diminta-transfer') as HTMLInputElement;
       const radioNomorAkun = screen.getByTestId('opsi-nomor_akun-nomor_baru') as HTMLInputElement;
       const radioDarurat = screen.getByTestId('opsi-darurat-true') as HTMLInputElement;
@@ -366,7 +342,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       expect(radioRahasia.checked).toBe(true);
       expect(radioTelepon.checked).toBe(true);
 
-      // Tombol lanjut ke checklist langsung aktif
       const tombolLanjut = screen.getByTestId('tombol-lanjut') as HTMLButtonElement;
       expect(tombolLanjut.disabled).toBe(false);
     });
@@ -413,7 +388,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
 
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Pertanyaan khusus tokoh terisi
       const radioTokohPublik = screen.getByTestId('opsi-siapa_tampil-tokoh_publik') as HTMLInputElement;
       const radioJanjiUntung = screen.getByTestId('opsi-janji_untung-true') as HTMLInputElement;
       const radioInvestasi = screen.getByTestId('opsi-apa_diminta-investasi') as HTMLInputElement;
@@ -430,7 +404,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       const kartuAwal = screen.getByTestId('kartu-situasi-video_call');
       expect(kartuAwal.getAttribute('aria-checked')).toBe('false');
 
-      // Update prop initialJawaban
       rerender(
         <WizardVideoSuara
           onHasilReady={onHasilReady}
@@ -482,9 +455,7 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
         />
       );
 
-      // Ke L2
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
-      // Ke L3
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
       for (const item of DAFTAR_CHECKLIST_PENGAMATAN) {
@@ -507,7 +478,6 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
 
       fireEvent.click(screen.getByTestId('tombol-lanjut'));
 
-      // Uji beberapa radio input
       const radioTransfer = screen.getByTestId('opsi-apa_diminta-transfer');
       expect(radioTransfer.getAttribute('id')).toBe('apa_diminta_transfer');
 
@@ -524,89 +494,9 @@ describe('components/input/WizardVideoSuara.tsx (Task 9.1)', () => {
       const wrapper = screen.getByTestId('wizard-video-suara');
       const text = wrapper.textContent || '';
 
-      // Larangan kesimpulan: "pasti aman", "terbukti aman", "100% aman"
       const regexTerlarang = /\b(pasti aman|terbukti aman|100% aman)\b/i;
       expect(text).not.toMatch(regexTerlarang);
     });
   });
 
-  describe('Fitur P1: Toggle Analisis File AI & Upload Media (Requirements VS-06, 32.3)', () => {
-    const setupLangkah3 = () => {
-      const onHasilReady = vi.fn();
-      render(
-        <WizardVideoSuara
-          onHasilReady={onHasilReady}
-          initialJawaban={{
-            situasi: 'video_call',
-            apa_diminta: 'transfer',
-            nomor_akun: 'nomor_baru',
-            darurat_desakan: true,
-            diminta_rahasiakan: true,
-            bisa_telepon_balik: false,
-          }}
-        />
-      );
-
-      // Ke L2
-      fireEvent.click(screen.getByTestId('tombol-lanjut'));
-      // Ke L3
-      fireEvent.click(screen.getByTestId('tombol-lanjut'));
-
-      return { onHasilReady };
-    };
-
-    it('toggle analisis AI berada di Langkah 3 dan default MATI (Requirement VS-06)', () => {
-      setupLangkah3();
-
-      const toggle = screen.getByTestId('toggle-analisis-ai') as HTMLInputElement;
-      expect(toggle).toBeDefined();
-      expect(toggle.checked).toBe(false);
-      expect(toggle.getAttribute('aria-checked')).toBe('false');
-
-      // Panel upload media tidak tampil saat toggle mati
-      expect(screen.queryByTestId('panel-upload-media-ai')).toBeNull();
-      expect(screen.queryByTestId('notifikasi-privasi-ai')).toBeNull();
-    });
-
-    it('menampilkan panel upload dan transparansi privasi saat toggle dinyalakan', () => {
-      setupLangkah3();
-
-      const toggle = screen.getByTestId('toggle-analisis-ai') as HTMLInputElement;
-      fireEvent.click(toggle);
-
-      expect(toggle.checked).toBe(true);
-      expect(screen.getByTestId('panel-upload-media-ai')).toBeDefined();
-
-      // Memeriksa teks transparansi privasi file (Requirement VS-06)
-      const notifikasi = screen.getByTestId('notifikasi-privasi-ai');
-      expect(notifikasi.textContent).toContain(
-        'Frame gambar atau audio akan dikirim ke Reality Defender. Video utuh tetap di perangkatmu. File tidak kami simpan.'
-      );
-
-      // Memeriksa catatan batasan transparan Reality Defender
-      expect(notifikasi.textContent).toContain('50 scan/bulan gratis');
-      expect(notifikasi.textContent).toContain('12 detik - 5 menit');
-      expect(notifikasi.textContent).toContain('bahasa Indonesia belum didukung secara resmi');
-
-      // Input file tersedia
-      const inputFile = screen.getByTestId('input-media-ai') as HTMLInputElement;
-      expect(inputFile).toBeDefined();
-      expect(inputFile.getAttribute('type')).toBe('file');
-      expect(inputFile.getAttribute('accept')).toBe('video/*,audio/*,image/*');
-    });
-
-    it('menyembunyikan kembali panel upload saat toggle dimatikan', () => {
-      setupLangkah3();
-
-      const toggle = screen.getByTestId('toggle-analisis-ai') as HTMLInputElement;
-      // Nyalakan
-      fireEvent.click(toggle);
-      expect(screen.getByTestId('panel-upload-media-ai')).toBeDefined();
-
-      // Matikan kembali
-      fireEvent.click(toggle);
-      expect(toggle.checked).toBe(false);
-      expect(screen.queryByTestId('panel-upload-media-ai')).toBeNull();
-    });
-  });
 });

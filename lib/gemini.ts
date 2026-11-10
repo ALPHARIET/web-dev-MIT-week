@@ -1,13 +1,3 @@
-/**
- * lib/gemini.ts
- *
- * Helper pemanggilan Google Gemini API untuk Aplikasi Web Cek Penipuan.
- * Mendukung analisis percakapan (Cek Chat, teks & screenshot multimodal)
- * dan penjelasan edukatif hasil diagnostik link (Cek Link).
- *
- * References: Requirements 14.1, 14.4, 14.5, 25.1, 30.1, 30.2, 30.3
- */
-
 import {
   FormatDataHasil,
   TingkatLevel,
@@ -23,16 +13,14 @@ import {
   FORMAT_DATA_HASIL_JSON_SCHEMA,
 } from '../data/system-prompt';
 
-/** Input untuk pemanggilan analyzeChat */
 export interface AnalyzeChatInput {
   mode: 'teks' | 'screenshot';
   teks?: string;
-  gambar?: string[]; // base64 data URLs atau raw base64
+  gambar?: string[];
   konteks?: string;
   levelMinimum?: TingkatLevel;
 }
 
-/** Paket diagnostik teknis untuk pemanggilan explainLink */
 export interface PaketDiagnostikLink {
   url: string;
   levelMinimum: TingkatLevel;
@@ -41,7 +29,6 @@ export interface PaketDiagnostikLink {
   umurDomainHari?: number;
 }
 
-/** Opsi pemanggilan Gemini API */
 export interface GeminiOptions {
   apiKey?: string;
   timeoutMs?: number;
@@ -49,17 +36,13 @@ export interface GeminiOptions {
   fetchFn?: typeof fetch;
 }
 
-/** Default timeout */
-export const DEFAULT_CHAT_TIMEOUT_MS = 20_000; // 20 detik
-export const DEFAULT_LINK_TIMEOUT_MS = 10_000; // 10 detik
+export const DEFAULT_CHAT_TIMEOUT_MS = 20_000;
+export const DEFAULT_LINK_TIMEOUT_MS = 10_000;
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
-/** Timeout per percobaan satu model agar tidak menggantung jika salah satu model overload */
 const PER_MODEL_TIMEOUT_MS = 6_000;
-/** Durasi cooldown (2 menit) bagi model yang sedang error 404 / 429 / 503 / timeout */
 const MODEL_COOLDOWN_MS = 2 * 60 * 1000;
 
-/** Daftar prioritas model kandidat dari yang paling cepat & kuota paling longgar */
 const FALLBACK_MODEL_POOL = [
   'gemini-3.5-flash-lite',
   'gemini-flash-lite-latest',
@@ -73,21 +56,37 @@ const FALLBACK_MODEL_POOL = [
 let lastWorkingModel: string | null = null;
 const failedModelsUntil = new Map<string, number>();
 
-/**
- * Memastikan nama model Gemini selalu valid (mengganti model 1.5/2.0 yang sudah dipensiunkan).
- */
+export const GEMINI_MODEL_CADANGAN = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.1-flash-lite'] as const;
+
+export const JEDA_MODEL_SIBUK_MS = 120_000;
+
+export const BATAS_PER_MODEL_MS = {
+  chat: 9_000,
+  link: 7_000,
+  tanya: 12_000,
+  media: 30_000,
+} as const;
+
+export const DEFAULT_GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com';
+
+export function memakaiProxyGemini(baseUrl?: string): boolean {
+  const base = (baseUrl ?? process.env.GEMINI_BASE_URL ?? '').trim();
+  if (!base) return false;
+  try {
+    return new URL(base).hostname !== new URL(DEFAULT_GEMINI_BASE_URL).hostname;
+  } catch {
+    return true;
+  }
+}
+
 export function resolveGeminiModel(modelInput?: string): string {
   const m = (modelInput || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL).trim();
-  if (!m || m === 'gemini-2.0-flash' || m === 'gemini-1.5-flash') {
+  if (!memakaiProxyGemini() && /^gemini-(1\.0|1\.5|2\.0)(-|$)/.test(m)) {
     return DEFAULT_GEMINI_MODEL;
   }
   return m;
 }
 
-/**
- * Menyusun urutan model kandidat yang siap dipakai saat ini.
- * Mengutamakan model terakhir yang berhasil (lastWorkingModel) dan melewati model yang sedang cooldown.
- */
 function getAvailableCandidateModels(
   requestedModel: string,
   isCustomFetcher: boolean
@@ -105,13 +104,11 @@ function getAvailableCandidateModels(
     ])
   );
 
-  // Filter model yang tidak sedang dalam masa cooldown error
   const activeModels = rawPool.filter((m) => {
     const cooldownUntil = failedModelsUntil.get(m);
     return !cooldownUntil || now >= cooldownUntil;
   });
 
-  // Jika semua model kebetulan sedang cooldown, coba kembali seluruh pool
   return activeModels.length > 0 ? activeModels : rawPool;
 }
 
@@ -127,10 +124,6 @@ function markModelFailed(model: string): void {
   failedModelsUntil.set(model, Date.now() + MODEL_COOLDOWN_MS);
 }
 
-/**
- * Menentukan apakah suatu model mendukung parameter thinkingConfig.
- * Varian '-lite' tidak memiliki mode thinking dan akan mengembalikan HTTP 400 jika diberi thinkingConfig.
- */
 function supportsThinkingConfig(model: string): boolean {
   const lower = model.toLowerCase();
   if (lower.includes('lite') || lower.includes('gemma')) {
@@ -139,12 +132,108 @@ function supportsThinkingConfig(model: string): boolean {
   return lower.includes('3.') || lower.includes('2.5');
 }
 
-/**
- * Memeriksa apakah teks pada posisi tertentu berada dalam konteks negasi/peringatan.
- * Sesuai Requirement 30.1, 30.2, 30.3 & design.md:
- * - "Ini tidak berarti pasti aman" -> diperbolehkan (negasi)
- * - "Link ini aman" -> dilarang (klaim pasti/kesimpulan)
- */
+const modelSibukSampai = new Map<string, number>();
+
+export function tandaiModelSibuk(
+  model: string,
+  now: number = Date.now(),
+  durasiMs: number = JEDA_MODEL_SIBUK_MS
+): void {
+  modelSibukSampai.set(model, now + durasiMs);
+}
+
+export function bacaJedaUlangGemini(teksError: string): number | undefined {
+  const m = /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(teksError || '');
+  if (!m) return undefined;
+  const ms = Math.round(parseFloat(m[1]) * 1000);
+  return isFinite(ms) && ms > 0 ? ms : undefined;
+}
+
+export const BATAS_KUOTA_HABIS_MS = 60_000;
+
+export function tandaiDariError(model: string, status: number, teksError: string): boolean {
+  if (status === 429) {
+    const jeda = bacaJedaUlangGemini(teksError);
+    if (jeda && jeda > BATAS_KUOTA_HABIS_MS) {
+      tandaiModelSibuk(model, Date.now(), jeda);
+      return false;
+    }
+    tandaiModelSibuk(model);
+    return true;
+  }
+  if (status === 503) {
+    tandaiModelSibuk(model);
+    return true;
+  }
+  return false;
+}
+
+export function resetModelSibuk(): void {
+  modelSibukSampai.clear();
+}
+
+export function daftarModelGemini(modelInput?: string, now: number = Date.now()): string[] {
+  const semua = Array.from(new Set([resolveGeminiModel(modelInput), ...GEMINI_MODEL_CADANGAN]));
+  const siap = semua.filter((m) => (modelSibukSampai.get(m) ?? 0) <= now);
+  return siap.length > 0 ? siap : semua;
+}
+
+export class GeminiModelTimeout extends Error {
+  constructor(public model: string, public batasMs: number) {
+    super(`Model ${model} tidak menjawab dalam ${batasMs}ms`);
+    this.name = 'GeminiModelTimeout';
+  }
+}
+
+export async function fetchModelGemini(
+  fetcher: typeof fetch,
+  url: string,
+  init: RequestInit,
+  model: string,
+  batasMs: number,
+  signalInduk?: AbortSignal
+): Promise<Response> {
+  const controller = new AbortController();
+  let habis = false;
+  const timer = setTimeout(() => {
+    habis = true;
+    controller.abort(new GeminiModelTimeout(model, batasMs));
+  }, batasMs);
+  const teruskan = () => controller.abort(signalInduk?.reason);
+  if (signalInduk) {
+    if (signalInduk.aborted) teruskan();
+    else signalInduk.addEventListener('abort', teruskan, { once: true });
+  }
+  try {
+    return await fetcher(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (habis && !signalInduk?.aborted) throw new GeminiModelTimeout(model, batasMs);
+    throw err;
+  } finally {
+    clearTimeout(timer);
+    signalInduk?.removeEventListener('abort', teruskan);
+  }
+}
+
+export function bangunGeminiRequest(
+  model: string,
+  apiKey: string,
+  baseUrl?: string
+): { url: string; headers: Record<string, string> } {
+  const proxy = memakaiProxyGemini(baseUrl);
+  let base = (baseUrl ?? process.env.GEMINI_BASE_URL ?? '').trim() || DEFAULT_GEMINI_BASE_URL;
+  base = base.replace(/\/+$/, '');
+  if (!/\/v1(?:beta|alpha)?$/.test(base)) base += '/v1beta';
+  const key = apiKey.trim();
+  const namaModel = encodeURIComponent(model.trim()).replace(/%2F/gi, '/');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'x-goog-api-key': key };
+  if (proxy) headers.Authorization = `Bearer ${key}`;
+  return {
+    url: `${base}/models/${namaModel}:generateContent?key=${encodeURIComponent(key)}`,
+    headers,
+  };
+}
+
 function isNegatedContext(clauseBefore: string): boolean {
   const breaks = clauseBefore.split(
     /[,;.!?\n]|\b(?:dan|tetapi|tapi|namun|sedangkan|padahal)\b/i
@@ -156,9 +245,6 @@ function isNegatedContext(clauseBefore: string): boolean {
   );
 }
 
-/**
- * Menyesuaikan kapitalisasi kata pengganti agar sesuai dengan kata aslinya.
- */
 function matchCapitalization(original: string, replacement: string): string {
   if (!original || !replacement) return replacement;
   if (
@@ -170,10 +256,6 @@ function matchCapitalization(original: string, replacement: string): string {
   return replacement;
 }
 
-/**
- * Menyaring kata terlarang ('aman', 'pasti', 'terbukti', '100%') jika digunakan sebagai kesimpulan atau vonis.
- * Mempertahankan konteks negasi/edukatif seperti "tidak berarti pasti aman" atau "tidak aman".
- */
 export function filterKataTerlarang(teks: string): string {
   if (!teks || typeof teks !== 'string') return teks;
 
@@ -192,7 +274,6 @@ export function filterKataTerlarang(teks: string): string {
     hasil += teks.slice(lastIndex, matchIndex);
     lastIndex = matchIndex + matchStr.length;
 
-    // Jika kata didahului negasi (misal: "tidak berarti pasti aman"), biarkan apa adanya
     if (isNegatedContext(clauseBefore)) {
       hasil += matchStr;
       continue;
@@ -242,10 +323,6 @@ export function filterKataTerlarang(teks: string): string {
   return hasil;
 }
 
-/**
- * Menyaring keluaran FormatDataHasil untuk membersihkan kata terlarang dari kesimpulan.
- * Sesuai Requirement 30.1 & 30.3.
- */
 export function filterFormatDataHasil(hasil: FormatDataHasil): FormatDataHasil {
   return {
     ...hasil,
@@ -254,7 +331,6 @@ export function filterFormatDataHasil(hasil: FormatDataHasil): FormatDataHasil {
       ...t,
       judul: filterKataTerlarang(t.judul),
       penjelasan: filterKataTerlarang(t.penjelasan),
-      // bukti dipertahankan apa adanya karena kutipan verbatim pesan
     })),
     hal_wajar: hasil.hal_wajar.map((h) => filterKataTerlarang(h)),
     langkah: hasil.langkah.map((l) => filterKataTerlarang(l)),
@@ -262,10 +338,6 @@ export function filterFormatDataHasil(hasil: FormatDataHasil): FormatDataHasil {
   };
 }
 
-/**
- * Memvalidasi apakah suatu objek sesuai dengan struktur FormatDataHasil.
- * Requirement 14.5: Validasi keluaran JSON dari AI.
- */
 export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
     return false;
@@ -273,12 +345,10 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
 
   const r = obj as Record<string, unknown>;
 
-  // Validasi properti halaman
   if (r.halaman !== 'chat' && r.halaman !== 'link' && r.halaman !== 'video') {
     return false;
   }
 
-  // Validasi level
   if (
     r.level !== 'tinggi' &&
     r.level !== 'sedang' &&
@@ -287,12 +357,10 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
     return false;
   }
 
-  // Validasi ringkasan
   if (typeof r.ringkasan !== 'string' || r.ringkasan.trim().length === 0) {
     return false;
   }
 
-  // Validasi temuan
   if (!Array.isArray(r.temuan)) {
     return false;
   }
@@ -312,7 +380,6 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
     if (typeof t.sumber !== 'string') return false;
   }
 
-  // Validasi hal_wajar & langkah
   if (!Array.isArray(r.hal_wajar) || !r.hal_wajar.every((h) => typeof h === 'string')) {
     return false;
   }
@@ -320,12 +387,10 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
     return false;
   }
 
-  // Validasi situasi_darurat
   if (!Array.isArray(r.situasi_darurat)) {
     return false;
   }
 
-  // Validasi batasan & pihak_ketiga
   if (typeof r.batasan !== 'string') {
     return false;
   }
@@ -333,12 +398,10 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
     return false;
   }
 
-  // Validasi status_layanan (bisa opsional dari model AI, diisi default oleh sistem)
   if (r.status_layanan !== undefined && (typeof r.status_layanan !== 'object' || Array.isArray(r.status_layanan))) {
     return false;
   }
 
-  // Validasi transkrip jika ada
   if (r.transkrip !== undefined && typeof r.transkrip !== 'string') {
     return false;
   }
@@ -346,9 +409,6 @@ export function isValidFormatDataHasil(obj: unknown): obj is FormatDataHasil {
   return true;
 }
 
-/**
- * Mengurai string base64 atau data URL menjadi mimeType dan raw data base64.
- */
 export function parseBase64DataUrl(
   dataUrlOrBase64: string
 ): { mimeType: string; data: string } {
@@ -368,9 +428,6 @@ export function parseBase64DataUrl(
   };
 }
 
-/**
- * Mencoba mem-parsing teks JSON (termasuk yang dibungkus markdown code fences).
- */
 export function tryParseJson(raw: string): unknown {
   if (!raw || typeof raw !== 'string') return null;
 
@@ -395,7 +452,6 @@ export function tryParseJson(raw: string): unknown {
   }
 }
 
-/** Struktur internal bagian konten Gemini API */
 interface GeminiPart {
   text?: string;
   inlineData?: {
@@ -404,9 +460,6 @@ interface GeminiPart {
   };
 }
 
-/**
- * Helper internal untuk melakukan HTTP POST ke Gemini REST API v1beta dengan timeout terminable.
- */
 async function callGeminiGenerateContent(
   systemPrompt: string,
   parts: GeminiPart[],
@@ -448,11 +501,8 @@ async function callGeminiGenerateContent(
         generationConfig,
       };
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        model
-      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const { url, headers } = bangunGeminiRequest(model, apiKey);
 
-      // Timeout per model agar langsung pindah ke kandidat berikutnya jika satu model lambat/overload
       const perModelTimeout =
         timeoutMs > 0 && timeoutMs < PER_MODEL_TIMEOUT_MS
           ? timeoutMs
@@ -466,9 +516,7 @@ async function callGeminiGenerateContent(
       try {
         response = await fetcher(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(payload),
           signal: controller.signal,
         });
@@ -486,7 +534,6 @@ async function callGeminiGenerateContent(
         if (!isCustomFetcher) {
           markModelFailed(model);
         }
-        // Coba model kandidat berikutnya jika gagal
         continue;
       }
 
@@ -514,7 +561,6 @@ async function callGeminiGenerateContent(
       if (!Array.isArray(p.pihak_ketiga)) p.pihak_ketiga = ['Google Gemini'];
 
       const temuanArr = p.temuan as unknown[];
-      // Jika level sedang/tinggi tetapi temuan kosong, sertakan temuan indikasi
       if ((p.level === 'tinggi' || p.level === 'sedang') && temuanArr.length === 0) {
         temuanArr.push({
           judul: 'Tanda mencurigakan terdeteksi',
@@ -525,7 +571,6 @@ async function callGeminiGenerateContent(
       }
 
       const langkahArr = p.langkah as string[];
-      // Pastikan minimal 2 langkah tindakan
       if (langkahArr.length < 2) {
         p.langkah = [
           'Jangan pernah membagikan kode OTP, PIN, password, atau mentransfer uang kepada pengirim.',
@@ -541,7 +586,6 @@ async function callGeminiGenerateContent(
         markModelSuccess(model);
       }
 
-      // Normalisasi situasi_darurat ke nilai valid
       const validSituasi = new Set<SituasiDarurat>([
         'klik_link',
         'isi_data',
@@ -574,18 +618,10 @@ async function callGeminiGenerateContent(
 
     return null;
   } catch {
-    // Timeout, network error, parsing error, abort -> return null
     return null;
   }
 }
 
-/**
- * Menganalisis percakapan chat (teks atau tangkapan layar multimodal) via Gemini API.
- * Default timeout 20 detik (20.000 ms).
- * Return null jika gagal atau timeout agar caller fallback ke aturan lokal.
- *
- * References: Requirements 14.1, 14.4, 14.5, 25.1, 30.1, 30.2, 30.3
- */
 export async function analyzeChat(
   input: AnalyzeChatInput,
   options?: GeminiOptions
@@ -637,7 +673,6 @@ export async function analyzeChat(
     return null;
   }
 
-  // Gabung level: Sesuai Requirement 14.4, tingkat kewaspadaan akhir tidak boleh lebih rendah dari aturan lokal
   const levelAkhir = input.levelMinimum
     ? gabungLevel(input.levelMinimum, hasilRaw.level)
     : hasilRaw.level;
@@ -662,13 +697,6 @@ export async function analyzeChat(
   return filterFormatDataHasil(hasilFinal);
 }
 
-/**
- * Menyusun penjelasan edukatif hasil pemindaian link diagnostik via Gemini API.
- * Default timeout 10 detik (10.000 ms).
- * Return null jika gagal atau timeout agar caller fallback ke teks penjelasan bawaan.
- *
- * References: Requirements 14.5, 25.1, 30.2, 30.3
- */
 export async function explainLink(
   diagnostik: PaketDiagnostikLink,
   options?: GeminiOptions
@@ -730,7 +758,6 @@ Susun respons sebagai objek FormatDataHasil JSON yang ramah, jelas, tanpa vonis,
     return null;
   }
 
-  // Gabung level: Sesuai prinsip rules-first, level tidak boleh lebih rendah dari hasil diagnostik
   const levelAkhir = gabungLevel(diagnostik.levelMinimum, hasilRaw.level);
 
   const pihakKetiga = new Set(hasilRaw.pihak_ketiga || []);
@@ -758,23 +785,14 @@ Susun respons sebagai objek FormatDataHasil JSON yang ramah, jelas, tanpa vonis,
   return filterFormatDataHasil(hasilFinal);
 }
 
-/** Default timeout untuk Tanya Lanjut: 15 detik (Requirement 32.4) */
 export const DEFAULT_TANYA_TIMEOUT_MS = 15_000;
 
-/** Input untuk pemanggilan tanyaGemini */
 export interface TanyaGeminiInput {
   pertanyaan: string;
   konteksHasil?: FormatDataHasil;
   riwayat?: Array<{ peran: 'pengguna' | 'asisten'; isi: string }>;
 }
 
-/**
- * Mengirimkan pertanyaan pengguna dan riwayat percakapan ke Google Gemini via REST API v1beta.
- * Menggunakan system prompt Tanya Lanjut dan menyaring kata terlarang dari respons.
- * Timeout default 15 detik. Return null jika gagal atau timeout agar caller fallback ke jawaban edukatif bawaan.
- *
- * References: Requirements 30.1, 30.2, 30.3, 31.5, 32.4
- */
 export async function tanyaGemini(
   input: TanyaGeminiInput,
   options?: GeminiOptions
@@ -794,7 +812,6 @@ export async function tanyaGemini(
     konteksHasil: input.konteksHasil,
   });
 
-  // Susun multi-turn contents untuk Gemini API
   const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
 
   if (Array.isArray(input.riwayat)) {
@@ -802,7 +819,6 @@ export async function tanyaGemini(
       if (!r || typeof r.isi !== 'string' || !r.isi.trim()) continue;
       const role = r.peran === 'asisten' ? 'model' : 'user';
 
-      // Gemini mengharuskan konten pertama memiliki peran 'user'
       if (contents.length === 0 && role === 'model') continue;
 
       const prev = contents[contents.length - 1];
@@ -814,7 +830,6 @@ export async function tanyaGemini(
     }
   }
 
-  // Tambahkan pertanyaan pengguna saat ini
   const userText = input.pertanyaan.trim();
   const last = contents[contents.length - 1];
   if (last && last.role === 'user') {
@@ -840,11 +855,8 @@ export async function tanyaGemini(
         generationConfig,
       };
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        model
-      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const { url, headers } = bangunGeminiRequest(model, apiKey);
 
-      // Timeout per model agar langsung pindah ke kandidat berikutnya jika satu model lambat/overload
       const perModelTimeout =
         timeoutMs > 0 && timeoutMs < PER_MODEL_TIMEOUT_MS
           ? timeoutMs
@@ -858,9 +870,7 @@ export async function tanyaGemini(
       try {
         response = await fetcher(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(payload),
           signal: controller.signal,
         });

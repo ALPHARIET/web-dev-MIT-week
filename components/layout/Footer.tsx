@@ -8,7 +8,6 @@ export function Footer() {
     <footer className="w-full bg-limestone mt-4 sm:mt-6 text-gray-600 text-sm">
       <div className="max-w-5xl lg:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1.5fr)] gap-8 lg:gap-12 items-start">
-          {/* Kolom 1: Tentang Aplikasi & Catatan Batasan */}
           <div className="space-y-3 max-w-md">
             <div className="flex items-center gap-2">
               <Image
@@ -30,7 +29,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Kolom 2: Navigasi & Informasi */}
+          {/* ===== KOLOM 2: NAVIGASI & INFORMASI ===== */}
           <div className="space-y-3 md:min-w-[240px]">
             <h3 className="font-semibold text-gray-900 text-sm tracking-wide uppercase">
               Informasi & Panduan
@@ -71,7 +70,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Kolom 3: Layanan Pihak Ketiga */}
+          {/* ===== KOLOM 3: LAYANAN PIHAK KETIGA ===== */}
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-900 text-sm tracking-wide uppercase">
               Layanan Pihak Ketiga
@@ -96,7 +95,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Garis batas bawah & Hak cipta / Disclaimer */}
         <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>
             &copy; {new Date().getFullYear()} Cek Penipuan. Disediakan untuk membantu meningkatkan kewaspadaan digital masyarakat Indonesia.

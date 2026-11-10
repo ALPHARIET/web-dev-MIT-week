@@ -22,7 +22,6 @@ interface Skenario {
   ajakan: string;
 }
 
-/** Semua isi di sini fiktif, termasuk nama bank dan alamat link. */
 const SKENARIO: Skenario[] = [
   {
     id: 'chat',
@@ -100,7 +99,6 @@ function pecahTeks(teks: string, tanda: Tanda[]): Potongan[] {
   return hasil;
 }
 
-/** Titik halftone yang membesar di dekat kursor dan ikut menyapu saat contoh diperiksa. */
 function HalftoneHidup({ fase, diam }: { fase: Fase; diam: boolean }): React.JSX.Element {
   const kanvasRef = useRef<HTMLCanvasElement>(null);
   const faseRef = useRef(fase);
@@ -236,10 +234,6 @@ function HalftoneHidup({ fase, diam }: { fase: Fase; diam: boolean }): React.JSX
   return <canvas ref={kanvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />;
 }
 
-/**
- * Demo di hero: contoh fiktif yang diketik, ditandai, lalu diberi hasil.
- * Berjalan sendiri sampai pengguna memilih tab; berhenti sementara saat ditunjuk atau difokus.
- */
 export function DemoPemeriksaan(): React.JSX.Element {
   const [indeks, setIndeks] = useState(0);
   const [karakter, setKarakter] = useState(0);

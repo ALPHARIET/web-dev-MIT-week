@@ -51,12 +51,10 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
       const endpoint = 'cek-chat';
       const now = 1000000;
 
-      // 10 permintaan pertama berhasil
       for (let i = 0; i < 10; i++) {
         await checkRateLimit(ip, endpoint, { now });
       }
 
-      // Permintaan ke-11 ditolak
       const res11 = await checkRateLimit(ip, endpoint, { now });
       expect(res11.success).toBe(false);
       expect(res11.limit).toBe(10);
@@ -70,16 +68,13 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
       const endpoint = 'cek-chat';
       const t0 = 1000000;
 
-      // 10 permintaan pada t0
       for (let i = 0; i < 10; i++) {
         await checkRateLimit(ip, endpoint, { now: t0 });
       }
 
-      // Permintaan ke-11 pada t0 ditolak
       const blocked = await checkRateLimit(ip, endpoint, { now: t0 });
       expect(blocked.success).toBe(false);
 
-      // Setelah 61 detik (61.000 ms), kuota permintaan lama telah kedaluwarsa
       const t1 = t0 + 61000;
       const allowedAgain = await checkRateLimit(ip, endpoint, { now: t1 });
       expect(allowedAgain.success).toBe(true);
@@ -91,17 +86,14 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
       const endpoint = 'cek-link';
       let currentTime = 1000000;
 
-      // Buat 10 batch x 10 permintaan dengan jeda 2 menit antar batch
-      // Total 100 permintaan dalam hari yang sama
       for (let batch = 0; batch < 10; batch++) {
         for (let req = 0; req < 10; req++) {
           const res = await checkRateLimit(ip, endpoint, { now: currentTime });
           expect(res.success).toBe(true);
         }
-        currentTime += 120 * 1000; // lompat 2 menit
+        currentTime += 120 * 1000;
       }
 
-      // Permintaan ke-101 dalam 24 jam ditolak oleh limit harian
       const res101 = await checkRateLimit(ip, endpoint, { now: currentTime });
       expect(res101.success).toBe(false);
       expect(res101.limit).toBe(RATE_LIMIT_PER_DAY);
@@ -117,14 +109,12 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
       const endpoint = 'cek-chat';
       const now = 1000000;
 
-      // Habiskan kuota IP 1
       for (let i = 0; i < 10; i++) {
         await checkRateLimit(ip1, endpoint, { now });
       }
       const resIp1 = await checkRateLimit(ip1, endpoint, { now });
       expect(resIp1.success).toBe(false);
 
-      // IP 2 masih memiliki kuota penuh
       const resIp2 = await checkRateLimit(ip2, endpoint, { now });
       expect(resIp2.success).toBe(true);
       expect(resIp2.remaining).toBe(9);
@@ -134,19 +124,16 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
       const ip = '10.0.0.3';
       const now = 1000000;
 
-      // Habiskan kuota untuk cek-chat
       for (let i = 0; i < 10; i++) {
         await checkRateLimit(ip, 'cek-chat', { now });
       }
       const chatBlocked = await checkRateLimit(ip, 'cek-chat', { now });
       expect(chatBlocked.success).toBe(false);
 
-      // Halaman cek-link untuk IP yang sama tetap dapat diakses
       const linkAllowed = await checkRateLimit(ip, 'cek-link', { now });
       expect(linkAllowed.success).toBe(true);
       expect(linkAllowed.remaining).toBe(9);
 
-      // Halaman cek-video untuk IP yang sama tetap dapat diakses
       const videoAllowed = await checkRateLimit(ip, 'cek-video-suara', { now });
       expect(videoAllowed.success).toBe(true);
       expect(videoAllowed.remaining).toBe(9);
@@ -160,7 +147,6 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
 
       const res2 = await checkRateLimit('   ');
       expect(res2.success).toBe(true);
-      // Harus mengurangi kuota yang sama (127.0.0.1)
       expect(res2.remaining).toBe(8);
     });
 
@@ -175,7 +161,6 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
     it('menerapkan fail-open jika Upstash Redis melempar error', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      // Mock Redis client yang melempar exception saat evaluasi
       const mockFailingRedis = {
         eval: vi.fn().mockRejectedValue(new Error('Connection timeout to Redis cluster')),
       } as any;
@@ -184,7 +169,6 @@ describe('lib/rate-limit.ts - In-Memory Fallback & Rate Limiting', () => {
 
       const res = await checkRateLimit('192.168.1.99', 'cek-chat');
 
-      // Fail-open: permintaan tetap diizinkan agar demo tidak terganggu
       expect(res.success).toBe(true);
       expect(res.limit).toBe(RATE_LIMIT_PER_MINUTE);
       expect(res.remaining).toBe(RATE_LIMIT_PER_MINUTE);

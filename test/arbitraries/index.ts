@@ -1,10 +1,3 @@
-/**
- * test/arbitraries/index.ts
- *
- * Custom fast-check arbitraries untuk testing property-based
- * pada Aplikasi Web Cek Penipuan.
- */
-
 import fc from 'fast-check';
 import type {
   FormatDataHasil,
@@ -26,7 +19,6 @@ import type {
 import daftarMerekJson from '../../data/merek.json';
 import tldBerisikoJson from '../../data/tld-berisiko.json';
 
-/** Generator untuk satu temuan mencurigakan */
 export function arbitraryTemuan(): fc.Arbitrary<Temuan> {
   return fc.record({
     judul: fc.string({ minLength: 1, maxLength: 100 }),
@@ -43,12 +35,10 @@ export function arbitraryTemuan(): fc.Arbitrary<Temuan> {
   });
 }
 
-/** Generator untuk tingkat kewaspadaan */
 export function arbitraryTingkatLevel(): fc.Arbitrary<TingkatLevel> {
   return fc.constantFrom<TingkatLevel>('tinggi', 'sedang', 'tidak_ditemukan');
 }
 
-/** Generator untuk objek FormatDataHasil yang valid */
 export function arbitraryFormatDataHasil(): fc.Arbitrary<FormatDataHasil> {
   return fc.record({
     halaman: fc.constantFrom<HalamanCek>('chat', 'link', 'video'),
@@ -76,16 +66,6 @@ export function arbitraryFormatDataHasil(): fc.Arbitrary<FormatDataHasil> {
     ),
   });
 }
-/**
- * Generator untuk URL dengan parameter sensitif (email, phone, token, session, id, password, otp).
- * Memenuhi spesifikasi Property 7 dan design.md:
- * - Menghasilkan URL dengan protokol (https://, http://, atau tanpa protokol)
- * - Domain umum dan domain Indonesia
- * - Path acak
- * - Setidaknya 1 parameter sensitif (dengan variasi huruf besar/kecil/campuran)
- * - Parameter non-sensitif (seperti safe, page, ref, lang, category, dll.)
- * - Opsional hash fragment (#...)
- */
 export function arbitraryUrlWithSensitiveParams(): fc.Arbitrary<string> {
   const sensitiveKeys = fc.constantFrom(
     'email',
@@ -168,14 +148,8 @@ export function arbitraryUrlWithSensitiveParams(): fc.Arbitrary<string> {
     });
 }
 
-/**
- * Tipe pola data sensitif yang didukung oleh sensor otomatis.
- */
 export type TipeSensitif = 'hp' | 'rekening' | 'email' | 'otp_pin';
 
-/**
- * Helper untuk membuat arbitrary string dari kumpulan karakter tertentu.
- */
 function stringOfChars(
   chars: string[],
   minLength: number,
@@ -186,9 +160,6 @@ function stringOfChars(
     .map((c) => c.join(''));
 }
 
-/**
- * Interface detail teks dengan data sensitif yang disuntikkan.
- */
 export interface TeksWithSensitifDetail {
   teks: string;
   prefix: string;
@@ -198,10 +169,6 @@ export interface TeksWithSensitifDetail {
   expected: string;
 }
 
-/**
- * Generator nomor HP Indonesia:
- * Awalan 08, +628, 628, atau 0 diikuti 8-12 digit lanjutan.
- */
 export function arbitraryNomorHp(): fc.Arbitrary<string> {
   const awalan = fc.constantFrom('08', '+628', '628', '0');
   const digitLanjutan = stringOfChars('0123456789'.split(''), 8, 11);
@@ -209,11 +176,6 @@ export function arbitraryNomorHp(): fc.Arbitrary<string> {
   return fc.tuple(awalan, digitLanjutan).map(([a, d]) => `${a}${d}`);
 }
 
-/**
- * Generator nomor rekening bank:
- * 10 sampai 16 digit angka.
- * Diawali angka 1-9 agar tidak tumpang tindih dengan awalan HP 08/+62.
- */
 export function arbitraryNomorRekening(): fc.Arbitrary<string> {
   const digitPertama = fc.constantFrom(...'123456789'.split(''));
   const sisaDigit = stringOfChars('0123456789'.split(''), 9, 15);
@@ -221,9 +183,6 @@ export function arbitraryNomorRekening(): fc.Arbitrary<string> {
   return fc.tuple(digitPertama, sisaDigit).map(([p, s]) => `${p}${s}`);
 }
 
-/**
- * Generator alamat email valid.
- */
 export function arbitraryEmail(): fc.Arbitrary<string> {
   const username = fc
     .tuple(
@@ -244,17 +203,10 @@ export function arbitraryEmail(): fc.Arbitrary<string> {
   return fc.tuple(username, domain).map(([u, d]) => `${u}@${d}`);
 }
 
-/**
- * Generator deretan 4-8 digit angka (PIN, OTP, kode verifikasi).
- */
 export function arbitraryOtpPin(): fc.Arbitrary<string> {
   return stringOfChars('0123456789'.split(''), 4, 8);
 }
 
-/**
- * Generator teks non-sensitif (kata-kata netral, angka 1-3 digit, tanda baca).
- * Dijamin tidak mengandung pola sensitif (tidak ada @, tidak ada deretan 4+ digit beruntun).
- */
 export function arbitraryTeksNonSensitif(): fc.Arbitrary<string> {
   const kataAman = fc.constantFrom(
     'halo', 'selamat', 'pagi', 'siang', 'sore', 'malam', 'kak', 'gan', 'bro', 'sis',
@@ -281,9 +233,6 @@ export function arbitraryTeksNonSensitif(): fc.Arbitrary<string> {
     .map((arr) => arr.join(' '));
 }
 
-/**
- * Generator satu pola sensitif acak beserta tipenya.
- */
 export function arbitraryPolaSensitif(): fc.Arbitrary<{
   teks: string;
   tipe: TipeSensitif;
@@ -296,9 +245,6 @@ export function arbitraryPolaSensitif(): fc.Arbitrary<{
   );
 }
 
-/**
- * Generator detail teks yang menyuntikkan satu pola sensitif ke teks non-sensitif.
- */
 export function arbitraryTeksWithSensitifDetail(): fc.Arbitrary<TeksWithSensitifDetail> {
   return fc
     .tuple(
@@ -325,9 +271,6 @@ export function arbitraryTeksWithSensitifDetail(): fc.Arbitrary<TeksWithSensitif
     });
 }
 
-/**
- * Generator teks dengan 1-4 pola sensitif majemuk diselingi teks non-sensitif.
- */
 export function arbitraryTeksWithMultipleSensitif(): fc.Arbitrary<{
   teks: string;
   count: number;
@@ -366,10 +309,6 @@ export function arbitraryTeksWithMultipleSensitif(): fc.Arbitrary<{
     );
 }
 
-/**
- * Generator untuk teks chat dengan pola sensitif.
- * Menghasilkan teks acak yang mengandung pola sensitif (HP, rekening, email, atau 4-8 digit OTP/PIN).
- */
 export function arbitraryTeksWithSensitif(): fc.Arbitrary<string> {
   return fc.oneof(
     arbitraryTeksWithSensitifDetail().map((d) => d.teks),
@@ -377,7 +316,6 @@ export function arbitraryTeksWithSensitif(): fc.Arbitrary<string> {
   );
 }
 
-/** Generator untuk pilihan situasi pada wizard Video & Suara */
 export function arbitrarySituasiVideo(): fc.Arbitrary<SituasiVideo | null | undefined> {
   return fc.constantFrom<SituasiVideo | null | undefined>(
     'video_call',
@@ -388,7 +326,6 @@ export function arbitrarySituasiVideo(): fc.Arbitrary<SituasiVideo | null | unde
   );
 }
 
-/** Generator untuk pilihan apa_diminta */
 export function arbitraryApaDimintaVideo(): fc.Arbitrary<ApaDimintaVideo | undefined> {
   return fc.constantFrom<ApaDimintaVideo | undefined>(
     'otp_pin',
@@ -402,7 +339,6 @@ export function arbitraryApaDimintaVideo(): fc.Arbitrary<ApaDimintaVideo | undef
   );
 }
 
-/** Generator untuk pilihan nomor_akun */
 export function arbitraryNomorAkunVideo(): fc.Arbitrary<NomorAkunVideo | undefined> {
   return fc.constantFrom<NomorAkunVideo | undefined>(
     'nomor_baru',
@@ -413,7 +349,6 @@ export function arbitraryNomorAkunVideo(): fc.Arbitrary<NomorAkunVideo | undefin
   );
 }
 
-/** Generator untuk pilihan siapa_tampil */
 export function arbitrarySiapaTampilVideo(): fc.Arbitrary<SiapaTampilVideo | undefined> {
   return fc.constantFrom<SiapaTampilVideo | undefined>(
     'tokoh_publik',
@@ -424,7 +359,6 @@ export function arbitrarySiapaTampilVideo(): fc.Arbitrary<SiapaTampilVideo | und
   );
 }
 
-/** Daftar tanda checklist visual & audio khas penipuan video/deepfake */
 export const DAFTAR_TANDA_CHECKLIST = [
   'bibir tidak sinkron',
   'kedipan aneh',
@@ -435,18 +369,10 @@ export const DAFTAR_TANDA_CHECKLIST = [
   'jeda janggal',
 ] as const;
 
-/** Generator untuk daftar tanda checklist */
 export function arbitraryChecklistVideo(): fc.Arbitrary<string[]> {
   return fc.subarray([...DAFTAR_TANDA_CHECKLIST], { minLength: 0, maxLength: 7 });
 }
 
-/**
- * Generator untuk kombinasi jawaban wizard Video & Suara secara acak.
- * Menghasilkan objek JawabanWizardVideo yang valid dengan berbagai kemungkinan
- * kombinasi situasi, apa_diminta, nomor_akun, darurat_desakan, diminta_rahasiakan,
- * bisa_telepon_balik, siapa_tampil, janji_untung_ajakan, tanda_checklist/checklist,
- * masih_tersambung, dan metadata tambahan.
- */
 export function arbitraryWizardAnswers(): fc.Arbitrary<JawabanWizardVideo> {
   return fc
     .record({
@@ -521,12 +447,6 @@ export function arbitraryWizardAnswers(): fc.Arbitrary<JawabanWizardVideo> {
     );
 }
 
-/**
- * Generator untuk jawaban wizard yang TIDAK memicu skor (bobot = 0).
- * Termasuk situasi, tidak_ada, nomor_lama, keluarga/atasan/lainnya,
- * darurat: false, rahasia: false, bisa_telepon_balik: true, janji_untung: false,
- * checklist kosong, dan field tambahan lainnya.
- */
 export function arbitraryNonTriggeringAnswers(): fc.Arbitrary<JawabanWizardVideo> {
   return fc
     .record({
@@ -599,17 +519,8 @@ export function arbitraryNonTriggeringAnswers(): fc.Arbitrary<JawabanWizardVideo
 }
 
 
-/**
- * ============================================================================
- * Generator untuk Teks Chat dan Pola Penipuan Chat (Property 4, Req 13.2)
- * ============================================================================
- */
+// ===== GENERATOR UNTUK TEKS CHAT DAN POLA PENIPUAN CHAT =====
 
-/**
- * Frase contoh representatif untuk masing-masing 11 pola penipuan chat (Requirement 13.2).
- * Frase-frase ini dirancang agar saling independen (non-overlapping)
- * sehingga pengujian sifat aditif skor dapat diverifikasi secara presisi.
- */
 export const FRASE_POLA_CHAT: Record<
   string,
   { bobot: number; langsung_tinggi: boolean; contoh: string[] }
@@ -744,7 +655,6 @@ export const FRASE_POLA_CHAT: Record<
   },
 };
 
-/** Kalimat percakapan netral (tanpa pola penipuan) */
 export const KALIMAT_CHAT_NETRAL = [
   'Halo selamat siang kak, apa kabar?',
   'Semoga harimu menyenangkan dan berkah selalu.',
@@ -757,10 +667,8 @@ export const KALIMAT_CHAT_NETRAL = [
   'Semoga acaranya berjalan lancar.',
 ];
 
-/** Tipe ID pola chat */
 export type PolaChatId = keyof typeof FRASE_POLA_CHAT;
 
-/** Detail struktur teks chat yang dihasilkan beserta pola yang disuntikkan */
 export interface ChatTextDetail {
   teks: string;
   selectedPatternIds: string[];
@@ -768,10 +676,6 @@ export interface ChatTextDetail {
   hasLangsungTinggi: boolean;
 }
 
-/**
- * Generator detail teks chat dengan 0-N pola penipuan terstruktur.
- * Memungkinkan pengujian presisi terhadap skor yang diharapkan.
- */
 export function arbitraryChatTextDetail(): fc.Arbitrary<ChatTextDetail> {
   const allIds = Object.keys(FRASE_POLA_CHAT);
 
@@ -811,14 +715,6 @@ export function arbitraryChatTextDetail(): fc.Arbitrary<ChatTextDetail> {
     });
 }
 
-/**
- * Generator teks chat acak dengan 0-N pola penipuan chat (Property 4).
- * Menghasilkan variasi:
- * - Teks percakapan dengan 0 pola (murni kalimat netral)
- * - Teks percakapan dengan 1-N pola terstruktur (1 sampai 11 pola)
- * - Teks dengan seluruh 11 pola hadir bersamaan
- * - Teks acak non-sensitif atau string kosong
- */
 export function arbitraryChatText(): fc.Arbitrary<string> {
   return fc.oneof(
     arbitraryChatTextDetail().map((d) => d.teks),
@@ -827,46 +723,21 @@ export function arbitraryChatText(): fc.Arbitrary<string> {
   );
 }
 
-/**
- * ============================================================================
- * Generator untuk Deteksi Merek dan Pola Leksikal URL (Property 8 & 11)
- * References: Requirements 19.2, 19.4, 19.5, 19.6, 19.8, 19.10, and design.md
- * ============================================================================
- */
-
 export interface BrandVariantSample {
   merek: string;
   domain: string;
 }
 
-/**
- * Generator untuk variasi domain merek Indonesia (Property 8, Requirement 19.2).
- *
- * Menghasilkan:
- * - Seluruh 14 merek Indonesia dari data/merek.json (BCA, BRI, BNI, Mandiri, BSI,
- *   DANA, OVO, GoPay, Shopee, Tokopedia, BPJS, JNE, J&T, Pos Indonesia)
- * - Variasi resmi dari data/merek.json
- * - Substitusi leetspeak dinamis: o->0, i->1, e->3, a->4, s->5
- * - Berbagai format URL (dengan/tanpa protokol, dengan TLD umum/Indonesia/berisiko,
- *   dengan/tanpa path, dan bare tokens)
- */
 export function arbitraryBrandVariant(): fc.Arbitrary<BrandVariantSample> {
   const brands = daftarMerekJson.merek || [];
 
   return fc.constantFrom(...brands).chain((brand) => {
-    // Kumpulkan semua kandidat variasi: nama kecil + variasi resmi
     const baseVariations = [
       brand.nama.toLowerCase(),
       ...(brand.variasi || []).map((v: string) => v.toLowerCase()),
     ];
 
     return fc.constantFrom(...baseVariations).chain((baseWord) => {
-      // Terapkan substitusi leetspeak acak pada karakter kata:
-      // o -> ['o', '0']
-      // i -> ['i', '1']
-      // e -> ['e', '3']
-      // a -> ['a', '4']
-      // s -> ['s', '5']
       const charArbs: fc.Arbitrary<string>[] = [];
       for (let i = 0; i < baseWord.length; i++) {
         const char = baseWord[i];
@@ -896,8 +767,6 @@ export function arbitraryBrandVariant(): fc.Arbitrary<BrandVariantSample> {
       return fc
         .tuple(mutatedArb, protoArb, tldArb, pathArb, fc.boolean())
         .map(([mutated, proto, tld, path, isBare]) => {
-          // Jika baseWord memiliki titik (seperti b.c.a), selalu sertakan TLD
-          // agar parsing host/subdomain tetap utuh
           const useBare = isBare && !baseWord.includes('.');
           const domain = useBare ? mutated : `${proto}${mutated}${tld}${path}`;
 
@@ -948,9 +817,6 @@ export const CONTOH_MEREK_URL = ['sh0pee', 'bc4', 'danaindonesia', 'tokoped1a', 
 export const CONTOH_DOMAIN_NETRAL = ['portal-berita', 'info-terkini', 'layanan-web', 'situs-artikel'] as const;
 export const CONTOH_TLD_NETRAL = ['com', 'net', 'org', 'id'] as const;
 
-/**
- * Membangun URL domain-based berdasarkan sinyal aktif.
- */
 export function buildDomainUrlWithSignals(flags: {
   merek: boolean;
   punycode: boolean;
@@ -969,7 +835,6 @@ export function buildDomainUrlWithSignals(flags: {
   const signals: SinyalLeksikalUrl[] = [];
   let expectedScore = 0;
 
-  // 1. Subdomain & Punycode
   let subdomainStr = '';
   if (flags.subdomain) {
     signals.push('subdomain');
@@ -991,7 +856,6 @@ export function buildDomainUrlWithSignals(flags: {
     }
   }
 
-  // 2. Domain Utama (Merek vs Netral)
   let domainUtama = '';
   if (flags.merek) {
     signals.push('merek');
@@ -1001,7 +865,6 @@ export function buildDomainUrlWithSignals(flags: {
     domainUtama = flags.neutralDomainChoice || CONTOH_DOMAIN_NETRAL[0];
   }
 
-  // 3. TLD (Berisiko vs Netral)
   let tld = '';
   if (flags.tld_berisiko) {
     signals.push('tld_berisiko');
@@ -1011,7 +874,6 @@ export function buildDomainUrlWithSignals(flags: {
     tld = flags.neutralTldChoice || CONTOH_TLD_NETRAL[0];
   }
 
-  // 4. Path (Kata Pemicu vs Netral)
   let path = '';
   if (flags.kata_pemicu) {
     signals.push('kata_pemicu');
@@ -1021,7 +883,6 @@ export function buildDomainUrlWithSignals(flags: {
     path = '/article/detail';
   }
 
-  // 5. At atau Panjang URL
   let atPart = '';
   if (flags.at_atau_panjang) {
     signals.push('at_atau_panjang');
@@ -1040,9 +901,6 @@ export function buildDomainUrlWithSignals(flags: {
   };
 }
 
-/**
- * Membangun URL berbasis IP numerik dengan sinyal opsional.
- */
 export function buildIpUrlWithSignals(flags: {
   kata_pemicu: boolean;
   at_atau_panjang: boolean;
@@ -1078,10 +936,6 @@ export function buildIpUrlWithSignals(flags: {
   };
 }
 
-/**
- * Generator URL dengan berbagai sinyal leksikal penipuan (Property 11).
- * Menguji aditivitas skor analisis leksikal URL (Requirements 19.2, 19.4, 19.5, 19.6, 19.8, 19.10).
- */
 export function arbitraryUrlWithSignals(): fc.Arbitrary<UrlWithSignals> {
   const domainArb = fc
     .record({
@@ -1113,11 +967,6 @@ export function arbitraryUrlWithSignals(): fc.Arbitrary<UrlWithSignals> {
   return fc.oneof(domainArb, ipArb);
 }
 
-/**
- * Generator pasangan URL (sebelum & sesudah penambahan satu sinyal leksikal baru).
- * Digunakan untuk menguji bahwa penambahan sinyal baru selalu menaikkan atau mempertahankan skor
- * (monotonisitas dan aditivitas).
- */
 export function arbitraryUrlSignalPair(): fc.Arbitrary<UrlSignalPair> {
   const DOMAIN_SIGNALS: Array<
     'merek' | 'punycode' | 'kata_pemicu' | 'subdomain' | 'tld_berisiko' | 'at_atau_panjang'

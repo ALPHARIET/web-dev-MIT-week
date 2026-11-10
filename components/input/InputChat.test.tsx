@@ -6,13 +6,9 @@ import {
   InputChat,
   validateImageMagicBytes,
   formatUkuranFile,
-  type InputChatProps,
   type ChatInputData,
 } from './InputChat';
 
-/**
- * Helper untuk membuat mock File dengan header magic bytes spesifik
- */
 function createMockFile(
   name: string,
   type: string,
@@ -27,7 +23,6 @@ function createMockFile(
 }
 
 describe('components/input/InputChat.tsx (Task 7.1)', () => {
-  // Mock File untuk berbagai format
   const validJpgFile = createMockFile(
     'bukti-chat.jpg',
     'image/jpeg',
@@ -42,9 +37,9 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
     'tangkapan.webp',
     'image/webp',
     [
-      0x52, 0x49, 0x46, 0x46, // RIFF
-      0x20, 0x00, 0x00, 0x00, // ukuran
-      0x57, 0x45, 0x42, 0x50, // WEBP
+      0x52, 0x49, 0x46, 0x46,
+      0x20, 0x00, 0x00, 0x00,
+      0x57, 0x45, 0x42, 0x50,
     ]
   );
   const invalidFakeJpg = createMockFile(
@@ -61,7 +56,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock window.URL.createObjectURL dan revokeObjectURL jika belum ada di jsdom
     if (typeof window.URL.createObjectURL !== 'function') {
       window.URL.createObjectURL = vi.fn(
         (obj: Blob | MediaSource) =>
@@ -85,9 +79,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
     cleanup();
   });
 
-  // -------------------------------------------------------------
-  // 1. Helper Functions Tests
-  // -------------------------------------------------------------
   describe('Helper: validateImageMagicBytes (Requirements 11.3, 11.7)', () => {
     it('mengembalikan true untuk file JPEG valid (FF D8 FF)', async () => {
       const isValid = await validateImageMagicBytes(validJpgFile);
@@ -138,9 +129,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
     });
   });
 
-  // -------------------------------------------------------------
-  // 2. Tab Navigation & Accessibility Tests (Requirement 11.1, 27.2)
-  // -------------------------------------------------------------
   describe('Tab Navigasi (Requirement 11.1, 27.2)', () => {
     it('merender dua tab: "Tempel teks" dan "Unggah screenshot"', () => {
       render(<InputChat onSubmit={vi.fn()} />);
@@ -161,7 +149,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
       expect(tabTeks.getAttribute('aria-selected')).toBe('true');
       expect(tabScreenshot.getAttribute('aria-selected')).toBe('false');
 
-      // Panel teks aktif
       expect(screen.getByRole('tabpanel', { name: /tempel teks/i })).toBeDefined();
     });
 
@@ -175,7 +162,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
       const tabTeks = screen.getByRole('tab', { name: /tempel teks/i });
       expect(tabTeks.getAttribute('aria-selected')).toBe('false');
 
-      // Panel screenshot aktif
       expect(screen.getByRole('tabpanel', { name: /unggah screenshot/i })).toBeDefined();
     });
 
@@ -190,9 +176,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
     });
   });
 
-  // -------------------------------------------------------------
-  // 3. Mode Teks Tests (Requirements 11.2, 11.5, 11.6, 27.4)
-  // -------------------------------------------------------------
   describe('Mode Teks (Requirements 11.2, 11.5, 11.6, 27.4)', () => {
     it('memiliki label yang terhubung dengan textarea melalui id/htmlFor (Requirement 27.4)', () => {
       render(<InputChat onSubmit={vi.fn()} />);
@@ -375,9 +358,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
     });
   });
 
-  // -------------------------------------------------------------
-  // 4. Mode Screenshot Tests (Requirements 11.3, 11.7, 12.3, 27.2)
-  // -------------------------------------------------------------
   describe('Mode Screenshot (Requirements 11.3, 11.7, 12.3, 27.2)', () => {
     it('menampilkan peringatan privasi bahwa screenshot tidak bisa disensor otomatis (Requirement 12.3)', () => {
       render(<InputChat onSubmit={vi.fn()} />);
@@ -432,7 +412,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
       expect(screen.getByText('bukti-chat.jpg')).toBeDefined();
       expect(screen.getByAltText('Pratinjau bukti-chat.jpg')).toBeDefined();
 
-      // Tombol periksa sekarang aktif
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       expect(tombolPeriksa.hasAttribute('disabled')).toBe(false);
     });
@@ -486,7 +465,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
 
       expect(window.URL.revokeObjectURL).toHaveBeenCalled();
 
-      // Tombol Periksa kembali disabled
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       expect(tombolPeriksa.hasAttribute('disabled')).toBe(true);
     });
@@ -507,7 +485,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
         expect(error.textContent).toContain('Format file tidak didukung');
       });
 
-      // Tidak ada gambar yang ditambahkan
       expect(screen.queryByTestId('daftar-thumbnail-screenshot')).toBeNull();
     });
 
@@ -535,7 +512,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
 
       expect(screen.getByTestId('error-file').textContent).toContain('Maksimal 5 gambar');
 
-      // Memastikan hanya 5 gambar yang tampil
       expect(screen.getByText('Gambar terunggah (5/5)')).toBeDefined();
       expect(screen.queryByText('img6.png')).toBeNull();
     });
@@ -596,9 +572,6 @@ describe('components/input/InputChat.tsx (Task 7.1)', () => {
     });
   });
 
-  // -------------------------------------------------------------
-  // 5. State Loading & Aksesibilitas Tambahan (Requirement 27.2)
-  // -------------------------------------------------------------
   describe('State Loading & Aksesibilitas (Requirement 27.2)', () => {
     it('menonaktifkan tombol Periksa dan menampilkan teks loading saat isLoading true', () => {
       render(

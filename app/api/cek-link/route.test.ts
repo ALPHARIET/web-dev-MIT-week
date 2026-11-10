@@ -29,7 +29,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
     vi.restoreAllMocks();
     process.env = { ...originalEnv };
 
-    // Default mocks: Safe Browsing bersih, RDAP tidak ditemukan/netral, Gemini return null (fallback lokal)
     vi.mocked(checkSafeBrowsing).mockResolvedValue({
       ditemukan: false,
       ancaman: [],
@@ -50,7 +49,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
     process.env = originalEnv;
   });
 
-  // Helper untuk membuat Request objek
   const createRequest = (body: unknown): Request => {
     return new Request('http://localhost:3000/api/cek-link', {
       method: 'POST',
@@ -114,14 +112,12 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
       const res = await POST(req);
       expect(res.status).toBe(200);
 
-      // Verifikasi Safe Browsing dipanggil dengan URL yang parameter sensitifnya telah dibuang
       expect(checkSafeBrowsing).toHaveBeenCalled();
       const calledUrl = vi.mocked(checkSafeBrowsing).mock.calls[0][0];
 
       expect(calledUrl).not.toContain('user@test.com');
       expect(calledUrl).not.toContain('secret123');
       expect(calledUrl).not.toContain('889900');
-      // Parameter non-sensitif 'promo' tetap dipertahankan
       expect(calledUrl).toContain('promo=merdeka');
     });
 
@@ -151,15 +147,13 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
       expect(json.level).toBe(contohSkenario.hasilSimulasi.level);
       expect(json.ringkasan).toBe(contohSkenario.hasilSimulasi.ringkasan);
 
-      // Pastikan TIDAK memanggil layanan eksternal
       expect(checkSafeBrowsing).not.toHaveBeenCalled();
       expect(queryDomainAge).not.toHaveBeenCalled();
       expect(explainLink).not.toHaveBeenCalled();
     });
 
     it('tetap mencocokkan contoh fiktif meskipun ada variasi trailing slash atau tanpa protokol', async () => {
-      const contohSkenario = linkContohJson.skenario[1]; // sh0pee promo
-      // Hilangkan https:// dan tambahkan trailing slash
+      const contohSkenario = linkContohJson.skenario[1];
       const urlVariant = contohSkenario.url.replace(/^https?:\/\//, '') + '/';
 
       const req = createRequest({ url: urlVariant });
@@ -192,7 +186,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
       expect(json.level).toBe('tinggi');
       expect(json.status_layanan.safe_browsing).toBe('ok');
 
-      // Terdapat temuan dengan sumber safe_browsing
       const safeBrowsingTemuan = json.temuan.find((t) => t.sumber === 'safe_browsing');
       expect(safeBrowsingTemuan).toBeDefined();
       expect(safeBrowsingTemuan?.judul).toMatch(/Google Safe Browsing/i);
@@ -230,7 +223,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
 
       const json: FormatDataHasil = await res.json();
       expect(json.status_layanan.safe_browsing).toBe('gagal');
-      // Aturan leksikal tetap bekerja (nama merek sh0pee -> level sedang/tinggi)
       expect(json.level).not.toBe('tidak_ditemukan');
       expect(json.temuan.length).toBeGreaterThanOrEqual(1);
     });
@@ -248,7 +240,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
 
       const json: FormatDataHasil = await res.json();
       expect(json.status_layanan.rdap).toBe('gagal');
-      // Alamat IP numerik terdeteksi oleh aturan leksikal
       expect(json.temuan.some((t) => t.judul.includes('IP numerik'))).toBe(true);
     });
   });
@@ -291,14 +282,12 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
     });
 
     it('menggabungkan level minimum dari aturan lokal (prinsip rules-first / tidak boleh menurunkan level)', async () => {
-      // Safe Browsing mendeteksi ancaman -> level lokal = 'tinggi'
       vi.mocked(checkSafeBrowsing).mockResolvedValueOnce({
         ditemukan: true,
         ancaman: ['MALWARE'],
         status: 'ok',
       });
 
-      // Gemini mengembalikan level yang lebih rendah ('sedang')
       const mockGeminiHasil: FormatDataHasil = {
         halaman: 'link',
         level: 'sedang',
@@ -325,7 +314,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
       const res = await POST(req);
       const json: FormatDataHasil = await res.json();
 
-      // Level akhir tetap 'tinggi' karena aturan Safe Browsing adalah 'tinggi'
       expect(json.level).toBe('tinggi');
     });
 
@@ -338,7 +326,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
 
       const json: FormatDataHasil = await res.json();
       expect(json.status_layanan.ai).toBe('gagal');
-      // FormatDataHasil tetap valid dan lengkap
       expect(json.halaman).toBe('link');
       expect(json.ringkasan).toBeTruthy();
       expect(json.temuan.length).toBeGreaterThanOrEqual(1);
@@ -376,9 +363,7 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
       const res = await POST(req);
       const json: FormatDataHasil = await res.json();
 
-      // Level minimal dari client ('sedang') tetap dijaga
       expect(['sedang', 'tinggi']).toContain(json.level);
-      // Temuan client dimasukkan ke daftar temuan akhir
       expect(json.temuan.some((t) => t.judul === 'Temuan khusus dari client')).toBe(true);
     });
   });
@@ -398,7 +383,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
         .map((args) => args.join(' '))
         .join('\n');
 
-      // Memastikan URL dan token tidak tercatat di output log
       expect(allLogCalls).not.toContain('supersecret123');
       expect(allLogCalls).not.toContain('081234567890');
       expect(allLogCalls).not.toContain(sensitiveUrl);
@@ -413,7 +397,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
 
       const json: FormatDataHasil = await res.json();
 
-      // Struktur FormatDataHasil lengkap
       expect(json.halaman).toBe('link');
       expect(['tinggi', 'sedang', 'tidak_ditemukan']).toContain(json.level);
       expect(typeof json.ringkasan).toBe('string');
@@ -426,7 +409,6 @@ describe('POST /api/cek-link Route Handler (Task 13.1)', () => {
       expect(Array.isArray(json.pihak_ketiga)).toBe(true);
       expect(typeof json.status_layanan).toBe('object');
 
-      // Round-trip property (Requirement 32.5)
       const serialized = JSON.stringify(json);
       const parsedRoundTrip = JSON.parse(serialized);
       expect(parsedRoundTrip).toEqual(json);

@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect, useRef, useId } from 'react';
 
-/**
- * Data hasil input pemeriksaan chat yang akan dikirim ke callback onSubmit.
- */
 export interface ChatInputData {
   mode: 'teks' | 'screenshot';
   teks?: string;
@@ -12,28 +9,16 @@ export interface ChatInputData {
   konteks?: string;
 }
 
-/** Alias untuk kompatibilitas dengan dokumen arsitektur */
 export type ChatInput = ChatInputData;
 
-/**
- * Props untuk komponen InputChat.
- */
 export interface InputChatProps {
-  /** Callback saat form disubmit dengan data input yang valid */
   onSubmit: (data: ChatInputData) => void | Promise<void>;
-  /** Status sedang memproses pengiriman atau analisis */
   isLoading?: boolean;
-  /** Nilai teks awal (misalnya diisi dari skenario contoh) */
   initialTeks?: string;
-  /** Nilai konteks awal (misalnya diisi dari skenario contoh) */
   initialKonteks?: string;
-  /** Kelas CSS tambahan untuk styling kustom */
   className?: string;
 }
 
-/**
- * Representasi internal file gambar yang diunggah dengan preview URL.
- */
 interface GambarItem {
   id: string;
   file: File;
@@ -44,17 +29,6 @@ const MAKS_KARAKTER_TEKS = 4000;
 const MAKS_KARAKTER_KONTEKS = 200;
 const MAKS_JUMLAH_GAMBAR = 5;
 
-/**
- * Memvalidasi apakah file gambar memiliki magic bytes yang valid untuk JPG, PNG, atau WebP.
- * Memeriksa isi header file secara langsung di browser tanpa bergantung pada ekstensi nama file semata.
- *
- * Magic bytes signature:
- * - JPEG/JPG: 0xFF, 0xD8, 0xFF
- * - PNG: 0x89, 0x50, 0x4E, 0x47
- * - WebP: bytes 0-3 = "RIFF" (0x52, 0x49, 0x46, 0x46) dan bytes 8-11 = "WEBP" (0x57, 0x45, 0x42, 0x50)
- *
- * References: Requirements 11.3, 11.7
- */
 export async function validateImageMagicBytes(file: File): Promise<boolean> {
   try {
     const slice = file.slice(0, 12);
@@ -84,17 +58,14 @@ export async function validateImageMagicBytes(file: File): Promise<boolean> {
       return false;
     }
 
-    // Cek JPEG / JPG: FF D8 FF
     if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
       return true;
     }
 
-    // Cek PNG: 89 50 4E 47
     if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
       return true;
     }
 
-    // Cek WebP: RIFF (bytes 0-3) dan WEBP (bytes 8-11)
     if (bytes.length >= 12) {
       const isRiff =
         bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46;
@@ -111,22 +82,12 @@ export async function validateImageMagicBytes(file: File): Promise<boolean> {
   }
 }
 
-/**
- * Format ukuran file ke representasi yang ramah pengguna (KB atau MB).
- */
 export function formatUkuranFile(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * Komponen Input Chat dengan dua tab: "Tempel teks" dan "Unggah screenshot".
- * Dilengkapi validasi panjang teks, magic bytes file, batas jumlah screenshot,
- * peringatan privasi untuk gambar, dan target sentuh minimal 44px.
- *
- * References: Requirements 11.1, 11.2, 11.3, 11.5, 11.6, 11.7, 12.3, 27.2, 27.4
- */
 export function InputChat({
   onSubmit,
   isLoading = false,
@@ -151,7 +112,6 @@ export function InputChat({
   const konteksInputId = useId();
   const fileInputId = useId();
 
-  // Sinkronisasi prop initialTeks jika berubah dari luar (misal TombolContoh)
   useEffect(() => {
     if (initialTeks !== undefined) {
       setTeks(initialTeks);
@@ -162,14 +122,12 @@ export function InputChat({
     }
   }, [initialTeks]);
 
-  // Sinkronisasi prop initialKonteks jika berubah dari luar
   useEffect(() => {
     if (initialKonteks !== undefined) {
       setKonteks(initialKonteks);
     }
   }, [initialKonteks]);
 
-  // Bersihkan semua URL preview saat unmount agar tidak terjadi memory leak
   useEffect(() => {
     return () => {
       gambarListRef.current.forEach((item) => {
@@ -182,14 +140,12 @@ export function InputChat({
           try {
             window.URL.revokeObjectURL(item.previewUrl);
           } catch {
-            // Abaikan kesalahan pembatalan object URL
           }
         }
       });
     };
   }, []);
 
-  // Validasi input kosong dan panjang
   const isTeksKosong = teks.trim().length === 0;
   const isTeksMelebihiBatas = teks.length > MAKS_KARAKTER_TEKS;
   const isScreenshotKosong = gambarList.length === 0;
@@ -203,17 +159,11 @@ export function InputChat({
   const isTombolPeriksaDisabled =
     isLoading || isCheckingFiles || !isFormValid;
 
-  /**
-   * Menangani perpindahan tab
-   */
   const handlePilihTab = (tabBaru: 'teks' | 'screenshot') => {
     setMode(tabBaru);
     setPesanValidasi(null);
   };
 
-  /**
-   * Membuat preview URL aman untuk browser / testing
-   */
   const buatPreviewUrl = (file: File): string => {
     if (
       typeof window !== 'undefined' &&
@@ -229,9 +179,6 @@ export function InputChat({
     return '';
   };
 
-  /**
-   * Memproses daftar file gambar yang dipilih atau di-drop
-   */
   const prosesPenambahanFile = async (files: File[]) => {
     if (!files || files.length === 0) return;
 
@@ -285,15 +232,11 @@ export function InputChat({
 
     setIsCheckingFiles(false);
 
-    // Reset input file agar dapat memilih file yang sama kembali jika diperlukan
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  /**
-   * Menghapus salah satu gambar yang telah diunggah
-   */
   const handleHapusGambar = (id: string) => {
     setGambarList((prev) => {
       const target = prev.find((item) => item.id === id);
@@ -306,7 +249,6 @@ export function InputChat({
         try {
           window.URL.revokeObjectURL(target.previewUrl);
         } catch {
-          // Abaikan
         }
       }
       const sisa = prev.filter((item) => item.id !== id);
@@ -317,9 +259,6 @@ export function InputChat({
     });
   };
 
-  /**
-   * Menangani submit form
-   */
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
@@ -367,7 +306,6 @@ export function InputChat({
       data-testid="input-chat-container"
       className={`overflow-hidden ${className}`}
     >
-      {/* Tab Navigasi: Tempel teks vs Unggah screenshot (Requirement 11.1, 27.2) */}
       <div
         role="tablist"
         aria-label="Pilihan mode input chat"
@@ -387,7 +325,7 @@ export function InputChat({
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           }`}
         >
-          {/* Ikon Tab Teks */}
+          {/* ===== IKON TAB TEKS ===== */}
           <svg
             className="w-4 h-4 text-current"
             xmlns="http://www.w3.org/2000/svg"
@@ -418,7 +356,7 @@ export function InputChat({
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           }`}
         >
-          {/* Ikon Tab Screenshot */}
+          {/* ===== IKON TAB SCREENSHOT ===== */}
           <svg
             className="w-4 h-4 text-current"
             xmlns="http://www.w3.org/2000/svg"
@@ -439,7 +377,7 @@ export function InputChat({
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-6 space-y-5">
-        {/* Panel Mode Teks */}
+        {/* ===== PANEL MODE TEKS ===== */}
         {mode === 'teks' && (
           <div
             role="tabpanel"
@@ -454,7 +392,7 @@ export function InputChat({
               >
                 Teks Percakapan Chat
               </label>
-              {/* Counter Karakter Responsif (Requirement 11.2) */}
+              {/* ===== COUNTER KARAKTER RESPONSIF ===== */}
               <span
                 data-testid="counter-karakter-teks"
                 className={`text-xs font-mono transition-colors ${
@@ -484,7 +422,6 @@ export function InputChat({
               } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
             />
 
-            {/* Peringatan jika melebihi batas 4.000 karakter */}
             {isTeksMelebihiBatas && (
               <p
                 role="alert"
@@ -509,7 +446,7 @@ export function InputChat({
           </div>
         )}
 
-        {/* Panel Mode Screenshot */}
+        {/* ===== PANEL MODE SCREENSHOT ===== */}
         {mode === 'screenshot' && (
           <div
             role="tabpanel"
@@ -517,7 +454,7 @@ export function InputChat({
             aria-labelledby="tab-screenshot"
             className="space-y-4"
           >
-            {/* Peringatan Privasi Screenshot (Requirement 12.3) */}
+            {/* ===== PERINGATAN PRIVASI SCREENSHOT ===== */}
             <div
               role="alert"
               data-testid="peringatan-privasi-screenshot"
@@ -546,7 +483,7 @@ export function InputChat({
               </div>
             </div>
 
-            {/* Area Dropzone & Input File (Requirement 11.3, 27.2, 27.4) */}
+            {/* ===== AREA DROPZONE & INPUT FILE ===== */}
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -624,7 +561,7 @@ export function InputChat({
               </div>
             </div>
 
-            {/* Pesan Error File (Format tidak didukung / Batas 5 gambar) */}
+            {/* ===== PESAN ERROR FILE ===== */}
             {pesanErrorFile && (
               <div
                 role="alert"
@@ -647,7 +584,7 @@ export function InputChat({
               </div>
             )}
 
-            {/* Indikator Memeriksa Magic Bytes File */}
+            {/* ===== INDIKATOR MEMERIKSA MAGIC BYTES FILE ===== */}
             {isCheckingFiles && (
               <p className="text-xs text-gray-500 italic flex items-center gap-1.5">
                 <svg
@@ -664,7 +601,6 @@ export function InputChat({
               </p>
             )}
 
-            {/* Pratinjau Thumbnail Gambar yang Diunggah */}
             {gambarList.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-gray-600">
@@ -683,7 +619,7 @@ export function InputChat({
                       data-testid={`thumbnail-item-${index}`}
                       className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 bg-gray-50/50"
                     >
-                      {/* Gambar Thumbnail */}
+                      {/* ===== GAMBAR THUMBNAIL ===== */}
                       <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-300 flex items-center justify-center">
                         {item.previewUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -707,7 +643,7 @@ export function InputChat({
                         )}
                       </div>
 
-                      {/* Detail Nama & Ukuran */}
+                      {/* ===== DETAIL NAMA & UKURAN ===== */}
                       <div className="flex-1 min-w-0">
                         <p
                           className="text-xs font-medium text-gray-900 truncate"
@@ -720,7 +656,7 @@ export function InputChat({
                         </p>
                       </div>
 
-                      {/* Tombol Hapus Gambar (Target Sentuh Minimal 44px - Requirement 27.2) */}
+                      {/* ===== TOMBOL HAPUS GAMBAR ===== */}
                       <button
                         type="button"
                         aria-label={`Hapus gambar ${item.file.name}`}
@@ -750,7 +686,7 @@ export function InputChat({
           </div>
         )}
 
-        {/* Kolom Konteks Opsional (Requirement 11.5, 27.4) */}
+        {/* ===== KOLOM KONTEKS OPSIONAL ===== */}
         <div className="space-y-1.5 pt-1 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <label
@@ -780,7 +716,7 @@ export function InputChat({
           />
         </div>
 
-        {/* Pesan Validasi Form Umum (Requirement 11.6) */}
+        {/* ===== PESAN VALIDASI FORM UMUM ===== */}
         {pesanValidasi && (
           <div
             role="alert"
@@ -803,7 +739,7 @@ export function InputChat({
           </div>
         )}
 
-        {/* Tombol Aksi Utama "Periksa" (Requirement 11.6, 27.2) */}
+        {/* ===== TOMBOL AKSI UTAMA "PERIKSA" ===== */}
         <div className="pt-2">
           <button
             type="submit"

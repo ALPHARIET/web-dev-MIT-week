@@ -65,7 +65,7 @@ describe('components/hasil/KartuTemuan.tsx', () => {
 
   describe('Badge Sumber Temuan (Requirement 6.6)', () => {
     const sumberTestCases: Array<{ sumber: SumberTemuan; expectedLabel: string }> = [
-      { sumber: 'aturan', expectedLabel: 'Aturan Lokal' },
+      { sumber: 'aturan', expectedLabel: 'Pola penipuan' },
       { sumber: 'ai', expectedLabel: 'Analisis AI' },
       { sumber: 'safe_browsing', expectedLabel: 'Google Safe Browsing' },
       { sumber: 'rdap', expectedLabel: 'Data Domain (RDAP)' },
@@ -153,17 +153,14 @@ describe('components/hasil/KartuTemuan.tsx', () => {
         <KartuTemuan temuan={sampleTemuan} nomor={1} />
       );
       expect(html).toContain('aria-label="Temuan 1: Meminta kode OTP"');
-      expect(html).toContain('aria-label="Sumber: Aturan Lokal"');
+      expect(html).toContain('aria-label="Sumber: Pola penipuan"');
       expect(html).toContain('aria-label="Kutipan bukti temuan"');
     });
 
     it('menerapkan kelas Tailwind untuk kontras warna teks yang memadai (WCAG AA)', () => {
       const html = renderToStaticMarkup(<KartuTemuan temuan={sampleTemuan} />);
-      // Judul menggunakan text-gray-900 (kontras tinggi terhadap latar putih)
       expect(html).toContain('text-gray-900');
-      // Penjelasan menggunakan text-gray-700
       expect(html).toContain('text-gray-700');
-      // Kotak bukti memiliki highlight visual
       expect(html).toContain('border-amber-500');
       expect(html).toContain('bg-amber-50');
     });

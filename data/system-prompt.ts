@@ -1,13 +1,3 @@
-/**
- * data/system-prompt.ts
- *
- * System prompt untuk Google Gemini API pada Aplikasi Web Cek Penipuan.
- * Mengatur gaya bahasa, batasan keamanan, format keluaran JSON (FormatDataHasil),
- * dan integrasi kanal lapor dari data/langkah-darurat.json.
- *
- * References: Requirements 14.2, 30.1, 30.2, and design.md
- */
-
 import langkahDaruratJson from './langkah-darurat.json';
 import type {
   FormatDataHasil,
@@ -15,54 +5,32 @@ import type {
   SituasiDarurat,
 } from '../lib/hasil';
 
-/**
- * Daftar kata terlarang yang tidak boleh digunakan sebagai kesimpulan atau klaim kepastian.
- * Sesuai Requirement 30.1 & 30.2.
- */
 export const KATA_TERLARANG = ['aman', 'pasti', 'terbukti', '100%'] as const;
 
-/**
- * Tipe struktur kanal lapor resmi
- */
 export interface KanalLaporItem {
   nama: string;
   kontak: string;
   keterangan: string;
 }
 
-/**
- * Tipe struktur situasi darurat
- */
 export interface SituasiDaruratItem {
   id: SituasiDarurat;
   label: string;
   langkah: string[];
 }
 
-/**
- * Tipe data langkah darurat yang konsisten dengan langkah-darurat.json
- */
 export interface LangkahDaruratData {
   situasi: SituasiDaruratItem[];
   kanal_lapor: KanalLaporItem[];
   peringatan: string;
 }
 
-/**
- * Data langkah darurat default dari data/langkah-darurat.json
- */
 export const DEFAULT_LANGKAH_DARURAT: LangkahDaruratData =
   langkahDaruratJson as LangkahDaruratData;
 
-/**
- * Kanal lapor resmi yang konsisten antara AI dan UI
- */
 export const KANAL_LAPOR_RESMI: KanalLaporItem[] =
   DEFAULT_LANGKAH_DARURAT.kanal_lapor;
 
-/**
- * Helper untuk memformat daftar kanal lapor dan peringatan ke teks prompt
- */
 export function formatKanalLaporText(
   data: LangkahDaruratData = DEFAULT_LANGKAH_DARURAT
 ): string {
@@ -73,9 +41,6 @@ export function formatKanalLaporText(
   return `${kanalText}\n\nPERINGATAN DARURAT:\n${data.peringatan}`;
 }
 
-/**
- * Helper untuk memformat 5 situasi darurat dan langkahnya ke teks prompt
- */
 export function formatLangkahDaruratText(
   data: LangkahDaruratData = DEFAULT_LANGKAH_DARURAT
 ): string {
@@ -87,9 +52,6 @@ export function formatLangkahDaruratText(
     .join('\n');
 }
 
-/**
- * JSON Schema untuk FormatDataHasil (sesuai Google Gemini responseSchema / structured output).
- */
 export const FORMAT_DATA_HASIL_JSON_SCHEMA = {
   type: 'object',
   properties: {
@@ -207,9 +169,6 @@ export const FORMAT_DATA_HASIL_JSON_SCHEMA = {
   ],
 } as const;
 
-/**
- * System prompt dasar untuk Cek Chat (analisis teks atau screenshot).
- */
 export const CHAT_SYSTEM_PROMPT = `Kamu adalah asisten analis keamanan digital cerdas dan ramah untuk aplikasi "Cek Penipuan", yang dirancang khusus membantu anak muda Indonesia (usia 18+) mengevaluasi pesan chat, tangkapan layar percakapan, atau tawaran mencurigakan.
 
 PANDUAN GAYA BAHASA & SAPAAN:
@@ -263,9 +222,6 @@ ${formatKanalLaporText(DEFAULT_LANGKAH_DARURAT)}
 FORMAT KELUARAN (WAJIB JSON MURNI):
 Keluarkan hasil HANYA dalam bentuk objek JSON valid yang mematuhi skema FormatDataHasil. Jangan sertakan teks markdown pembuka/penutup selain blok JSON. Properti "halaman" harus bernilai "chat", properti "pihak_ketiga" harus memuat ["Google Gemini"], dan properti "status_layanan" harus memiliki {"ai": "ok"}.`;
 
-/**
- * System prompt untuk Cek Link (penjelasan edukatif hasil diagnostik URL).
- */
 export const LINK_EXPLANATION_SYSTEM_PROMPT = `Kamu adalah asisten edukasi keamanan digital untuk fitur "Cek Link" pada aplikasi "Cek Penipuan".
 Tugasmu adalah menganalisis paket diagnostik teknis dari suatu link/URL yang telah dipindai oleh sistem (analisis leksikal domain, Google Safe Browsing, dan data umur domain via RDAP) lalu menulis ulang penjelasannya menjadi bahasa Indonesia yang mudah dipahami, ramah, dan edukatif bagi anak muda (18+).
 
@@ -294,14 +250,8 @@ FORMAT KELUARAN (WAJIB JSON MURNI):
 Keluarkan hasil HANYA dalam bentuk objek JSON valid yang mematuhi skema FormatDataHasil.
 Properti "halaman" harus bernilai "link", properti "pihak_ketiga" harus memuat layanan yang relevan (misal: "Google Gemini", "Google Safe Browsing", "RDAP"), dan status_layanan {"ai": "ok"}.`;
 
-/**
- * Alias untuk LINK_EXPLANATION_SYSTEM_PROMPT agar mudah diakses.
- */
 export const LINK_SYSTEM_PROMPT = LINK_EXPLANATION_SYSTEM_PROMPT;
 
-/**
- * System prompt untuk fitur Tanya Lanjut (P1).
- */
 export const TANYA_SYSTEM_PROMPT = `Kamu adalah asisten tanya jawab keamanan digital untuk fitur "Tanya Lanjut" pada aplikasi "Cek Penipuan".
 Pengguna bertanya seputar hasil pemeriksaan chat, link, atau video/suara yang baru saja mereka lakukan.
 
@@ -319,26 +269,16 @@ ATURAN & BATASAN KOMUNIKASI:
    - Peringatkan pengguna untuk mewaspadai pihak yang mengaku perwakilan IASC dan menjanjikan uang kembali.
 8. Berikan jawaban yang ringkas, praktis, to-the-point, dan langsung dapat dipraktikkan oleh pengguna.`;
 
-/**
- * Opsi untuk fungsi helper pembuat system prompt Cek Chat
- */
 export interface ChatSystemPromptOptions {
-  /** Konteks tambahan dari pengguna (misalnya "dari nomor tak dikenal") */
   konteks?: string;
-  /** Tingkat level minimum yang terdeteksi dari pra-pemindaian lokal di browser */
   levelMinimum?: TingkatLevel;
-  /** Data langkah darurat kustom jika ingin mengganti data default */
   langkahDarurat?: LangkahDaruratData;
 }
 
-/**
- * Helper untuk membuat system prompt Cek Chat dengan opsi kontekstual tambahan.
- */
 export function getChatSystemPrompt(options?: ChatSystemPromptOptions): string {
   const data = options?.langkahDarurat ?? DEFAULT_LANGKAH_DARURAT;
   let prompt = CHAT_SYSTEM_PROMPT;
 
-  // Jika data langkah darurat kustom diberikan dan berbeda dari default
   if (options?.langkahDarurat) {
     prompt = prompt.replace(
       formatLangkahDaruratText(DEFAULT_LANGKAH_DARURAT),
@@ -371,21 +311,12 @@ export function getChatSystemPrompt(options?: ChatSystemPromptOptions): string {
   return prompt;
 }
 
-/**
- * Opsi untuk fungsi helper pembuat system prompt Cek Link
- */
 export interface LinkSystemPromptOptions {
-  /** Ringkasan temuan diagnostik teknis */
   temuanDiagnostik?: string[];
-  /** Level risiko hasil perhitungan aturan dan API */
   levelResiko?: TingkatLevel;
-  /** Data langkah darurat kustom */
   langkahDarurat?: LangkahDaruratData;
 }
 
-/**
- * Helper untuk membuat system prompt Cek Link dengan opsi kontekstual tambahan.
- */
 export function getLinkExplanationSystemPrompt(
   options?: LinkSystemPromptOptions
 ): string {
@@ -422,24 +353,13 @@ export function getLinkExplanationSystemPrompt(
   return prompt;
 }
 
-/**
- * Alias helper untuk getLinkExplanationSystemPrompt
- */
 export const getLinkSystemPrompt = getLinkExplanationSystemPrompt;
 
-/**
- * Opsi untuk fungsi helper pembuat system prompt Tanya Lanjut
- */
 export interface TanyaSystemPromptOptions {
-  /** Konteks ringkasan hasil pemeriksaan sebelumnya */
   konteksHasil?: FormatDataHasil;
-  /** Riwayat tanya jawab sebelumnya */
   riwayatSingkat?: string;
 }
 
-/**
- * Helper untuk membuat system prompt Tanya Lanjut dengan konteks pemeriksaan.
- */
 export function getTanyaSystemPrompt(
   options?: TanyaSystemPromptOptions
 ): string {

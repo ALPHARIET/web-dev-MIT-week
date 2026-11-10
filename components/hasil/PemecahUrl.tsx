@@ -11,19 +11,14 @@ import {
 } from '@/lib/aturan/link-rules';
 import type { Temuan } from '@/lib/hasil';
 
-/**
- * Props untuk komponen PemecahUrl sesuai spesifikasi Task 18.2 & LN-07.
- */
 export interface PemecahUrlProps {
   url: string;
   temuan?: Temuan[];
   className?: string;
 }
 
-/** Tingkat risiko untuk komponen URL */
 export type TingkatRisikoBagian = 'tinggi' | 'sedang' | 'normal';
 
-/** Objek rincian tiap bagian URL */
 export interface DetailBagianUrl {
   id: 'protokol' | 'subdomain' | 'domainUtama' | 'tld' | 'path' | 'params';
   label: string;
@@ -35,18 +30,12 @@ export interface DetailBagianUrl {
   paramsList?: Array<{ kunci: string; nilai: string; isSensitif: boolean }>;
 }
 
-/**
- * Ekstrak kata pemicu penipuan yang muncul dalam teks.
- */
 function cariKataPemicu(teks: string): string[] {
   if (!teks) return [];
   const lower = teks.toLowerCase();
   return KATA_PEMICU_LINK.filter((kata) => lower.includes(kata));
 }
 
-/**
- * Mengurai URL dan mengevaluasi status kecurigaan tiap bagian secara mendalam.
- */
 export function bedahBagianUrl(
   rawUrl: string,
   temuan: Temuan[] = []
@@ -70,7 +59,6 @@ export function bedahBagianUrl(
     .join(' ')
     .toLowerCase();
 
-  // 1. Protokol (https://, http://, atau tidak ada)
   let protokolMencurigakan = false;
   let protokolRisiko: TingkatRisikoBagian = 'normal';
   let protokolAlasan = 'Menggunakan protokol HTTPS terenkripsi standar.';
@@ -101,7 +89,6 @@ export function bedahBagianUrl(
     alasan: protokolAlasan,
   };
 
-  // 2. Subdomain
   let subMencurigakan = false;
   let subRisiko: TingkatRisikoBagian = 'normal';
   let subAlasan = parsed.subdomain
@@ -145,7 +132,6 @@ export function bedahBagianUrl(
     alasan: subAlasan,
   };
 
-  // 3. Domain Utama
   let domMencurigakan = false;
   let domRisiko: TingkatRisikoBagian = 'normal';
   let domAlasan = 'Nama domain utama terdaftar sesuai format umum.';
@@ -212,7 +198,6 @@ export function bedahBagianUrl(
     alasan: domAlasan,
   };
 
-  // 4. TLD / ccTLD
   let tldMencurigakan = false;
   let tldRisiko: TingkatRisikoBagian = 'normal';
   let tldAlasan = parsed.tld
@@ -245,7 +230,6 @@ export function bedahBagianUrl(
     alasan: tldAlasan,
   };
 
-  // 5. Path (Jalur Halaman)
   let pathMencurigakan = false;
   let pathRisiko: TingkatRisikoBagian = 'normal';
   let pathAlasan = parsed.path
@@ -283,7 +267,6 @@ export function bedahBagianUrl(
     alasan: pathAlasan,
   };
 
-  // 6. Query Parameters
   const paramKeys = Object.keys(parsed.params || {});
   const paramsList = paramKeys.map((k) => ({
     kunci: k,
@@ -352,9 +335,6 @@ export function bedahBagianUrl(
   };
 }
 
-/**
- * Styling badge status risiko yang memenuhi rasio kontras WCAG AA (> 4.5:1).
- */
 export function getBadgeRisikoBagian(
   tingkatRisiko: TingkatRisikoBagian,
   isMencurigakan: boolean
@@ -382,9 +362,6 @@ export function getBadgeRisikoBagian(
   };
 }
 
-/**
- * Styling segmen URL pada sorotan horizontal inline.
- */
 function getSorotanStyle(
   isMencurigakan: boolean,
   tingkatRisiko: TingkatRisikoBagian
@@ -398,25 +375,6 @@ function getSorotanStyle(
   return 'bg-amber-100 text-amber-950 border-amber-400 font-semibold shadow-xs ring-2 ring-amber-400/40';
 }
 
-/**
- * Komponen PemecahUrl (Task 18.2, Requirement LN-07)
- *
- * Mengurai URL menjadi komponen:
- * - Protokol (https://, http://)
- * - Subdomain
- * - Domain utama
- * - TLD / ccTLD
- * - Path (Jalur)
- * - Query Parameters
- *
- * Menampilkan:
- * 1. Visual URL Breakdown Bar (sorotan horizontal per bagian dengan warna risiko)
- * 2. Kartu Rincian Tiap Bagian dengan badge risiko dan penjelasan mendalam
- *
- * Catatan Keamanan (Requirement 17.2):
- * URL dan bagian-bagiannya selalu ditampilkan sebagai teks biasa (span/code),
- * tidak pernah sebagai tautan yang bisa diklik (`<a>`).
- */
 export function PemecahUrl({
   url,
   temuan = [],
@@ -424,7 +382,6 @@ export function PemecahUrl({
 }: PemecahUrlProps): React.JSX.Element {
   const { bagianList, jumlahMencurigakan } = bedahBagianUrl(url, temuan);
 
-  // Buat map untuk akses cepat per komponen
   const bagianMap = bagianList.reduce<Record<string, DetailBagianUrl>>(
     (acc, b) => {
       acc[b.id] = b;
@@ -446,7 +403,7 @@ export function PemecahUrl({
       aria-label="Pemecahan Bagian URL dan Sorotan Risiko"
       className={`rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm space-y-6 ${className}`.trim()}
     >
-      {/* Header Pemecah URL */}
+      {/* ===== HEADER PEMECAH URL ===== */}
       <header className="space-y-1.5 border-b border-gray-100 pb-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -508,7 +465,6 @@ export function PemecahUrl({
         </p>
       </header>
 
-      {/* 1. Visual URL Breakdown Bar (Sorotan Horizontal Segmen URL) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-gray-700">
           <span>Pratinjau Sorotan Struktur URL:</span>
@@ -523,7 +479,7 @@ export function PemecahUrl({
           aria-label="Sorotan Visual Segmen URL"
           className="p-3 sm:p-4 rounded-xl border border-gray-300 bg-gray-50/80 font-mono text-xs sm:text-sm overflow-x-auto flex flex-wrap items-center gap-1.5 shadow-inner"
         >
-          {/* Segmen Protokol */}
+          {/* ===== SEGMEN PROTOKOL ===== */}
           {protokol && (
             <span
               data-testid="sorotan-protokol"
@@ -539,7 +495,7 @@ export function PemecahUrl({
             </span>
           )}
 
-          {/* Segmen Subdomain (jika ada) */}
+          {/* ===== SEGMEN SUBDOMAIN ===== */}
           {subdomain && subdomain.nilaiTampil !== '(tidak ada)' && (
             <span
               data-testid="sorotan-subdomain"
@@ -553,7 +509,7 @@ export function PemecahUrl({
             </span>
           )}
 
-          {/* Segmen Domain Utama (Wajib ada) */}
+          {/* ===== SEGMEN DOMAIN UTAMA ===== */}
           {domainUtama && (
             <span
               data-testid="sorotan-domainUtama"
@@ -567,7 +523,7 @@ export function PemecahUrl({
             </span>
           )}
 
-          {/* Segmen TLD (jika ada) */}
+          {/* ===== SEGMEN TLD ===== */}
           {tld && tld.nilaiTampil !== '(tidak ada)' && (
             <span
               data-testid="sorotan-tld"
@@ -581,7 +537,7 @@ export function PemecahUrl({
             </span>
           )}
 
-          {/* Segmen Path */}
+          {/* ===== SEGMEN PATH ===== */}
           {path && (
             <span
               data-testid="sorotan-path"
@@ -595,7 +551,7 @@ export function PemecahUrl({
             </span>
           )}
 
-          {/* Segmen Query Params (jika ada) */}
+          {/* ===== SEGMEN QUERY PARAMS ===== */}
           {params && params.nilaiTampil !== '(tidak ada)' && (
             <span
               data-testid="sorotan-params"
@@ -611,7 +567,6 @@ export function PemecahUrl({
         </div>
       </div>
 
-      {/* 2. Kartu Rincian Tiap Bagian URL */}
       <div className="space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
           Rincian dan Penjelasan per Bagian:
@@ -634,7 +589,7 @@ export function PemecahUrl({
                 aria-label={`Rincian Bagian ${item.label}`}
                 className={`rounded-xl border p-4 transition-all flex flex-col justify-between gap-3 ${badge.containerBorder}`}
               >
-                {/* Header Kartu Bagian */}
+                {/* ===== HEADER KARTU BAGIAN ===== */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -648,17 +603,16 @@ export function PemecahUrl({
                     </span>
                   </div>
 
-                  {/* Nilai Teks Bagian */}
+                  {/* ===== NILAI TEKS BAGIAN ===== */}
                   <div className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-mono text-xs sm:text-sm text-gray-900 break-all select-all font-semibold">
                     {item.nilaiTampil}
                   </div>
                 </div>
 
-                {/* Penjelasan Risiko / Status */}
+                {/* ===== PENJELASAN RISIKO / STATUS ===== */}
                 <div className="space-y-1 text-xs text-gray-700 leading-relaxed">
                   <p data-testid={`penjelasan-${item.id}`}>{item.alasan}</p>
 
-                  {/* Rincian Parameter Spesifik jika ada */}
                   {item.id === 'params' &&
                     item.paramsList &&
                     item.paramsList.length > 0 && (

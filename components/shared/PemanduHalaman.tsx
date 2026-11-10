@@ -2,27 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-/**
- * Tiga jenis pemicu skrip untuk pemandu halaman Cek Link (Requirement LN-09)
- * - fokus: saat kolom input link difokuskan atau disentuh
- * - submit_kosong: saat tombol periksa ditekan sebelum kolom input terisi
- * - idle_8s: saat pengguna terdiam 8 detik tanpa mengetik di halaman
- */
 export type PemicuPemandu = 'fokus' | 'submit_kosong' | 'idle_8s';
 
-/**
- * Daftar pesan kontekstual per pemicu skrip (Requirement LN-09)
- * Catatan penting: Semua pesan bebas kata terlarang (aman, pasti, terbukti, 100%) sebagai kesimpulan.
- */
 export const PESAN_PEMANDU: Record<PemicuPemandu, string> = {
   fokus: 'Ketik atau tempel URL lengkap, misalnya https://nama-situs.com/promo...',
   submit_kosong: "Kolom link masih kosong. Masukkan URL atau coba tombol 'Coba contoh' di atas...",
   idle_8s: "Butuh ide link mencurigakan? Klik 'Coba contoh' untuk mencoba skenario link hadiah atau tiruan bank...",
 };
 
-/**
- * Judul kontekstual ramah pengguna per pemicu
- */
 export const JUDUL_PEMANDU: Record<PemicuPemandu, string> = {
   fokus: 'Panduan Pengisian Link',
   submit_kosong: 'Kolom Link Masih Kosong',
@@ -30,39 +17,23 @@ export const JUDUL_PEMANDU: Record<PemicuPemandu, string> = {
 };
 
 export interface PemanduHalamanProps {
-  /** Jenis pemicu skrip aktif */
   pemicu?: PemicuPemandu | null;
-  /** Pesan kustom untuk menggantikan teks default */
   pesan?: string;
-  /** Judul kustom untuk tooltip */
   judul?: string;
-  /** Status apakah tooltip ditampilkan (default: true jika pemicu ada) */
   terbuka?: boolean;
   isOpen?: boolean;
-  /** Callback saat tooltip ditutup secara manual melalui tombol silang 'X' */
   onTutup?: () => void;
   onClose?: () => void;
-  /** Callback saat pemicu berubah secara otomatis */
   onPemicuChange?: (pemicu: PemicuPemandu | null) => void;
-  /** Otomatis menutup tooltip saat pengguna mulai mengetik di halaman (default: true) */
   autoTutupSaatKetik?: boolean;
-  /** Aktifkan pemicu idle 8 detik otomatis saat komponen dimount tanpa pemicu (default: false) */
   autoIdle?: boolean;
-  /** Waktu jeda diam sebelum memicu idle dalam milidetik (default: 8000 ms) */
   idleTimeoutMs?: number;
-  /** Kelas CSS tambahan */
   className?: string;
 }
 
-/**
- * Hook bantuan untuk mengelola state dan timer pemandu halaman berbasis skrip murni di browser (Requirement LN-09).
- */
 export interface UsePemanduHalamanOptions {
-  /** Waktu diam dalam ms sebelum memicu idle_8s (default: 8000) */
   idleTimeoutMs?: number;
-  /** Apakah pemandu aktif (default: true) */
   enabled?: boolean;
-  /** Callback saat ada pemicu baru */
   onPemicu?: (pemicu: PemicuPemandu | null) => void;
 }
 
@@ -81,7 +52,6 @@ export function usePemanduHalaman(options?: UsePemanduHalamanOptions) {
     [onPemicu]
   );
 
-  // Timer 8 detik diam tanpa mengetik saat halaman dimount
   useEffect(() => {
     if (!enabled || sudahKetik || ditutupManual) return;
 
@@ -117,7 +87,7 @@ export function usePemanduHalaman(options?: UsePemanduHalamanOptions) {
 
   const handleKetik = useCallback(() => {
     setSudahKetik(true);
-    setPemicu(null); // Otomatis menutup saat pengguna mulai mengetik
+    setPemicu(null);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -126,7 +96,7 @@ export function usePemanduHalaman(options?: UsePemanduHalamanOptions) {
 
   const handleTutup = useCallback(() => {
     setDitutupManual(true);
-    setPemicu(null); // Menutup manual via tombol 'X'
+    setPemicu(null);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -155,19 +125,6 @@ export function usePemanduHalaman(options?: UsePemanduHalamanOptions) {
   };
 }
 
-/**
- * Komponen PemanduHalaman (Contextual Tooltip Guide)
- *
- * Fitur & Spesifikasi (Requirement LN-09):
- * 1. Menampilkan tooltip kontekstual berbasis skrip murni di browser (tanpa AI, tanpa kirim data ke server).
- * 2. Tiga pemicu skrip:
- *    - "fokus": Saat kolom input link difokuskan / disentuh
- *    - "submit_kosong": Saat tombol "Periksa" ditekan sebelum kolom input terisi
- *    - "idle_8s": Saat pengguna terdiam 8 detik tanpa mengetik di halaman
- * 3. Tooltip dapat ditutup secara manual (tombol silang 'X') atau otomatis saat pengguna mulai mengetik.
- * 4. Target sentuh tombol penutup minimal 44px (Requirement 27.2).
- * 5. Bebas kata terlarang ("aman", "pasti", "terbukti", "100%") sebagai kesimpulan (Requirement 30.1).
- */
 export function PemanduHalaman({
   pemicu: pemicuProp,
   pesan: pesanProp,
@@ -186,7 +143,6 @@ export function PemanduHalaman({
   const [terlihat, setTerlihat] = useState<boolean>(true);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sinkronkan pemicuProp jika diberikan dari luar
   useEffect(() => {
     if (pemicuProp !== undefined) {
       setPemicuInternal(pemicuProp);
@@ -196,7 +152,6 @@ export function PemanduHalaman({
     }
   }, [pemicuProp]);
 
-  // Auto-idle timer jika autoIdle diaktifkan pada komponen
   useEffect(() => {
     if (!autoIdle || pemicuProp) return;
 
@@ -214,7 +169,6 @@ export function PemanduHalaman({
     };
   }, [autoIdle, pemicuProp, idleTimeoutMs, onPemicuChange]);
 
-  // Listener event input dan keydown untuk menutup otomatis saat mengetik atau Escape
   useEffect(() => {
     if (!autoTutupSaatKetik || !terlihat || !pemicuInternal) return;
 
@@ -268,7 +222,6 @@ export function PemanduHalaman({
   const teksPesan = pesanProp || (pemicuAktif ? PESAN_PEMANDU[pemicuAktif] : '');
   const teksJudul = judulProp || (pemicuAktif ? JUDUL_PEMANDU[pemicuAktif] : 'Panduan Halaman');
 
-  // Skema warna berdasarkan jenis pemicu skrip
   const gayaPemicu = {
     fokus: {
       container: 'bg-blue-50/95 border-blue-200 text-blue-950',
@@ -299,7 +252,7 @@ export function PemanduHalaman({
       data-pemicu={pemicuAktif}
       className={`relative flex items-start gap-3 p-3.5 sm:p-4 rounded-xl border shadow-xs transition-all duration-200 animate-fadeIn ${gayaPemicu.container} ${className}`.trim()}
     >
-      {/* Ikon Simbol Panduan */}
+      {/* ===== IKON SIMBOL PANDUAN ===== */}
       <div
         className={`p-2 rounded-lg shrink-0 mt-0.5 ${gayaPemicu.ikonContainer}`}
         aria-hidden="true"
@@ -320,7 +273,7 @@ export function PemanduHalaman({
         )}
       </div>
 
-      {/* Konten Teks Panduan */}
+      {/* ===== KONTEN TEKS PANDUAN ===== */}
       <div className="flex-1 min-w-0 pr-1">
         <div className="flex items-center gap-2 mb-1">
           <span
@@ -344,7 +297,7 @@ export function PemanduHalaman({
         </p>
       </div>
 
-      {/* Tombol Silang 'X' Penutup (Target sentuh minimal 44px - Requirement 4 & 27.2) */}
+      {/* ===== TOMBOL SILANG 'X' PENUTUP ===== */}
       <button
         type="button"
         onClick={handleManualClose}

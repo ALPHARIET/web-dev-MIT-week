@@ -11,6 +11,7 @@ import TanyaLanjut from './TanyaLanjut';
 import SorotanTranskrip from './SorotanTranskrip';
 import PemecahUrl from './PemecahUrl';
 import TemplatPeringatan from './TemplatPeringatan';
+import PanelAnalisisMedia from './PanelAnalisisMedia';
 
 export interface CrossLink {
   label: string;
@@ -30,23 +31,19 @@ export interface KomponenHasilProps {
   pertanyaanCepat?: string[];
   tampilkanTanyaLanjut?: boolean;
   tampilkanTemplatPeringatan?: boolean;
+  framePratinjau?: string[];
 }
 
-/**
- * Pemetaan nama teknis layanan pihak ketiga ke label yang mudah dipahami.
- */
 export const NAMA_LAYANAN_LABEL: Record<string, string> = {
-  gemini: 'Google Gemini (Analisis AI)',
-  ai: 'Google Gemini (Analisis AI)',
+  gemini: 'Analisis AI',
+  ai: 'Analisis AI',
+  'Google Gemini': 'Analisis AI',
   safe_browsing: 'Google Safe Browsing',
   rdap: 'Data Domain (RDAP)',
   virustotal: 'VirusTotal',
   reality_defender: 'Reality Defender',
 };
 
-/**
- * Konfigurasi badge status layanan pihak ketiga (WCAG AA compliant).
- */
 export const STATUS_LAYANAN_CONFIG: Record<
   StatusLayanan,
   { label: string; badgeClasses: string }
@@ -69,10 +66,6 @@ export const STATUS_LAYANAN_CONFIG: Record<
   },
 };
 
-/**
- * Halaman cek alternatif default jika prop halamanLain tidak diberikan.
- * Menjamin Requirement 34.4 selalu terpenuhi (menampilkan 2 halaman cek lainnya).
- */
 export const HALAMAN_LAIN_DEFAULT: Record<
   HalamanCek,
   Array<{ label: string; href: string }>
@@ -91,23 +84,6 @@ export const HALAMAN_LAIN_DEFAULT: Record<
   ],
 };
 
-/**
- * KomponenHasil
- *
- * Komponen bersama yang menampilkan hasil pemeriksaan dengan format seragam
- * di seluruh halaman cek (Cek Chat, Cek Link, Cek Video & Suara).
- *
- * Susunan blok wajib (Requirement 6.1):
- * 1. TingkatKewaspadaan + ringkasan
- * 2. Yang perlu diwaspadai (daftar KartuTemuan untuk setiap item di hasil.temuan)
- * 3. Yang tampak wajar (hasil.hal_wajar) jika ada
- * 4. Langkah yang disarankan (LangkahDisarankan dengan hasil.langkah)
- * 5. PanelDarurat (PanelDarurat dengan situasiAktif={hasil.situasi_darurat} dan autoOpen={hasil.situasi_darurat.length > 0})
- * 6. Batasan + layanan pihak ketiga (hasil.batasan, hasil.pihak_ketiga, hasil.status_layanan)
- * 7. Aksi penutup: Tombol "Cek lagi", tautan ke halaman cek lainnya, dan tombol cross-links
- *
- * References: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 7.6, 34.1, 34.3, 34.4, 35.2
- */
 export function KomponenHasil({
   hasil,
   halamanLain,
@@ -119,32 +95,31 @@ export function KomponenHasil({
   pertanyaanCepat,
   tampilkanTanyaLanjut = true,
   tampilkanTemplatPeringatan = true,
+  framePratinjau,
 }: KomponenHasilProps): React.JSX.Element {
-  // Transkrip yang akan ditampilkan jika ada (prop transkrip atau hasil.transkrip)
   const transkripTampil = transkrip || hasil.transkrip;
 
-  // URL yang akan diurai jika ada (prop url atau hasil.url) (Requirement LN-07)
   const urlTarget = url || hasil.url;
 
-  // Daftar bukti dari semua temuan untuk disorot di transkrip
   const daftarBukti = React.useMemo(() => {
     return (hasil.temuan || [])
       .map((t) => t.bukti)
       .filter((b): b is string => Boolean(b && b.trim().length > 0));
   }, [hasil.temuan]);
 
-  // Tentukan daftar tautan halaman lain (gunakan prop atau fallback otomatis berdasarkan halaman)
   const daftarHalamanLain =
     halamanLain && halamanLain.length > 0
       ? halamanLain
       : HALAMAN_LAIN_DEFAULT[hasil.halaman] || [];
 
-  // Apakah situasi darurat terdeteksi (Requirement 7.6)
   const adaSituasiDarurat = Boolean(
     hasil.situasi_darurat && hasil.situasi_darurat.length > 0
   );
 
-  // Daftar unik layanan yang dipakai atau tercatat di status_layanan (tanpa duplikasi ai / Google Gemini)
+  const bukanPenipuan = Boolean(
+    hasil.analisis_media?.kategori && hasil.analisis_media.kategori !== 'penipuan'
+  );
+
   const rawLayanan = Array.from(
     new Set([
       ...(hasil.pihak_ketiga || []),
@@ -163,7 +138,6 @@ export function KomponenHasil({
       aria-label="Hasil Pemeriksaan"
       className={`space-y-6 sm:space-y-8 ${className}`.trim()}
     >
-      {/* 1. TingkatKewaspadaan + ringkasan (Requirement 6.1, 6.2, 6.3, 6.4, 6.5) */}
       <section data-testid="blok-tingkat-kewaspadaan" aria-label="Tingkat Kewaspadaan">
         <TingkatKewaspadaan
           level={hasil.level}
@@ -171,18 +145,18 @@ export function KomponenHasil({
         />
       </section>
 
-      {/* Pemecahan URL per bagian dengan sorotan (Requirement LN-07) */}
+      {hasil.analisis_media && (
+        <PanelAnalisisMedia analisis={hasil.analisis_media} framePratinjau={framePratinjau} />
+      )}
+
       {urlTarget && urlTarget.trim().length > 0 && (
         <section data-testid="blok-pemecah-url" aria-label="Pemecahan Struktur URL">
           <PemecahUrl url={urlTarget} temuan={hasil.temuan} />
         </section>
       )}
 
-      {/* Tata letak seimbang: Kolom Kiri (Temuan & Analisis), Kolom Kanan (Panduan & Tindakan) */}
       <div className="space-y-6 sm:space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
-        {/* Kolom Kiri: Evaluasi Temuan & Indikator Wajar */}
         <div className="space-y-6 sm:space-y-8">
-          {/* 2. Yang perlu diwaspadai (daftar KartuTemuan) (Requirement 6.1, 6.6) */}
           <section
             data-testid="blok-temuan"
             aria-labelledby="judul-blok-temuan"
@@ -208,7 +182,6 @@ export function KomponenHasil({
               </div>
             </div>
 
-            {/* Sorotan transkrip jika transkrip atau teks asli tersedia (Requirement CH-07) */}
             {transkripTampil && transkripTampil.trim().length > 0 && (
               <SorotanTranskrip
                 transkrip={transkripTampil}
@@ -236,7 +209,6 @@ export function KomponenHasil({
             )}
           </section>
 
-          {/* 3. Yang tampak wajar jika ada (Requirement 6.1) */}
           {hasil.hal_wajar && hasil.hal_wajar.length > 0 && (
             <section
               data-testid="blok-hal-wajar"
@@ -289,28 +261,26 @@ export function KomponenHasil({
           )}
         </div>
 
-        {/* Kolom Kanan: Panduan Tindakan, Panel Darurat, & Batasan */}
         <div className="space-y-6 sm:space-y-8">
-          {/* 4. Langkah yang disarankan (Requirement 6.1) */}
           <section data-testid="blok-langkah-disarankan" aria-label="Langkah yang Disarankan">
             <LangkahDisarankan langkah={hasil.langkah} />
           </section>
 
-          {/* 5. PanelDarurat (Requirement 6.1, 7.6) */}
-          <section data-testid="blok-panel-darurat" aria-label="Panel Darurat">
-            <PanelDarurat
-              situasiAktif={hasil.situasi_darurat}
-              autoOpen={adaSituasiDarurat}
-              temuan={hasil.temuan}
-              langkah={hasil.langkah}
-              ringkasan={hasil.ringkasan}
-              halaman={hasil.halaman}
-              transkrip={hasil.transkrip || transkrip}
-              url={hasil.url || urlTarget}
-            />
-          </section>
+          {!bukanPenipuan && (
+            <section data-testid="blok-panel-darurat" aria-label="Panel Darurat">
+              <PanelDarurat
+                situasiAktif={hasil.situasi_darurat}
+                autoOpen={adaSituasiDarurat}
+                temuan={hasil.temuan}
+                langkah={hasil.langkah}
+                ringkasan={hasil.ringkasan}
+                halaman={hasil.halaman}
+                transkrip={hasil.transkrip || transkrip}
+                url={hasil.url || urlTarget}
+              />
+            </section>
+          )}
 
-          {/* 6. Batasan + layanan pihak ketiga (Requirement 6.1) */}
           <section
             data-testid="blok-batasan-layanan"
             aria-labelledby="judul-batasan-layanan"
@@ -341,7 +311,7 @@ export function KomponenHasil({
               </h3>
             </div>
 
-            {/* Keterangan Batasan */}
+            {/* ===== KETERANGAN BATASAN ===== */}
             {hasil.batasan && hasil.batasan.trim().length > 0 && (
               <div className="space-y-1.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
@@ -356,7 +326,7 @@ export function KomponenHasil({
               </div>
             )}
 
-            {/* Layanan Pihak Ketiga & Statusnya (Disembunyikan dari UI visual pengguna) */}
+            {/* ===== LAYANAN PIHAK KETIGA & STATUSNYA ===== */}
             <div className="sr-only">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
                 Layanan Pihak Ketiga:
@@ -405,7 +375,7 @@ export function KomponenHasil({
               )}
             </div>
 
-            {/* Jaminan Privasi & Keamanan Sesi Pengguna */}
+            {/* ===== JAMINAN PRIVASI & KEAMANAN SESI PENGGUNA ===== */}
             <div className="pt-2 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2 text-xs text-gray-600 font-medium">
               <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" aria-hidden="true" />
@@ -420,7 +390,6 @@ export function KomponenHasil({
         </div>
       </div>
 
-      {/* Tanya Lanjut (P1 - Requirements 31.5, 32.4) - Full Width di Bawah Grid untuk kenyamanan konsultasi interaktif */}
       {tampilkanTanyaLanjut && (
         <section
           data-testid="blok-tanya-lanjut"
@@ -433,13 +402,11 @@ export function KomponenHasil({
         </section>
       )}
 
-      {/* 7. Aksi penutup: Tombol "Cek lagi", tautan halaman cek lainnya, dan cross-links (Requirements 6.1, 34.1, 34.3, 34.4, 35.2) */}
       <section
         data-testid="blok-aksi-penutup"
         aria-label="Aksi Penutup dan Navigasi"
         className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm space-y-5"
       >
-        {/* Tombol Cross-links jika tersedia (Requirements 34.1, 34.3) */}
         {crossLinks && crossLinks.length > 0 && (
           <div data-testid="area-cross-links" className="space-y-2.5">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-900 block">
@@ -499,7 +466,6 @@ export function KomponenHasil({
           </div>
         )}
 
-        {/* Tombol Utama "Cek lagi" dan "Kirim peringatan" (Requirements 35.2, P1, 27.2) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button
             type="button"
@@ -523,12 +489,12 @@ export function KomponenHasil({
             <span>Cek lagi</span>
           </button>
 
-          {tampilkanTemplatPeringatan && (
+          {tampilkanTemplatPeringatan && !bukanPenipuan && (
             <TemplatPeringatan hasil={hasil} />
           )}
         </div>
 
-        {/* Tautan Navigasi ke Halaman Cek Lainnya (Requirement 34.4) */}
+        {/* ===== TAUTAN NAVIGASI KE HALAMAN CEK LAINNYA ===== */}
         {daftarHalamanLain.length > 0 && (
           <div
             data-testid="area-halaman-lain"

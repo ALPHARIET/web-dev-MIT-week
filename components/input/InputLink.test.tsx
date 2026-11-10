@@ -2,7 +2,7 @@
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { InputLink, type InputLinkProps } from './InputLink';
+import { InputLink } from './InputLink';
 
 describe('components/input/InputLink.tsx (Task 8.1)', () => {
   afterEach(() => {
@@ -60,7 +60,6 @@ describe('components/input/InputLink.tsx (Task 8.1)', () => {
         <InputLink onSubmit={vi.fn()} initialUrl={urlMencurigakan} />
       );
 
-      // Pastikan pratinjau alamat muncul
       const pratinjau = screen.getByTestId('pratinjau-alamat');
       expect(pratinjau).toBeDefined();
 
@@ -69,15 +68,12 @@ describe('components/input/InputLink.tsx (Task 8.1)', () => {
       expect(teksPratinjau.textContent).toBe(urlMencurigakan);
       expect(teksPratinjau.tagName.toLowerCase()).not.toBe('a');
 
-      // KEAMANAN KRITIS: Tidak boleh ada elemen <a> sama sekali di dalam komponen
       const allAnchorTags = container.querySelectorAll('a');
       expect(allAnchorTags.length).toBe(0);
 
-      // Verifikasi tidak ada elemen yang memiliki atribut href
       const allHrefElements = container.querySelectorAll('[href]');
       expect(allHrefElements.length).toBe(0);
 
-      // Terdapat badge penjelas teks biasa
       const badge = screen.getByTestId('badge-keamanan-teks');
       expect(badge.textContent?.toLowerCase()).toContain('teks biasa');
     });
@@ -85,7 +81,6 @@ describe('components/input/InputLink.tsx (Task 8.1)', () => {
     it('memperbarui teks pratinjau saat pengguna mengetik URL', () => {
       render(<InputLink onSubmit={vi.fn()} />);
 
-      // Awalnya pratinjau tidak muncul karena input kosong
       expect(screen.queryByTestId('pratinjau-alamat')).toBeNull();
 
       const input = screen.getByTestId('input-link');
@@ -108,15 +103,12 @@ describe('components/input/InputLink.tsx (Task 8.1)', () => {
       const tombolPeriksa = screen.getByTestId('tombol-periksa');
       fireEvent.click(tombolPeriksa);
 
-      // Validasi error muncul
       const errorMsg = screen.getByTestId('pesan-validasi');
       expect(errorMsg).toBeDefined();
       expect(errorMsg.textContent).toContain('Masukkan URL atau nama domain');
 
-      // onSubmit tidak boleh dipanggil
       expect(onSubmit).not.toHaveBeenCalled();
 
-      // Input diberi status aria-invalid="true"
       const input = screen.getByTestId('input-link');
       expect(input.getAttribute('aria-invalid')).toBe('true');
     });
@@ -233,7 +225,6 @@ describe('components/input/InputLink.tsx (Task 8.1)', () => {
       const spinner = screen.getByTestId('spinner-loading');
       expect(spinner).toBeDefined();
 
-      // Tombol bersihkan disembunyikan saat sedang loading
       expect(screen.queryByTestId('tombol-bersihkan')).toBeNull();
     });
   });

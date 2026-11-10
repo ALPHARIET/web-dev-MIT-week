@@ -55,7 +55,7 @@ describe('POST /api/cek-link — Integrasi VirusTotal (Task 19.1, Requirement LN
       keterangan: '0 dari 75 vendor',
     });
 
-    vi.mocked(explainLink).mockResolvedValue(null); // Fallback ke aturan lokal untuk memeriksa temuan & skor langsung
+    vi.mocked(explainLink).mockResolvedValue(null);
   });
 
   it('memanggil checkVirusTotal secara paralel sebagai sumber ke-4 dalam Promise.allSettled', async () => {
@@ -101,7 +101,6 @@ describe('POST /api/cek-link — Integrasi VirusTotal (Task 19.1, Requirement LN
     expect(res.status).toBe(200);
     const data = await res.json();
 
-    // URL normal awalnya 0 skor (tidak_ditemukan), dengan +3 VirusTotal naik menjadi "sedang"
     expect(data.level).toBe('sedang');
 
     const vtFinding = data.temuan.find(
@@ -176,7 +175,6 @@ describe('POST /api/cek-link — Integrasi VirusTotal (Task 19.1, Requirement LN
     const data = await res.json();
 
     expect(data.status_layanan.virustotal).toBe('gagal');
-    // Sumber lain tetap berjalan lancar
     expect(data.status_layanan.safe_browsing).toBe('ok');
     expect(data.status_layanan.rdap).toBe('ok');
   });
@@ -225,7 +223,6 @@ describe('POST /api/cek-link — Integrasi VirusTotal (Task 19.1, Requirement LN
     expect(data.status_layanan.virustotal).toBe('ok');
     expect(data.status_layanan.ai).toBe('ok');
 
-    // Temuan VirusTotal tetap dipertahankan
     const vt = data.temuan.find(
       (t: { sumber: string }) => t.sumber === 'virustotal'
     );

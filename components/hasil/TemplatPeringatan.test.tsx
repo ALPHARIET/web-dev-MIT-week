@@ -113,9 +113,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     status_layanan: {},
   };
 
-  // =========================================================================
-  // 1. Pembangkitan Pesan Dinamis & Sanitasi
-  // =========================================================================
   describe('Pembangkitan Templat Pesan Dinamis (Requirement P1)', () => {
     it('mendeteksi merek BCA dan modus permintaan OTP dengan benar', () => {
       const pihak = deteksiPihakDicatut(dummyHasilBcaOtp);
@@ -178,9 +175,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     });
   });
 
-  // =========================================================================
-  // 2. Perlindungan Privasi Data Pengguna (Requirement P1)
-  // =========================================================================
   describe('Perlindungan Privasi Data Pengguna (Requirement P1)', () => {
     it('tidak menyertakan data sensitif pengguna (nomor HP, email, nomor rekening, OTP) dalam templat', () => {
       const hasilDenganDataSensitif: FormatDataHasil = {
@@ -198,7 +192,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
 
       const templat = buatTemplatPeringatan(hasilDenganDataSensitif);
 
-      // Data sensitif mentah tidak boleh muncul di templat
       expect(templat).not.toContain('budi.santoso@example.com');
       expect(templat).not.toContain('081234567890');
       expect(templat).not.toContain('123456789012');
@@ -206,9 +199,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     });
   });
 
-  // =========================================================================
-  // 3. Kepatuhan Larangan Kata Terlarang (Requirements 6.7, 30.1)
-  // =========================================================================
   describe('Bebas Kata Terlarang sebagai Vonis Mutlak (Requirements 6.7, 30.1)', () => {
     it('memastikan templat pesan bebas dari kata terlarang "aman", "pasti", "terbukti", "100%"', () => {
       const templat1 = buatTemplatPeringatan(dummyHasilBcaOtp);
@@ -234,9 +224,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     });
   });
 
-  // =========================================================================
-  // 4. Interaksi UI & Modal Dialog
-  // =========================================================================
   describe('Interaksi UI Komponen TemplatPeringatan', () => {
     it('merender tombol pemicu "Kirim peringatan" dan belum menampilkan modal', () => {
       render(<TemplatPeringatan hasil={dummyHasilBcaOtp} />);
@@ -272,7 +259,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
 
       expect(textarea.value).toBe('Pesan peringatan khusus untuk grup keluarga besar.');
 
-      // Tautan WhatsApp harus terupdate dengan teks yang disunting
       const waBtn = screen.getByTestId('tombol-whatsapp-templat') as HTMLAnchorElement;
       expect(waBtn.href).toContain(encodeURIComponent('Pesan peringatan khusus untuk grup keluarga besar.'));
     });
@@ -294,7 +280,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
       const copyCallArg = writeTextMock.mock.calls[0][0];
       expect(copyCallArg).toContain('BCA');
 
-      // Feedback visual tersalin harus muncul
       await waitFor(() => {
         expect(screen.getByTestId('feedback-tersalin')).toBeDefined();
         expect(screen.getByText('Tersalin!')).toBeDefined();
@@ -302,7 +287,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     });
 
     it('menyediakan fallback penyalinan saat navigator.clipboard tidak tersedia', async () => {
-      // Mock clipboard null
       const originalClipboard = navigator.clipboard;
       // @ts-expect-error simulasi browser tanpa clipboard API
       navigator.clipboard = undefined;
@@ -321,7 +305,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
         expect(screen.getByTestId('feedback-tersalin')).toBeDefined();
       });
 
-      // Kembalikan clipboard semula
       Object.assign(navigator, { clipboard: originalClipboard });
     });
 
@@ -334,7 +317,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
       expect(waBtn.rel).toContain('noopener');
       expect(waBtn.href).toMatch(/^https:\/\/api\.whatsapp\.com\/send\?text=/);
 
-      // Pastikan URL WhatsApp memuat teks ter-encode
       const urlText = decodeURIComponent(waBtn.href.split('text=')[1]);
       expect(urlText).toContain('BCA');
       expect(urlText).toContain('OTP');
@@ -382,9 +364,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     });
   });
 
-  // =========================================================================
-  // 5. Target Sentuh Minimal 44px (Requirement 27.2)
-  // =========================================================================
   describe('Aksesibilitas & Target Sentuh Minimal 44px (Requirement 27.2)', () => {
     it('seluruh elemen tombol dan tautan memiliki ukuran target sentuh minimal 44px', () => {
       render(<TemplatPeringatan hasil={dummyHasilBcaOtp} defaultOpen={true} />);
@@ -416,9 +395,6 @@ describe('components/hasil/TemplatPeringatan.tsx (Task 21.2 & Requirement P1)', 
     });
   });
 
-  // =========================================================================
-  // 6. Integrasi dalam KomponenHasil
-  // =========================================================================
   describe('Integrasi TemplatPeringatan di KomponenHasil', () => {
     it('merender tombol "Kirim peringatan" di dalam KomponenHasil', () => {
       render(<KomponenHasil hasil={dummyHasilBcaOtp} />);

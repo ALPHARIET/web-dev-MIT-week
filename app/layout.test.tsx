@@ -4,12 +4,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import RootLayout, { metadata, viewport } from './layout';
 
-// Mock next/navigation for usePathname
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
-// Mock next/font/local agar tidak mencoba membaca file font biner selama unit test
 vi.mock('next/font/local', () => ({
   default: (options: { variable: string }) => ({
     variable: options.variable,
@@ -102,10 +100,8 @@ describe('app/layout.tsx — Root Layout, Header, Footer & Metadata (Task 4.1)',
       const headerElement = screen.getByRole('banner');
       expect(headerElement).toBeDefined();
 
-      // Memeriksa nama aplikasi pada header
       expect(within(headerElement).getByText('Cek Penipuan')).toBeDefined();
 
-      // Memeriksa tautan navigasi ke tiga halaman cek di dalam header
       const navLinks = within(headerElement).getAllByRole('link');
       const hrefs = navLinks.map((link) => link.getAttribute('href'));
 
@@ -124,17 +120,14 @@ describe('app/layout.tsx — Root Layout, Header, Footer & Metadata (Task 4.1)',
       const footerElement = screen.getByRole('contentinfo');
       expect(footerElement).toBeDefined();
 
-      // Memeriksa tautan ke bagian cara kerja dan batasan di Beranda
       const caraKerjaLink = screen.getByRole('link', {
         name: /cara kerja dan batasan/i,
       });
       expect(caraKerjaLink).toBeDefined();
       expect(caraKerjaLink.getAttribute('href')).toBe('/#cara-kerja');
 
-      // Memeriksa catatan pengguna 18 tahun ke atas
       expect(screen.getByText(/18 tahun ke atas/i)).toBeDefined();
 
-      // Memeriksa penyebutan layanan pihak ketiga pada footer
       expect(screen.getByText(/Google Gemini/i)).toBeDefined();
       expect(screen.getByText(/Google Safe Browsing/i)).toBeDefined();
       expect(screen.getByText(/RDAP/i)).toBeDefined();
@@ -155,7 +148,6 @@ describe('app/layout.tsx — Root Layout, Header, Footer & Metadata (Task 4.1)',
       expect(main?.classList.contains('px-4')).toBe(true);
 
       const body = container.querySelector('body') || container.firstElementChild;
-      // Memastikan flex layout dan min-h-screen agar footer menempel rapi di bawah
       expect(body?.classList.contains('min-h-screen')).toBe(true);
       expect(body?.classList.contains('flex')).toBe(true);
       expect(body?.classList.contains('flex-col')).toBe(true);
