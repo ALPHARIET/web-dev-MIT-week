@@ -424,7 +424,7 @@ export function PratinjauSensor({
               <>
                 <svg
                   data-testid="spinner-loading"
-                  className="animate-spin w-4 h-4 text-white"
+                  className="animate-spin w-4 h-4 text-current"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"

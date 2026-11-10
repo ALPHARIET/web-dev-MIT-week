@@ -349,7 +349,7 @@ export function KomponenHasil({
                 </span>
                 <p
                   data-testid="teks-batasan"
-                  className="text-xs sm:text-sm text-gray-700 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-3.5"
+                  className="text-xs sm:text-sm text-gray-700 leading-relaxed bg-gray-50/80 border border-gray-200 rounded-lg p-3.5"
                 >
                   {hasil.batasan}
                 </p>
@@ -407,7 +407,7 @@ export function KomponenHasil({
 
             {/* Jaminan Privasi & Keamanan Sesi Pengguna */}
             <div className="pt-2 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2 text-xs text-gray-600 font-medium">
-              <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" aria-hidden="true" />
                 <span>Sesi selesai, data input otomatis dibersihkan</span>
               </div>
