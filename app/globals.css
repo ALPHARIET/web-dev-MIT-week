@@ -118,11 +118,29 @@ textarea {
 /* Navigasi header. */
 header nav a {
   color: #070607;
+  border: none;
 }
 
 header nav a[aria-current="page"] {
   background-color: #fc5000;
   color: #070607;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Navigasi footer: tanpa border/outline kotak saat difokuskan atau diklik, jarak tautan rapat proporsional. */
+footer a,
+footer a:focus,
+footer a:focus-visible,
+footer a:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+footer ul a {
+  min-height: 28px !important;
 }
 
 /* ---------- Permukaan ---------- */

@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import PemanduKursor from '@/components/layout/PemanduKursor';
+import logoFinal from './LogoFinal.png';
 
 export interface HeaderProps {
   currentPath?: string;
@@ -49,28 +51,19 @@ export function Header({ currentPath }: HeaderProps) {
         <div className="flex items-center justify-between h-14">
           {/* Logo / Nama Aplikasi */}
           <div className="flex items-center">
-            <Link
-              href="/"
-              onClick={closeMobileMenu}
-              className="font-display flex items-center gap-2 text-obsidian text-xl sm:text-2xl rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[44px] min-w-[44px]"
-              aria-label="Cek Penipuan - Beranda"
+            <div
+              className="font-display flex items-center gap-2 text-obsidian text-xl sm:text-2xl"
             >
-              <svg
-                className="w-7 h-7 text-ember flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                />
-              </svg>
+              <Image
+                src={logoFinal}
+                alt="Logo Cek Penipuan"
+                width={32}
+                height={32}
+                className="w-7 h-7 sm:w-8 sm:h-8 object-contain flex-shrink-0"
+                priority
+              />
               <span>Cek Penipuan</span>
-            </Link>
+            </div>
           </div>
 
           {/* Navigasi Desktop (lebar > 640px) */}
@@ -85,10 +78,10 @@ export function Header({ currentPath }: HeaderProps) {
                   key={item.id}
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-full transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-600 ${
+                  className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-full transition-colors min-h-[44px] focus:outline-none ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-pumice'
+                      ? 'bg-ember text-white'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   {item.label}
@@ -162,7 +155,7 @@ export function Header({ currentPath }: HeaderProps) {
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center px-4 py-3 text-base font-medium rounded-full transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-600 ${
                     isActive
-                      ? 'bg-obsidian text-limestone'
+                      ? 'bg-ember text-white'
                       : 'text-obsidian hover:bg-pumice'
                   }`}
                 >
