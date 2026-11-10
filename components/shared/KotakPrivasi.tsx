@@ -141,7 +141,7 @@ export function KotakPrivasi({
       aria-label="Pemberitahuan privasi dan layanan pihak ketiga"
       data-testid="kotak-privasi"
       data-halaman={halaman}
-      className={`rounded-2xl border border-blue-200 bg-blue-50/70 p-4 sm:p-5 text-gray-900 shadow-sm transition-all duration-200 ${className}`.trim()}
+      className={`rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 text-gray-900 shadow-sm transition-all duration-200 space-y-4 ${className}`.trim()}
     >
       {/* Header Kotak Privasi: Ikon Perisai & Judul */}
       <div className="flex items-center justify-between gap-3 mb-3.5">
@@ -171,27 +171,27 @@ export function KotakPrivasi({
         </div>
       </div>
 
-      {/* Peringatan Utama: Data Sensitif (Requirement 8.2) */}
+      {/* Peringatan Utama: Data Sensitif (Requirement 8.2) - Desain flat callout beraksen kiri tanpa bubble rounded berlebih */}
       <div
         data-testid="peringatan-sensitif"
-        className="rounded-xl border border-amber-300 bg-amber-50 p-3 sm:p-3.5 mb-3.5 text-amber-950 flex items-start gap-2.5"
+        className="border-l-4 border-amber-500 bg-amber-50/80 px-3.5 py-2.5 text-xs sm:text-sm text-amber-950 flex items-start gap-2.5 rounded-r-md"
       >
-        <span className="flex-shrink-0 text-amber-700 mt-0.5" aria-hidden="true">
-          <AlertWarningIcon className="w-5 h-5" />
+        <span className="shrink-0 text-amber-700 mt-0.5" aria-hidden="true">
+          <AlertWarningIcon className="w-4 h-4" />
         </span>
-        <div className="text-xs sm:text-sm leading-relaxed">
-          <span className="font-bold">Penting: </span>
+        <div className="leading-relaxed">
+          <span className="font-semibold text-amber-900">Penting: </span>
           <span>jangan masukkan OTP, PIN, password, atau nomor rekening asli.</span>
         </div>
       </div>
 
-      {/* Rincian Pengiriman Data & Pihak Ketiga (Requirement 8.3, 8.4, 8.5) */}
+      {/* Rincian Pengiriman Data & Pihak Ketiga (Requirement 8.3, 8.4, 8.5) - Alur datar dengan divider tipis */}
       <div
         data-testid="layanan-pihak-ketiga"
-        className="rounded-xl bg-white border border-blue-100 p-3.5 sm:p-4 mb-3.5 space-y-2 shadow-xs"
+        className="pt-3 border-t border-gray-100 space-y-2"
       >
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {halaman === 'chat' ? 'Pengolahan & Analisis Data AI' : 'Pengolahan Data & Layanan Luar'}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -199,7 +199,7 @@ export function KotakPrivasi({
               <span
                 key={layanan}
                 data-testid="badge-layanan"
-                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200"
+                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200"
               >
                 {layanan}
               </span>
@@ -209,7 +209,7 @@ export function KotakPrivasi({
 
         <p
           data-testid="deskripsi-layanan"
-          className="text-xs sm:text-sm text-gray-700 leading-relaxed pt-1"
+          className="text-xs sm:text-sm text-gray-600 leading-relaxed"
         >
           {infoHalaman.deskripsiLayanan}
         </p>
@@ -217,7 +217,7 @@ export function KotakPrivasi({
         {infoHalaman.catatanTransparansi && (
           <p
             data-testid="catatan-transparansi"
-            className="text-xs text-gray-600 italic border-t border-gray-100 pt-2 leading-relaxed"
+            className="text-xs text-gray-500 italic pt-1 leading-relaxed"
           >
             {infoHalaman.catatanTransparansi}
           </p>
@@ -227,22 +227,22 @@ export function KotakPrivasi({
       {/* Jaminan Privasi (Tanpa Login & Input Tidak Disimpan) */}
       <div
         data-testid="jaminan-privasi"
-        className="pt-1 border-t border-blue-200/60 flex items-center justify-between flex-wrap gap-2 text-xs sm:text-sm text-gray-700"
+        className="pt-3 border-t border-gray-100 space-y-1.5 text-xs text-gray-600"
       >
-        <div className="flex items-center gap-1.5 font-medium text-blue-950">
-          <span className="text-emerald-700 flex-shrink-0" aria-hidden="true">
+        <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-900">
+          <span className="text-emerald-600 shrink-0" aria-hidden="true">
             <CheckCircleIcon className="w-4 h-4" />
           </span>
           <span>Tanpa login, input tidak disimpan setelah sesi selesai.</span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-gray-600 font-medium">
-          <span className="inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
+        <div className="flex items-center gap-3 pl-6 text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
             Tanpa database pengguna
           </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
             Bebas pelacakan pribadi
           </span>
         </div>

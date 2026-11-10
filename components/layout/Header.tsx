@@ -51,8 +51,11 @@ export function Header({ currentPath }: HeaderProps) {
         <div className="flex items-center justify-between h-14">
           {/* Logo / Nama Aplikasi */}
           <div className="flex items-center">
-            <div
-              className="font-display flex items-center gap-2 text-obsidian text-xl sm:text-2xl"
+            <Link
+              href="/"
+              onClick={closeMobileMenu}
+              className="font-display flex items-center gap-2 text-obsidian text-xl sm:text-2xl rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[44px] min-w-[44px]"
+              aria-label="Cek Penipuan - Beranda"
             >
               <Image
                 src={logoFinal}
@@ -63,7 +66,7 @@ export function Header({ currentPath }: HeaderProps) {
                 priority
               />
               <span>Cek Penipuan</span>
-            </div>
+            </Link>
           </div>
 
           {/* Navigasi Desktop (lebar > 640px) */}

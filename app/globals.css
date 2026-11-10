@@ -71,17 +71,34 @@ b {
 .bg-blue-600,
 .bg-red-500,
 .bg-red-600 {
-  background-color: #fc5000;
-  color: #070607;
-  border-radius: 800px;
+  background-color: #fc5000 !important;
+  color: #070607 !important;
+  border-radius: 800px !important;
 }
 
+.hover\:bg-blue-600:hover,
 .hover\:bg-blue-700:hover,
 .hover\:bg-blue-800:hover,
+.hover\:bg-red-600:hover,
 .hover\:bg-red-700:hover,
 .hover\:bg-red-800:hover {
-  background-color: #ff6f2b;
-  color: #070607;
+  background-color: #ff6f2b !important;
+  color: #070607 !important;
+}
+
+.active\:bg-blue-700:active,
+.active\:bg-blue-800:active,
+.active\:bg-red-700:active,
+.active\:bg-red-800:active {
+  background-color: #e04600 !important;
+  color: #070607 !important;
+}
+
+.bg-blue-500 *,
+.bg-blue-600 *,
+.bg-red-500 *,
+.bg-red-600 * {
+  color: inherit;
 }
 
 /* Tidak ada tombol bersudut kecil. */

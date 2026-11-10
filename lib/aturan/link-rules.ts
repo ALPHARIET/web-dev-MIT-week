@@ -680,7 +680,7 @@ function tentukanLangkahLink(
   const parsed = rawUrl
     ? parseUrl(rawUrl.includes('://') ? rawUrl : `http://${rawUrl}`)
     : null;
-  const hostname = parsed?.hostname || cleanHostString(rawUrl) || 'tautan ini';
+  const hostname = cleanHostString(rawUrl) || 'tautan ini';
   const pathLower = (parsed?.path || rawUrl).toLowerCase();
 
   const infoMerek = rawUrl ? deteksiMerek(rawUrl) : { cocok: false, merek: null };
